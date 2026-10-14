@@ -1,45 +1,48 @@
-namespace backend;
+using System.Text.Json.Serialization;
+using backend.Data;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
 
-public class Program {
-    public static void Main(string[] args)
-    {
-        var builder = WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
-        // Add services to the container.
-        builder.Services.AddAuthorization();
+// Configuration
+string connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' was not found.");
 
-        // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-        builder.Services.AddOpenApi();
+// Services
+builder.Services.AddDbContext<AppDbContext>(options => options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
-        var app = builder.Build();
+builder.Services.AddControllers();
+builder.Services.AddOpenApi();
+builder.Services.AddAuthorization();
+builder.Services.AddHealthChecks();
 
-        // Configure the HTTP request pipeline.
-        if (app.Environment.IsDevelopment())
-        {
-            app.MapOpenApi();
-        }
+string[] allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 
-        app.UseHttpsRedirection();
+builder.Services.AddCors(options => {
+    options.AddPolicy("Frontend",
+        policy => {
+            if (allowedOrigins.Length > 0)
+                policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod();
+        });
+});
 
-        app.UseAuthorization();
+builder.Services.Configure<ForwardedHeadersOptions>(options => { options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto; });
+builder.Services.ConfigureHttpJsonOptions(options => { options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()); });
 
-        var summaries = new[] {
-            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-        };
+var app = builder.Build();
 
-        app.MapGet("/weatherforecast",
-                (HttpContext httpContext) => {
-                    var forecast = Enumerable.Range(1, 5).Select(index =>
-                            new WeatherForecast {
-                                Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                                TemperatureC = Random.Shared.Next(-20, 55),
-                                Summary = summaries[Random.Shared.Next(summaries.Length)]
-                            })
-                        .ToArray();
-                    return forecast;
-                })
-            .WithName("GetWeatherForecast");
+// HTTP request pipeline
+app.UseForwardedHeaders();
 
-        app.Run();
-    }
-}
+if (app.Environment.IsDevelopment())
+    app.MapOpenApi();
+
+app.UseHttpsRedirection();
+
+app.UseCors("Frontend");
+app.UseAuthorization();
+
+app.MapControllers();
+app.MapHealthChecks("/health");
+
+await app.RunAsync();

@@ -1,0 +1,23 @@
+﻿services:
+  backend:
+    image: backend
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+  db:
+    image: mariadb:11.4
+    container_name: mariadb_db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: nnpro
+      MARIADB_DATABASE: nnpro
+      MARIADB_USER: nnpro
+      MARIADB_PASSWORD: nnpro
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+volumes:
+  mariadb_data:
