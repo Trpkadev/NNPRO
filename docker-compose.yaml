@@ -8,6 +8,8 @@
       MARIADB_DATABASE: nnpro
       MARIADB_USER: nnpro
       MARIADB_PASSWORD: nnpro
+    ports:
+      - "3306:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
       - ./database/init:/docker-entrypoint-initdb.d
