@@ -1,23 +1,40 @@
 ﻿services:
-  backend:
-    image: backend
-    build:
-      context: .
-      dockerfile: Dockerfile
-
   db:
     image: mariadb:11.4
-    container_name: mariadb_db
+    container_name: db
     restart: unless-stopped
     environment:
       MARIADB_ROOT_PASSWORD: nnpro
       MARIADB_DATABASE: nnpro
       MARIADB_USER: nnpro
       MARIADB_PASSWORD: nnpro
-    ports:
-      - "3306:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
+      - ./database/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "--user=nnpro", "--password=nnpro"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=db;Port=3306;Database=nnpro;User=nnpro;Password=nnpro;
+      - Jwt__Secret=SuperSecretKeyKteraMaMnohemViceNez32Znaku123!
+      - Jwt__Issuer=ELearningApi
+      - Jwt__Audience=ELearningClient
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   mariadb_data:
