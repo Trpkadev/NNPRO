@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">E-learning</string>
+    <string name="title_activity_main">E-learning</string>
+    <string name="package_name">cz.upce.nnpro.elearning</string>
+    <string name="custom_url_scheme">cz.upce.nnpro.elearning</string>
+</resources>
