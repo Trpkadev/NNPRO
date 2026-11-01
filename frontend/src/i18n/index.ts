@@ -19,6 +19,12 @@ const messages = {
       required: 'Toto pole je povinné',
       email: 'Zadejte platný e-mail',
     },
+    nav: {
+      home: 'Domů',
+      courses: 'Kurzy',
+      about: 'O nás',
+      login: 'Přihlásit se',
+    },
   },
   en: {
     welcome: 'Welcome to the app',
@@ -37,6 +43,12 @@ const messages = {
     validation: {
       required: 'This field is required',
       email: 'Enter a valid email',
+    },
+    nav: {
+      home: 'Home',
+      courses: 'Courses',
+      about: 'About',
+      login: 'Sign in',
     },
   },
 }

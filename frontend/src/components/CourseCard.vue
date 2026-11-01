@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 defineProps<{
   title: string
@@ -8,28 +7,17 @@ defineProps<{
 </script>
 
 <template>
-  <article class="course-card">
-    <h3 class="text-lg font-semibold">{{ title }}</h3>
+  <Card class="h-full">
+    <template #title>
+      {{ title }}
+    </template>
 
-    <p class="text-sm text-muted">
-      {{ lessons }} lekcí · {{ level }}
-    </p>
+    <template #content>
+      <p class="mb-4 text-sm text-muted-color">
+        {{ lessons }} lekcí · {{ level }}
+      </p>
 
-    <Button label="Zobrazit kurz" outlined />
-  </article>
+      <Button label="Zobrazit kurz" outlined fluid />
+    </template>
+  </Card>
 </template>
-
-<style scoped>
-.course-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 20px;
-  display: grid;
-  gap: 16px;
-}
-
-.text-muted {
-  color: var(--color-muted);
-}
-</style>
