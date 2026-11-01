@@ -3,6 +3,12 @@ import { createI18n } from 'vue-i18n'
 const messages = {
   cs: {
     welcome: 'Vítejte v aplikaci',
+    loading: {
+      default: 'Načítáme obsah kurzu...',
+      courses: 'Načítáme kurzy...',
+      quiz: 'Připravujeme kvíz...',
+      login: 'Ověřujeme přihlášení...',
+    },
     notFound: {
       title: 'Stránka nenalezena',
       description: 'Omlouváme se, ale stránka, kterou hledáte, neexistuje nebo byla přesunuta.',
@@ -16,6 +22,12 @@ const messages = {
   },
   en: {
     welcome: 'Welcome to the app',
+    loading: {
+      default: 'Loading course content...',
+      courses: 'Loading courses...',
+      quiz: 'Preparing quiz...',
+      login: 'Verifying login...',
+    },
     notFound: {
       title: 'Page not found',
       description: 'Sorry, the page you are looking for does not exist or has been moved.',
@@ -30,7 +42,7 @@ const messages = {
 }
 
 export const i18n = createI18n({
-  legacy: false, // Nutné pro Composition API
+  legacy: false,
   locale: 'cs',
   fallbackLocale: 'en',
   messages,

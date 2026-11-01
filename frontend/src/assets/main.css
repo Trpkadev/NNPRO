@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import '@openvue/openicons/openicons.css';
 @plugin "tailwindcss-primeui";
+@import './theme.css';
 
 /* Volitelné nastavení pro přepínání dark mode přes třídu .dark */
 @custom-variant dark (&:where(.dark, .dark *));
