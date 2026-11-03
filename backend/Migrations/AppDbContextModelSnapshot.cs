@@ -37,6 +37,21 @@ namespace backend.Migrations
                     b.ToTable("CourseInstructors");
                 });
 
+            modelBuilder.Entity("StudentAnswerSelectedOptions", b =>
+                {
+                    b.Property<int>("AnswerOptionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("StudentAnswerId")
+                        .HasColumnType("int");
+
+                    b.HasKey("AnswerOptionId", "StudentAnswerId");
+
+                    b.HasIndex("StudentAnswerId");
+
+                    b.ToTable("StudentAnswerSelectedOptions");
+                });
+
             modelBuilder.Entity("backend.Models.Entities.AnswerOption", b =>
                 {
                     b.Property<int>("Id")
@@ -214,8 +229,8 @@ namespace backend.Migrations
                         .HasMaxLength(2048)
                         .HasColumnType("varchar(2048)");
 
-                    b.Property<int>("Type")
-                        .HasColumnType("int");
+                    b.Property<byte>("Type")
+                        .HasColumnType("tinyint unsigned");
 
                     b.HasKey("Id");
 
@@ -343,11 +358,6 @@ namespace backend.Migrations
                     b.Property<int>("QuizAttemptId")
                         .HasColumnType("int");
 
-                    b.Property<string>("SelectedOptionIdsJson")
-                        .IsRequired()
-                        .HasMaxLength(1024)
-                        .HasColumnType("varchar(1024)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("QuestionId");
@@ -406,8 +416,8 @@ namespace backend.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("varchar(256)");
 
-                    b.Property<int>("Role")
-                        .HasColumnType("int");
+                    b.Property<byte>("Role")
+                        .HasColumnType("tinyint unsigned");
 
                     b.Property<string>("Username")
                         .IsRequired()
@@ -436,6 +446,21 @@ namespace backend.Migrations
                     b.HasOne("backend.Models.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("InstructorsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("StudentAnswerSelectedOptions", b =>
+                {
+                    b.HasOne("backend.Models.Entities.AnswerOption", null)
+                        .WithMany()
+                        .HasForeignKey("AnswerOptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.Models.Entities.StudentAnswer", null)
+                        .WithMany()
+                        .HasForeignKey("StudentAnswerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

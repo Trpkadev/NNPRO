@@ -17,5 +17,5 @@ public class Course {
     public string? AccessKey { get; set; }
 
     // Uživatelé, kteří kurz spravují
-    public List<User> Instructors { get; set; } = [];
+    public ICollection<User> Instructors { get; set; } = [];
 }

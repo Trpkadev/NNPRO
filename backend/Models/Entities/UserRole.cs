@@ -1,7 +1,7 @@
 ﻿namespace backend.Models.Entities;
 
-public enum UserRole {
-    Admin,
-    Instructor,
-    Student
+public enum UserRole : byte {
+    Admin = 0,
+    Instructor = 1,
+    Student = 2
 }

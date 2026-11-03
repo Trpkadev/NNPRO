@@ -23,7 +23,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         // Jeden student může být v konkrétním kurzu zapsaný pouze jednou.
         modelBuilder.Entity<Enrollment>()
-            .HasIndex(e => new { e.StudentId, e.CourseId })
+            .HasIndex(e => new {
+                e.StudentId,
+                e.CourseId
+            })
             .IsUnique();
 
         // Přihlašovací údaje uživatele musí být v systému jedinečné.
@@ -56,7 +59,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         // Pro každého studenta a lekci existuje nejvýše jeden záznam průchodu.
         modelBuilder.Entity<StudentLessonProgress>()
-            .HasIndex(p => new { p.StudentId, p.LessonId })
+            .HasIndex(p => new {
+                p.StudentId,
+                p.LessonId
+            })
             .IsUnique();
         modelBuilder.Entity<StudentLessonProgress>()
             .HasIndex(p => p.LessonId);
@@ -74,11 +80,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         // Lekce se načítají v pořadí v rámci tematické sekce.
         modelBuilder.Entity<Lesson>()
-            .HasIndex(l => new { l.SectionId, l.Order });
+            .HasIndex(l => new {
+                l.SectionId,
+                l.Order
+            });
 
         // Sekce se načítají v pořadí v rámci kurzu.
         modelBuilder.Entity<Section>()
-            .HasIndex(s => new { s.CourseId, s.Order });
+            .HasIndex(s => new {
+                s.CourseId,
+                s.Order
+            });
 
         // Každá příloha patří právě k jedné lekci.
         modelBuilder.Entity<LessonAttachment>()
@@ -100,24 +112,41 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Jeden pokus může obsahovat nejvýše jednu odpověď na konkrétní otázku.
         modelBuilder.Entity<QuizAttempt>()
-            .HasIndex(a => new { a.StudentId, a.QuizId });
+            .HasIndex(a => new {
+                a.StudentId,
+                a.QuizId
+            });
         modelBuilder.Entity<StudentAnswer>()
-            .HasIndex(a => new { a.QuizAttemptId, a.QuestionId })
+            .HasIndex(a => new {
+                a.QuizAttemptId,
+                a.QuestionId
+            })
             .IsUnique();
+
         modelBuilder.Entity<StudentAnswer>()
             .HasOne(a => a.QuizAttempt)
             .WithMany()
             .HasForeignKey(a => a.QuizAttemptId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.Entity<StudentAnswer>()
             .HasOne(a => a.Question)
             .WithMany()
             .HasForeignKey(a => a.QuestionId)
             .IsRequired()
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Konfigurace M:N vazební tabulky
+        modelBuilder.Entity<StudentAnswer>()
+            .HasMany(a => a.SelectedOptions)
+            .WithMany()
+            .UsingEntity<Dictionary<string, object>>(
+                "StudentAnswerSelectedOptions",
+                j => j.HasOne<AnswerOption>().WithMany().HasForeignKey("AnswerOptionId").OnDelete(DeleteBehavior.Cascade),
+                j => j.HasOne<StudentAnswer>().WithMany().HasForeignKey("StudentAnswerId").OnDelete(DeleteBehavior.Cascade)
+            );
 
         // Průchod lekcí i pokus o kvíz vždy patří konkrétnímu studentovi.
         modelBuilder.Entity<StudentLessonProgress>()
