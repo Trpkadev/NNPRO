@@ -1,0 +1,13 @@
+@import 'tailwindcss';
+@import '@openvue/openicons/openicons.css';
+@plugin "tailwindcss-primeui";
+
+/* Volitelné nastavení pro přepínání dark mode přes třídu .dark */
+@custom-variant dark (&:where(.dark, .dark *));
+
+body {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+  user-select: none; /* Zabrání nechtěnému označování textu na mobilu */
+  -webkit-tap-highlight-color: transparent;
+}
