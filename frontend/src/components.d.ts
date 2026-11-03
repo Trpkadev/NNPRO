@@ -11,8 +11,12 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AppLoader: typeof import('./components/AppLoader.vue')['default']
+    AppNavbar: typeof import('./components/AppNavbar.vue')['default']
     Button: typeof import('openvue/button')['default']
+    Card: typeof import('openvue/card')['default']
     ConfirmDialog: typeof import('openvue/confirmdialog')['default']
+    CourseCard: typeof import('./components/CourseCard.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Toast: typeof import('openvue/toast')['default']

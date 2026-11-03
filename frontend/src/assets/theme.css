@@ -1,0 +1,22 @@
+
+:root {
+  --color-primary: #092b6e;
+  --color-primary-hover: #3892ca;
+  --color-background: #97bce1;
+  --color-surface: #ffffff;
+  --color-hero: #eef2ff;
+  --color-text: #1e293b;
+  --color-muted: #64748b;
+  --color-border: #e2e8f0;
+}
+
+
+:root:root {
+  --p-primary-color: var(--color-primary);
+  --p-primary-hover-color: var(--color-primary-hover);
+  --p-primary-active-color: var(--color-primary-hover);
+  --p-primary-contrast-color: var(--color-surface);
+
+  --p-primary-500: var(--color-primary);
+  --p-primary-600: var(--color-primary-hover);
+}

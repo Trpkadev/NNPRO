@@ -1,16 +1,28 @@
+
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { VueQueryDevtools } from '@tanstack/vue-query-devtools'
+
+const isLoading = ref(true)
+
+onMounted(() => {
+  setTimeout(() => {
+    isLoading.value = false
+  }, 2000)
+})
 </script>
 
 <template>
-  <!-- Globální kontejnery pro OpenVue Toast notifikace a dialogy -->
-  <Toast />
-  <ConfirmDialog />
+  <AppLoader v-if="isLoading" />
 
-  <!-- Hlavní kontejner aplikace, kam se vykreslují routes -->
-  <div class="min-h-screen bg-surface-0 dark:bg-surface-950 text-surface-900 dark:text-surface-0">
-    <RouterView />
-  </div>
+  <template v-else>
+    <Toast />
+    <ConfirmDialog />
 
-  <VueQueryDevtools />
+    <div class="min-h-screen bg-surface-0 dark:bg-surface-950 text-surface-900 dark:text-surface-0">
+      <RouterView />
+    </div>
+
+    <VueQueryDevtools />
+  </template>
 </template>
