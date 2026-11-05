@@ -1,0 +1,2 @@
+﻿[*.cs]
+resharper_property_field_keyword_is_never_used_highlighting = none
