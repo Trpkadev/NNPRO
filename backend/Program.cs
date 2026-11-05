@@ -1,7 +1,13 @@
 using System.Text.Json.Serialization;
-using backend.Data;
+using Backend;
+using Backend.Data;
+using Backend.Middleware;
+using Backend.Services;
+using Backend.Services.Interfaces;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,12 +15,34 @@ var builder = WebApplication.CreateBuilder(args);
 string connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' was not found.");
 
 // Services
-builder.Services.AddDbContext<AppDbContext>(options => options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+builder.Services.AddDbContextFactory<AppDbContext>(options => options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
-builder.Services.AddControllers();
-builder.Services.AddOpenApi();
+builder.Services.AddControllers(options => { options.Filters.Add<ApiResponseWrapperFilter>(); })
+    .ConfigureApiBehaviorOptions(options => {
+        options.InvalidModelStateResponseFactory = context => {
+            var problemDetails = new ValidationProblemDetails(context.ModelState) {
+                Title = Resources.ErrorTitleBadRequest,
+                Detail = Resources.ErrorDescriptionBadRequest,
+                Status = StatusCodes.Status400BadRequest,
+                Instance = context.HttpContext.Request.Path,
+                Extensions = { ["traceId"] = context.HttpContext.TraceIdentifier }
+            };
+            return new BadRequestObjectResult(problemDetails);
+        };
+    });
+builder.Services.AddOpenApi(options => {
+    options.AddDocumentTransformer((document, _, _) => {
+        document.Info.Title = "E-learning System API";
+        document.Info.Version = "v1";
+        document.Info.Description = "API pro správu kurzů, lekcí a kvízů.";
+        return Task.CompletedTask;
+    });
+});
 builder.Services.AddAuthorization();
 builder.Services.AddHealthChecks();
+
+builder.Services.AddScoped<ICourseService, CourseService>();
+builder.Services.AddScoped<ILessonService, LessonService>();
 
 string[] allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 
@@ -28,14 +56,21 @@ builder.Services.AddCors(options => {
 
 builder.Services.Configure<ForwardedHeadersOptions>(options => { options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto; });
 builder.Services.ConfigureHttpJsonOptions(options => { options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()); });
-
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    await DbInitializer.SeedCoursesAsync(app.Services.GetRequiredService<IDbContextFactory<AppDbContext>>());
+}
 
 // HTTP request pipeline
 app.UseForwardedHeaders();
 
 if (app.Environment.IsDevelopment())
+{
     app.MapOpenApi();
+    app.MapScalarApiReference();
+}
 
 app.UseHttpsRedirection();
 
