@@ -42,3 +42,11 @@ ENV ASPNETCORE_Kestrel__Certificates__Default__Path="/https/aspnetapp.pfx"
 ENV ASPNETCORE_Kestrel__Certificates__Default__Password="nnpro"
 
 ENTRYPOINT ["dotnet", "Backend.dll"]
+
+# Development exposes OpenAPI/Scalar and seeds the development database.
+FROM final AS development
+ENV ASPNETCORE_ENVIRONMENT="Development"
+
+# Production is the default target.
+FROM final AS production
+ENV ASPNETCORE_ENVIRONMENT="Production"

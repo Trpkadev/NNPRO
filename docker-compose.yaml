@@ -15,7 +15,7 @@
       - mariadb_data:/var/lib/mysql
       - ./database/init:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD", "mariadb-admin", "ping", "--user=nnpro", "--password=nnpro"]
+      test: [ "CMD", "mariadb-admin", "ping", "--user=nnpro", "--password=nnpro" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,13 +24,14 @@
     build:
       context: ./Backend
       dockerfile: Dockerfile
+      target: development
+      #target: production
     container_name: backend
     restart: unless-stopped
     ports:
       - "8080:8080"
       - "8081:8081"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Server=db;Port=3306;Database=nnpro;User=nnpro;Password=nnpro;
       - Jwt__Secret=SuperSecretKeyKteraMaMnohemViceNez32Znaku123!
       - Jwt__Issuer=ELearningApi

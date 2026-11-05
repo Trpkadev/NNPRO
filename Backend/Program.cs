@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
+Console.WriteLine($"[Startup] ASP.NET Core environment: {builder.Environment.EnvironmentName}");
 
 // Configuration
 string connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' was not found.");
