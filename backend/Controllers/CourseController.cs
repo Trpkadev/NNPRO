@@ -22,7 +22,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [EndpointDescription("Vrátí detail kurzu včetně názvu, popisu a případného přístupového klíče.")]
     [ProducesResponseType<Wrapper<CourseDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<Wrapper<CourseDto>>> GetCourseById(uint id, CancellationToken cancellationToken)
+    public async Task<ActionResult<CourseDto>> GetCourseById(uint id, CancellationToken cancellationToken)
     {
         var serviceResult = await courseService.GetByIdAsync(id, cancellationToken);
 
@@ -40,9 +40,9 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [HttpGet("thumbnails")]
     [EndpointSummary("Seznam náhledů kurzů")]
     [EndpointDescription("Vrátí kolekci kurzů v odlehčené podobě pro katalog nebo karty kurzů. Podporuje stránkování, textové hledání, omezení délky popisu a řazení.")]
-    [ProducesResponseType<Wrapper<IEnumerable<CourseThumbnailDto>>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Wrapper<CourseThumbnailDto[]>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<Wrapper<IEnumerable<CourseThumbnailDto>>>> GetCourseThumbnails([FromQuery] CourseThumbnailQuery query, CancellationToken cancellationToken)
+    public async Task<ActionResult<CourseThumbnailDto[]>> GetCourseThumbnails([FromQuery] CourseThumbnailQuery query, CancellationToken cancellationToken)
     {
         var sortableProperties = typeof(Course).GetProperties().Select(property => property.Name);
         if (!sortableProperties.Contains(query.SortBy, StringComparer.OrdinalIgnoreCase))
