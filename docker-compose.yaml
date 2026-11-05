@@ -1,6 +1,6 @@
 ﻿services:
   db:
-    image: mariadb:11.4
+    image: mariadb:12.3
     container_name: db
     restart: unless-stopped
     environment:
@@ -8,6 +8,7 @@
       MARIADB_DATABASE: nnpro
       MARIADB_USER: nnpro
       MARIADB_PASSWORD: nnpro
+      MARIADB_AUTO_UPGRADE: "1"
     ports:
       - "3306:3306"
     volumes:
@@ -21,7 +22,7 @@
 
   backend:
     build:
-      context: ./backend
+      context: ./Backend
       dockerfile: Dockerfile
     container_name: backend
     restart: unless-stopped
