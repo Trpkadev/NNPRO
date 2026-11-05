@@ -1,9 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace backend.Models.Entities;
+namespace Backend.Models.Entities;
 
 public class LessonAttachment {
-    public int Id { get; set; }
+    public uint Id { get; set; }
 
     [Required] [MaxLength(256)]
     public string FileName { get; set; } = string.Empty;
@@ -17,6 +17,6 @@ public class LessonAttachment {
     [Range(0, long.MaxValue)]
     public long? SizeBytes { get; set; }
 
-    public int LessonId { get; set; }
+    public uint LessonId { get; set; }
     public required Lesson Lesson { get; set; }
 }

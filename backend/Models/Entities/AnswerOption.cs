@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace backend.Models.Entities;
+namespace Backend.Models.Entities;
 
 public class AnswerOption {
-    public int Id { get; set; }
+    public uint Id { get; set; }
 
     [Required] [MaxLength(1024)]
     public string Text { get; set; } = string.Empty;
@@ -13,6 +13,6 @@ public class AnswerOption {
 
     public bool IsCorrect { get; set; }
 
-    public int QuestionId { get; set; }
+    public uint QuestionId { get; set; }
     public required Question Question { get; set; }
 }

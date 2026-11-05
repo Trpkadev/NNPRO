@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace backend.Models.Entities;
+namespace Backend.Models.Entities;
 
 public class User {
-    public int Id { get; set; }
+    public uint Id { get; set; }
 
     [Required] [MinLength(3)] [MaxLength(32)]
     public string Username { get; set; } = string.Empty;

@@ -1,7 +1,7 @@
-﻿using backend.Models.Entities;
+﻿using Backend.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace backend.Data;
+namespace Backend.Data;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options) {
     public DbSet<User> Users => Set<User>();

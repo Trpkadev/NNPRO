@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace backend.Models.Entities;
+namespace Backend.Models.Entities;
 
 public class Course {
-    public int Id { get; set; }
+    public uint Id { get; set; }
 
     [Required] [MaxLength(128)]
     public string Title { get; set; } = string.Empty;

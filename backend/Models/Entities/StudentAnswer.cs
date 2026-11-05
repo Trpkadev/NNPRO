@@ -1,14 +1,14 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 
-namespace backend.Models.Entities;
+namespace Backend.Models.Entities;
 
 public class StudentAnswer : IValidatableObject {
-    public int Id { get; set; }
-    public int QuizAttemptId { get; set; }
+    public uint Id { get; set; }
+    public uint QuizAttemptId { get; set; }
     public required QuizAttempt QuizAttempt { get; set; }
 
-    public int QuestionId { get; set; }
+    public uint QuestionId { get; set; }
     public required Question Question { get; set; }
 
     [Required] [MaxLength(1024)]
@@ -18,8 +18,8 @@ public class StudentAnswer : IValidatableObject {
     // Odpověď získá body pouze při úplné správnosti.
     public bool IsFullyCorrect { get; set; }
 
-    [Range(0, int.MaxValue)]
-    public int AwardedPoints { get; set; }
+    [Range(0, ushort.MaxValue)]
+    public ushort AwardedPoints { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {

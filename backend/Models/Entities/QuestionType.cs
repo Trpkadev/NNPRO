@@ -1,4 +1,4 @@
-﻿namespace backend.Models.Entities;
+﻿namespace Backend.Models.Entities;
 
 public enum QuestionType {
     SingleChoice, //Jednoznačná volba

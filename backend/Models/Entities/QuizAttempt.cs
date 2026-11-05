@@ -1,13 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace backend.Models.Entities;
+namespace Backend.Models.Entities;
 
 public class QuizAttempt : IValidatableObject {
-    public int Id { get; set; }
-    public int QuizId { get; set; }
+    public uint Id { get; set; }
+    public uint QuizId { get; set; }
     public required Quiz Quiz { get; set; }
 
-    public int StudentId { get; set; }
+    public uint StudentId { get; set; }
     public required User Student { get; set; }
 
     // Začátek pokusu v UTC.
@@ -18,7 +18,7 @@ public class QuizAttempt : IValidatableObject {
 
     [Range(0, 100)]
     // Výsledek pokusu v procentech (0-100).
-    public double ScorePercent { get; set; }
+    public decimal ScorePercent { get; set; }
 
     // Určuje, zda výsledek dosáhl prahu nastaveného u kvízu.
     public bool IsPassed { get; set; }

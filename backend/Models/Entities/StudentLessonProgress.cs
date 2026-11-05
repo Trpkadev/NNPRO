@@ -1,13 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace backend.Models.Entities;
+namespace Backend.Models.Entities;
 
 public class StudentLessonProgress : IValidatableObject {
-    public int Id { get; set; }
-    public int StudentId { get; set; }
+    public uint Id { get; set; }
+    public uint StudentId { get; set; }
     public required User Student { get; set; }
 
-    public int LessonId { get; set; }
+    public uint LessonId { get; set; }
     public required Lesson Lesson { get; set; }
 
     public bool IsCompleted { get; set; }

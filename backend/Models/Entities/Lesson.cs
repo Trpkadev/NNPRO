@@ -1,9 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace backend.Models.Entities;
+namespace Backend.Models.Entities;
 
 public class Lesson {
-    public int Id { get; set; }
+    public uint Id { get; set; }
 
     [Required] [MaxLength(128)]
     public string Title { get; set; } = string.Empty;
@@ -15,9 +15,9 @@ public class Lesson {
     [Url] [MaxLength(512)]
     public string? VideoUrl { get; set; }
 
-    [Range(0, int.MaxValue)]
-    public int Order { get; set; }
+    [Range(0, ushort.MaxValue)]
+    public ushort Order { get; set; }
 
-    public int SectionId { get; set; }
+    public uint SectionId { get; set; }
     public required Section Section { get; set; }
 }
