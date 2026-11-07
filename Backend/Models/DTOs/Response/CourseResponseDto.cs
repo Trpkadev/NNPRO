@@ -1,23 +1,11 @@
-using System.ComponentModel.DataAnnotations;
+using Backend.Models.Entities;
 
 namespace Backend.Models.DTOs.Response;
 
-public class CourseDto {
-    [Required] [MaxLength(128)]
-    public string Title { get; set; } = string.Empty;
-
-    [MaxLength(1024)]
-    public string Description { get; set; } = string.Empty;
-
-    [MaxLength(128)]
-    public string? AccessKey { get; set; }
+public record CourseResponseDto(uint Id, string Title, string Description, string? AccessKey) {
+    public static implicit operator CourseResponseDto(Course c) => new(c.Id, c.Title, c.Description, c.AccessKey);
 }
 
-public class CourseThumbnailDto {
-    [Required]
-    [MaxLength(128)]
-    public required string Title { get; init; }
-
-    [MaxLength(1024)]
-    public required string ShortDescription { get; init; }
+public record CourseThumbnailDto(string Title, string ShortDescription) {
+    public static implicit operator CourseThumbnailDto(Course c) => new(c.Title, c.Description);
 }

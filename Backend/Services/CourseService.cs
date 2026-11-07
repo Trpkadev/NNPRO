@@ -8,7 +8,7 @@ using Backend.Models.DTOs.Request;
 namespace Backend.Services;
 
 public class CourseService(IDbContextFactory<AppDbContext> dbContextFactory) : ICourseService {
-    public Task<CourseDto?> GetByIdAsync(uint id, CancellationToken ct) => throw new NotImplementedException();
+    public Task<CourseResponseDto?> GetByIdAsync(uint id, CancellationToken ct) => throw new NotImplementedException();
 
     public async Task<CourseThumbnailDto[]> GetCourseThumbnailsAsync(CourseThumbnailQuery query, CancellationToken ct)
     {
@@ -26,12 +26,11 @@ public class CourseService(IDbContextFactory<AppDbContext> dbContextFactory) : I
             .ToArrayAsync(ct);
 
         return [
-            .. courses.Select(x => new CourseThumbnailDto {
-                Title = x.Title,
-                ShortDescription = query.MaxDescriptionLength.HasValue && x.Description.Length > query.MaxDescriptionLength.Value
+            .. courses.Select(x => new CourseThumbnailDto(x.Title,
+                query.MaxDescriptionLength.HasValue && x.Description.Length > query.MaxDescriptionLength.Value
                     ? string.Concat(x.Description.AsSpan(0, query.MaxDescriptionLength.Value), "...")
                     : x.Description
-            })
+            ))
         ];
     }
 }
