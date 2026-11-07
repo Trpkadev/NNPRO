@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Backend;
 using Backend.Data;
+using Backend.Exceptions;
 using Backend.Extensions;
 using Backend.Middleware;
 using Backend.Services;
@@ -58,7 +59,13 @@ builder.Services.AddCors(options => {
 builder.Services.Configure<RouteOptions>(options => options.ConstraintMap.Add("uint", typeof(UintRouteConstraint)));
 builder.Services.Configure<ForwardedHeadersOptions>(options => options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto);
 builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
+
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
 var app = builder.Build();
+
+app.UseExceptionHandler();
 
 // HTTP request pipeline
 app.UseForwardedHeaders();
