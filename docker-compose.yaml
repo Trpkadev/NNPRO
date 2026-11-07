@@ -27,6 +27,7 @@
       target: development
       #target: production
     container_name: backend
+    command: dotnet ef database update
     restart: unless-stopped
     ports:
       - "8080:8080"

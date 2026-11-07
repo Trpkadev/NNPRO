@@ -36,8 +36,8 @@ RUN mkdir -p /https && \
 COPY --from=publish /app/publish .
 USER $APP_UID
 
-ENV ASPNETCORE_HTTP_PORTS="8080"
-ENV ASPNETCORE_HTTPS_PORTS="8081"
+ENV ASPNETCORE_HTTP_PORTS=""
+ENV ASPNETCORE_HTTPS_PORTS=""
 ENV ASPNETCORE_Kestrel__Certificates__Default__Path="/https/aspnetapp.pfx"
 ENV ASPNETCORE_Kestrel__Certificates__Default__Password="nnpro"
 
