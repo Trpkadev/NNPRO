@@ -1,5 +1,4 @@
-﻿using Backend.Models.DTOs;
-using Backend.Models.DTOs.Response;
+﻿using Backend.Models.DTOs.Response;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers;

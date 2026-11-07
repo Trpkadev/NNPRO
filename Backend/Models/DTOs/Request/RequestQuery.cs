@@ -1,8 +1,8 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace Backend.Models.DTOs.Request;
 
-public sealed class CourseThumbnailQuery {
+public class RequestQuery {
     [Range(1, int.MaxValue)]
     public int Page { get; init; } = 1;
 
@@ -10,8 +10,6 @@ public sealed class CourseThumbnailQuery {
     public int PageSize { get; init; } = 10;
 
     public string? Search { get; init; }
-    public ushort? MaxDescriptionLength { get; init; }
-
     public string SortBy { get; init; } = "Id";
 
     public bool Descending { get; init; }

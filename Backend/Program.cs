@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Backend;
 using Backend.Data;
+using Backend.Extensions;
 using Backend.Middleware;
 using Backend.Services;
 using Backend.Services.Interfaces;
@@ -54,21 +55,17 @@ builder.Services.AddCors(options => {
                 policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod();
         });
 });
-
-builder.Services.Configure<ForwardedHeadersOptions>(options => { options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto; });
-builder.Services.ConfigureHttpJsonOptions(options => { options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()); });
+builder.Services.Configure<RouteOptions>(options => options.ConstraintMap.Add("uint", typeof(UintRouteConstraint)));
+builder.Services.Configure<ForwardedHeadersOptions>(options => options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto);
+builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 var app = builder.Build();
-
-if (app.Environment.IsDevelopment())
-{
-    await DbInitializer.SeedCoursesAsync(app.Services.GetRequiredService<IDbContextFactory<AppDbContext>>());
-}
 
 // HTTP request pipeline
 app.UseForwardedHeaders();
 
 if (app.Environment.IsDevelopment())
 {
+    await DbInitializer.SeedCoursesAsync(app.Services.GetRequiredService<IDbContextFactory<AppDbContext>>());
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
