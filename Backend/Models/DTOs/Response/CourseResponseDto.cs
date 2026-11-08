@@ -6,6 +6,6 @@ public record CourseResponseDto(uint Id, string Title, string Description, strin
     public static implicit operator CourseResponseDto(Course c) => new(c.Id, c.Title, c.Description, c.AccessKey);
 }
 
-public record CourseThumbnailDto(string Title, string ShortDescription) {
-    public static implicit operator CourseThumbnailDto(Course c) => new(c.Title, c.Description);
+public record CourseThumbnailDto(uint Id, string Title, string ShortDescription) {
+    public static implicit operator CourseThumbnailDto(Course c) => new(c.Id, c.Title, c.Description);
 }

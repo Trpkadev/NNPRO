@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
 using System.Diagnostics;
 using Backend.Models.DTOs.Response;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace Backend.Middleware;
 
@@ -38,9 +38,7 @@ public class ApiResponseWrapperFilter : IAsyncActionFilter {
     private static void SetServerMetadata(IApiResponseWrapper response, long executionTimeMs)
     {
         response.Metadata ??= new Metadata();
-        response.Metadata.ServerInfo ??= new ServerMetadata();
-        response.Metadata.ServerInfo.Timestamp = DateTime.UtcNow;
-        response.Metadata.ServerInfo.ExecutionTimeMs = executionTimeMs;
+        response.Metadata.ServerInfo = new ServerMetadata { Timestamp = DateTime.UtcNow, ExecutionTimeMs = executionTimeMs };
     }
 
     private static Metadata CreateMetadata(long executionTimeMs) => new() { ServerInfo = new ServerMetadata { ExecutionTimeMs = executionTimeMs } };

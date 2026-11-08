@@ -1,5 +1,7 @@
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Backend;
+using Backend.Config;
 using Backend.Data;
 using Backend.Exceptions;
 using Backend.Extensions;
@@ -7,8 +9,9 @@ using Backend.Middleware;
 using Backend.Services;
 using Backend.Services.Interfaces;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -40,12 +43,27 @@ builder.Services.AddOpenApi(options => {
         document.Info.Description = "API pro správu kurzů, lekcí a kvízů.";
         return Task.CompletedTask;
     });
+    options.AddOperationTransformer((operation, _, _) => {
+        if (operation.Parameters is null)
+            return Task.CompletedTask;
+
+        foreach (var param in operation.Parameters)
+        {
+            if (param.Name != null && param.Name.Equals("filters", StringComparison.OrdinalIgnoreCase) && param is OpenApiParameter concreteParam)
+                concreteParam.Schema = new OpenApiSchema { Type = JsonSchemaType.String };
+        }
+
+        return Task.CompletedTask;
+    });
 });
 builder.Services.AddAuthorization();
 builder.Services.AddHealthChecks();
 
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<ILessonService, LessonService>();
+
+var dbLimits = builder.Configuration.GetSection(DatabaseLimitsOptions.SectionName).Get<DatabaseLimitsOptions>() ?? new DatabaseLimitsOptions();
+builder.Services.AddSingleton(dbLimits);
 
 string[] allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 
@@ -61,6 +79,9 @@ builder.Services.Configure<ForwardedHeadersOptions>(options => options.Forwarded
 builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
 builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<PaginationNeededExceptionHandler>();
+builder.Services.AddExceptionHandler<InvalidFilterExceptionHandler>();
+
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 var app = builder.Build();

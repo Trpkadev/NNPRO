@@ -1,4 +1,3 @@
-using Backend;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
 using Backend.Models.Entities;
@@ -12,11 +11,6 @@ namespace Backend.Controllers;
 [Tags("Courses")]
 [Produces("application/json")]
 public class CourseController(ICourseService courseService) : ApiControllerBase {
-    /// <summary>
-    /// Returns the detail of a specific course by its ID.
-    /// </summary>
-    /// <param name="id">The unique identifier of the course.</param>
-    /// <param name="cancellationToken">Cancellation token for the request.</param>
     [HttpGet("{id:uint}")]
     [EndpointSummary("Get course detail")]
     [EndpointDescription("Returns the full details of a course including title, description, and optional access key.")]
@@ -24,97 +18,84 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CourseResponseDto>> GetCourseById(uint id, CancellationToken cancellationToken)
     {
-        var serviceResult = await courseService.GetByIdAsync(id, cancellationToken);
+        var course = await courseService.GetByIdAsync(id, cancellationToken);
 
-        if (serviceResult is null)
+        if (course is null)
             return NotFound();
 
-        return Ok(serviceResult);
+        return Ok(course);
     }
 
-    /// <summary>
-    /// Returns a list of courses based on filter criteria.
-    /// </summary>
-    /// <param name="courseRequestDto">Filtering and pagination options.</param>
-    /// <param name="cancellationToken">Cancellation token for the request.</param>
     [HttpGet]
     [EndpointSummary("Get all courses")]
     [EndpointDescription("Returns a list of courses including their details and assigned instructors.")]
     [ProducesResponseType<Wrapper<IEnumerable<CourseResponseDto>>>(StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<CourseResponseDto>>> GetCourses([FromQuery] CourseRequestDto courseRequestDto, CancellationToken cancellationToken)
+    public async Task<ActionResult<IEnumerable<CourseResponseDto>>> GetCourses([FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        List<User> users = [new() { Email = "dummy@dummy.dummy", Id = 1, PasswordHash = "dummy", Role = UserRole.Instructor, Username = "dummy" }];
-        List<User> users2 = [new() { Email = "admindummy@dummy.dummy", Id = 1, PasswordHash = "admindummy", Role = UserRole.Admin, Username = "admindummy" }];
-        Course[] courses = [
-            new() { Description = "dummy1", Title = "dummy1", AccessKey = "dummy", Id = 1, Instructors = users },
-            new() { Description = "dummy2", Title = "dummy3", AccessKey = null, Id = 2, Instructors = users2 }
-        ];
-        return Ok(courses);
+        var (courses, metadata) = await courseService.GetAsync(requestQuery, cancellationToken);
+
+        return Ok(new Wrapper<CourseResponseDto[]>(courses) { Metadata = metadata });
     }
 
-    /// <summary>
-    /// Creates a new course.
-    /// </summary>
-    /// <param name="coursePostRequestDto">Data required to create a new course.</param>
-    /// <param name="cancellationToken">Cancellation token for the request.</param>
     [HttpPost]
     [EndpointSummary("Create a course")]
-    [EndpointDescription("Creates a new course and returns the created course details.")]
-    [ProducesResponseType<Wrapper<CourseResponseDto>>(StatusCodes.Status201Created)]
+    [EndpointDescription("Creates a new course and returns the created course id.")]
+    [ProducesResponseType<Wrapper<uint>>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<CourseResponseDto>> AddCourse([FromBody] CoursePostRequestDto coursePostRequestDto, CancellationToken cancellationToken)
+    public async Task<ActionResult<uint>> AddCourse([FromBody] CourseCreateRequestDto courseCreateRequestDto, CancellationToken cancellationToken)
     {
-        Course course = new() { Description = coursePostRequestDto.Description, Title = coursePostRequestDto.Title, AccessKey = coursePostRequestDto.AccessKey, Instructors = [] };
-        return Created();
+        uint newCourseId = await courseService.CreateAsync(courseCreateRequestDto, cancellationToken);
+
+        return Created($"/api/courses/{newCourseId}", newCourseId);
     }
 
-    /// <summary>
-    /// Deletes an existing course by its ID.
-    /// </summary>
-    /// <param name="id">The unique identifier of the course to delete.</param>
-    /// <param name="cancellationToken">Cancellation token for the request.</param>
     [HttpDelete("{id:uint}")]
     [EndpointSummary("Delete a course")]
     [EndpointDescription("Removes a course from the system by its ID.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> RemoveCourse(uint id, CancellationToken cancellationToken) => NoContent();
+    public async Task<IActionResult> RemoveCourse(uint id, CancellationToken cancellationToken)
+    {
+        bool success = await courseService.RemoveAsync(id, cancellationToken);
 
-    /// <summary>
-    /// Updates an existing course by its ID.
-    /// </summary>
-    /// <param name="id">The unique identifier of the course to update.</param>
-    /// <param name="courseUpdateRequestDto">Updated course data.</param>
-    /// <param name="cancellationToken">Cancellation token for the request.</param>
+        if (!success)
+            return NotFound();
+
+        return NoContent();
+    }
+
     [HttpPut("{id:uint}")]
     [EndpointSummary("Update a course")]
     [EndpointDescription("Fully updates an existing course with new details.")]
-    [ProducesResponseType<Wrapper<CourseResponseDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<CourseResponseDto>> UpdateCourse(uint id, [FromBody] CourseUpdateRequestDto courseUpdateRequestDto, CancellationToken cancellationToken) => Ok();
+    public async Task<IActionResult> UpdateCourse(uint id, [FromBody] CourseUpdateRequestDto courseUpdateRequestDto, CancellationToken cancellationToken)
+    {
+        bool success = await courseService.UpdateAsync(id, courseUpdateRequestDto, cancellationToken);
 
-    /// <summary>
-    /// Returns a paginated list of course thumbnails.
-    /// </summary>
-    /// <param name="query">Pagination, filtering, and sorting parameters.</param>
-    /// <param name="cancellationToken">Cancellation token for the request.</param>
+        if (!success)
+            return NotFound();
+
+        return Ok();
+    }
+
     [HttpGet("thumbnails")]
     [EndpointSummary("Get course thumbnails")]
     [EndpointDescription("Returns a lightweight collection of courses for catalog or card display. Supports pagination, text search, description trimming, and sorting.")]
     [ProducesResponseType<Wrapper<CourseThumbnailDto[]>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<CourseThumbnailDto[]>> GetCourseThumbnails([FromQuery] CourseThumbnailQuery query, CancellationToken cancellationToken)
+    public async Task<ActionResult<CourseThumbnailDto[]>> GetCourseThumbnails([FromQuery] CourseThumbnailRequestDto requestDto, CancellationToken cancellationToken)
     {
         var sortableProperties = typeof(Course).GetProperties().Select(property => property.Name);
-        if (!sortableProperties.Contains(query.SortBy, StringComparer.OrdinalIgnoreCase))
+        if (!sortableProperties.Contains(requestDto.SortBy, StringComparer.OrdinalIgnoreCase))
             return BadRequest(new ProblemDetails {
                 Title = Resources.ErrorTitleInvalidSortBy,
-                Detail = string.Format(Resources.ErrorDescriptionInvalidSortBy, query.SortBy, Resources.Course),
+                Detail = string.Format(Resources.ErrorDescriptionInvalidSortBy, requestDto.SortBy, Resources.Course),
                 Status = StatusCodes.Status400BadRequest
             });
 
-        var result = await courseService.GetCourseThumbnailsAsync(query, cancellationToken);
+        var result = await courseService.GetCourseThumbnailsAsync(requestDto, cancellationToken);
 
         return Ok(result);
     }

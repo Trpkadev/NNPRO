@@ -1,18 +1,18 @@
 namespace Backend.Models.DTOs.Response;
 
 /// <summary>
-/// Standard API response wrapper with optional metadata.
+///     Standard API response wrapper with optional metadata.
 /// </summary>
 public interface IApiResponseWrapper {
     Metadata? Metadata { get; set; }
 }
 
-public class Wrapper<T>(T data, Metadata? metadata = null) : IApiResponseWrapper {
-    public T Data { get; } = data;
-    public Metadata? Metadata { get; set; } = metadata;
+public record Wrapper<T>(T Data, Metadata? Metadata = null) : IApiResponseWrapper {
+    public T Data { get; } = Data;
+    public Metadata? Metadata { get; set; } = Metadata;
 }
 
-public class Metadata {
+public record Metadata {
     public PaginationMetadata? Pagination { get; set; }
     public SortingMetadata? Sorting { get; set; }
     public FilterMetadata? Filters { get; set; }
@@ -28,17 +28,17 @@ public record PaginationMetadata {
     public bool HasPreviousPage => Page > 1;
 }
 
-public class SortingMetadata {
-    public string SortBy { get; set; } = string.Empty;
-    public bool IsDescending { get; set; }
+public record SortingMetadata {
+    public string? SortBy { get; init; }
+    public bool IsDescending { get; init; } = false;
 }
 
-public class FilterMetadata {
-    public string? SearchQuery { get; set; }
-    public Dictionary<string, string> AppliedFilters { get; set; } = [];
+public record FilterMetadata {
+    public string? SearchQuery { get; init; }
+    public Dictionary<string, string> AppliedFilters { get; init; } = [];
 }
 
-public class ServerMetadata {
-    public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
-    public long ExecutionTimeMs { get; set; }
+public record ServerMetadata {
+    public DateTimeOffset Timestamp { get; init; } = DateTimeOffset.UtcNow;
+    public long ExecutionTimeMs { get; init; }
 }
