@@ -19,7 +19,7 @@ RUN dotnet publish "Backend.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:U
 FROM base AS final
 WORKDIR /app
 
-# Generování certifikátu pro Kestrel
+# Generování certifikátu pro Kestrel a příprava složek pod uživatelem root
 USER root
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 RUN mkdir -p /https && \
@@ -33,7 +33,11 @@ RUN mkdir -p /https && \
       -passout pass:nnpro && \
     chown -R $APP_UID:$APP_UID /https
 
+RUN mkdir -p /home/app/dp_keys && \
+    chown -R $APP_UID:$APP_UID /home/app
+
 COPY --from=publish /app/publish .
+
 USER $APP_UID
 
 ENV ASPNETCORE_HTTP_PORTS=""
@@ -43,10 +47,8 @@ ENV ASPNETCORE_Kestrel__Certificates__Default__Password="nnpro"
 
 ENTRYPOINT ["dotnet", "Backend.dll"]
 
-# Development exposes OpenAPI/Scalar and seeds the development database.
 FROM final AS development
 ENV ASPNETCORE_ENVIRONMENT="Development"
 
-# Production is the default target.
 FROM final AS production
 ENV ASPNETCORE_ENVIRONMENT="Production"
