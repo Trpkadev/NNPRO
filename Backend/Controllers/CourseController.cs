@@ -10,6 +10,7 @@ namespace Backend.Controllers;
 [Route("api/courses")]
 [Tags("Courses")]
 [Produces("application/json")]
+[ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
 public class CourseController(ICourseService courseService) : ApiControllerBase {
     [HttpGet("{id:uint}")]
     [EndpointSummary("Get course detail")]
@@ -30,11 +31,12 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [EndpointSummary("Get all courses")]
     [EndpointDescription("Returns a list of courses including their details and assigned instructors.")]
     [ProducesResponseType<Wrapper<IEnumerable<CourseResponseDto>>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IEnumerable<CourseResponseDto>>> GetCourses([FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
         var (courses, metadata) = await courseService.GetAsync(requestQuery, cancellationToken);
 
-        return Ok(new Wrapper<CourseResponseDto[]>(courses) { Metadata = metadata });
+        return Ok(courses, metadata);
     }
 
     [HttpPost]
@@ -67,7 +69,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [HttpPut("{id:uint}")]
     [EndpointSummary("Update a course")]
     [EndpointDescription("Fully updates an existing course with new details.")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateCourse(uint id, [FromBody] CourseUpdateRequestDto courseUpdateRequestDto, CancellationToken cancellationToken)
@@ -77,7 +79,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
         if (!success)
             return NotFound();
 
-        return Ok();
+        return NoContent();
     }
 
     [HttpGet("thumbnails")]
@@ -95,8 +97,8 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
                 Status = StatusCodes.Status400BadRequest
             });
 
-        var result = await courseService.GetCourseThumbnailsAsync(requestDto, cancellationToken);
+        var (thumbnails, metadata) = await courseService.GetCourseThumbnailsAsync(requestDto, cancellationToken);
 
-        return Ok(result);
+        return Ok(thumbnails, metadata);
     }
 }
