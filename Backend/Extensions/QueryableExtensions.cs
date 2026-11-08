@@ -10,10 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Backend.Extensions;
 
 public static class QueryableExtensions {
-    /// <summary>
-    ///     Applies dynamic sorting by property name.
-    /// </summary>
-    public static IQueryable<T> OrderByProperty<T>(this IQueryable<T> source, string? propertyName, bool? descending)
+    private static IQueryable<T> OrderByProperty<T>(this IQueryable<T> source, string? propertyName, bool? descending)
     {
         if (string.IsNullOrWhiteSpace(propertyName))
             return source;
@@ -34,6 +31,9 @@ public static class QueryableExtensions {
         return source.Provider.CreateQuery<T>(resultExpression);
     }
 
+    /// <summary>
+    ///     Applies dynamic sorting by property name.
+    /// </summary>
     public static IQueryable<T> OrderByProperty<T>(this IQueryable<T> source, SortingMetadata? sortingMetadata) => sortingMetadata is null ? source : source.OrderByProperty(sortingMetadata.SortBy, sortingMetadata.IsDescending);
 
     /// <summary>

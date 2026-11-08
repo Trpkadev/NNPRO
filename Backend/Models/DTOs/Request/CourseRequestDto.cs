@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Backend.Models.DTOs.Response;
 
 namespace Backend.Models.DTOs.Request;
 
@@ -29,5 +30,18 @@ public sealed record CourseUpdateRequestDto {
 }
 
 public sealed record CourseThumbnailRequestDto : RequestQuery {
+    private static readonly HashSet<string> AllowedSortProperties = typeof(CourseThumbnailResponseDto).GetProperties().Select(p => p.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
     public ushort? MaxDescriptionLength { get; init; }
+
+    public override IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        foreach (var result in base.Validate(validationContext))
+            yield return result;
+
+        if (string.IsNullOrWhiteSpace(SortBy))
+            yield break;
+
+        if (!AllowedSortProperties.Contains(SortBy))
+            yield return new ValidationResult(string.Format(Resources.ErrorDescriptionInvalidSortBy, SortBy, "Course"), [nameof(SortBy)]);
+    }
 }

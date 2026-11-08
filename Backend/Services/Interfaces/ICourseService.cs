@@ -14,5 +14,5 @@ public interface ICourseService {
 
     Task<bool> UpdateAsync(uint id, CourseUpdateRequestDto requestDto, CancellationToken ct);
 
-    Task<(CourseThumbnailDto[]Courses, Metadata Metadata)> GetCourseThumbnailsAsync(CourseThumbnailRequestDto requestDto, CancellationToken ct);
+    Task<(CourseThumbnailResponseDto[]Courses, Metadata Metadata)> GetCourseThumbnailsAsync(CourseThumbnailRequestDto requestDto, CancellationToken ct);
 }

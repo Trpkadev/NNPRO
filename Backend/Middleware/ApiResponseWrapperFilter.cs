@@ -17,7 +17,8 @@ public class ApiResponseWrapperFilter : IAsyncActionFilter {
 
         if (objectResult.Value is IApiResponseWrapper existingWrapper)
         {
-            SetServerMetadata(existingWrapper, stopwatch.ElapsedMilliseconds);
+            existingWrapper.Metadata ??= new Metadata();
+            existingWrapper.Metadata.ServerInfo = new ServerMetadata { Timestamp = DateTime.UtcNow, ExecutionTimeMs = stopwatch.ElapsedMilliseconds };
             return;
         }
 
@@ -33,12 +34,6 @@ public class ApiResponseWrapperFilter : IAsyncActionFilter {
             DeclaredType = objectResult.DeclaredType,
             StatusCode = objectResult.StatusCode
         };
-    }
-
-    private static void SetServerMetadata(IApiResponseWrapper response, long executionTimeMs)
-    {
-        response.Metadata ??= new Metadata();
-        response.Metadata.ServerInfo = new ServerMetadata { Timestamp = DateTime.UtcNow, ExecutionTimeMs = executionTimeMs };
     }
 
     private static Metadata CreateMetadata(long executionTimeMs) => new() { ServerInfo = new ServerMetadata { ExecutionTimeMs = executionTimeMs } };

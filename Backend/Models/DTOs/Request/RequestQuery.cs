@@ -27,11 +27,10 @@ public record RequestQuery : IValidatableObject {
     };
 
     internal FilterMetadata FilterMetadata => new() {
-        SearchQuery = string.IsNullOrWhiteSpace(Search) ? null : Search,
         AppliedFilters = Filters
     };
 
-    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    public virtual IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (Page.HasValue == PageSize.HasValue)
             yield break;

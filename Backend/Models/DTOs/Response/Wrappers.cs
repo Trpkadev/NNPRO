@@ -1,3 +1,5 @@
+using Backend.Models.DTOs.Request;
+
 namespace Backend.Models.DTOs.Response;
 
 /// <summary>
@@ -13,6 +15,15 @@ public record Wrapper<T>(T Data, Metadata? Metadata = null) : IApiResponseWrappe
 }
 
 public record Metadata {
+    public Metadata() {}
+
+    public Metadata(PaginationMetadata pagination, RequestQuery query)
+    {
+        Pagination = pagination;
+        Sorting = query.Sorting;
+        Filters = query.FilterMetadata;
+    }
+
     public PaginationMetadata? Pagination { get; set; }
     public SortingMetadata? Sorting { get; set; }
     public FilterMetadata? Filters { get; set; }
@@ -34,7 +45,6 @@ public record SortingMetadata {
 }
 
 public record FilterMetadata {
-    public string? SearchQuery { get; init; }
     public Dictionary<string, string> AppliedFilters { get; init; } = [];
 }
 
