@@ -5,10 +5,12 @@ namespace Backend.Models.Entities;
 public class Question {
     public uint Id { get; set; }
 
-    [Required] [MaxLength(2048)]
-    public string Text { get; set; } = string.Empty; // Může obsahovat formátovaný text
+    [Required]
+    [MaxLength(2048)]
+    public string Text { get; set; } = string.Empty;
 
-    [Url] [MaxLength(2048)]
+    [Url]
+    [MaxLength(2048)]
     public string? ImageUrl { get; set; }
 
     [EnumDataType(typeof(QuestionType))]
@@ -18,5 +20,8 @@ public class Question {
     public ushort Points { get; set; }
 
     public uint QuizId { get; set; }
-    public required Quiz Quiz { get; set; }
+    public Quiz Quiz { get; set; } = null!;
+
+    // Navigace
+    public ICollection<AnswerOption> AnswerOptions { get; set; } = [];
 }

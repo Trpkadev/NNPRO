@@ -4,22 +4,23 @@ namespace Backend.Models.Entities;
 
 public class StudentLessonProgress : IValidatableObject {
     public uint Id { get; set; }
+
     public uint StudentId { get; set; }
-    public required User Student { get; set; }
+    public User Student { get; set; } = null!;
 
     public uint LessonId { get; set; }
-    public required Lesson Lesson { get; set; }
+    public Lesson Lesson { get; set; } = null!;
 
     public bool IsCompleted { get; set; }
-    public DateTime? CompletedAt { get; set; }
+    public DateTime? CompletedAtUtc { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        if (IsCompleted != CompletedAt.HasValue)
+        if (IsCompleted != CompletedAtUtc.HasValue)
         {
             yield return new ValidationResult(
                 "Dokončená lekce musí mít čas dokončení a nedokončená lekce ho mít nesmí.",
-                [nameof(IsCompleted), nameof(CompletedAt)]);
+                [nameof(IsCompleted), nameof(CompletedAtUtc)]);
         }
     }
 }

@@ -12,15 +12,15 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Backend.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20261105011039_DatatypeChange")]
-    partial class DatatypeChange
+    [Migration("20261108224026_Init")]
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.13")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
@@ -93,7 +93,7 @@ namespace Backend.Migrations
                     b.Property<uint>("CourseId")
                         .HasColumnType("int unsigned");
 
-                    b.Property<DateTime>("EnrolledAt")
+                    b.Property<DateTime>("EnrolledAtUtc")
                         .HasColumnType("datetime(6)");
 
                     b.Property<uint>("StudentId")
@@ -224,7 +224,8 @@ namespace Backend.Migrations
                         .HasColumnType("smallint unsigned");
 
                     b.Property<decimal>("PassingThresholdPercent")
-                        .HasColumnType("decimal(65,30)");
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
 
                     b.Property<bool>("RandomizeAnswers")
                         .HasColumnType("tinyint(1)");
@@ -265,15 +266,16 @@ namespace Backend.Migrations
                         .HasColumnType("int unsigned");
 
                     b.Property<decimal>("ScorePercent")
-                        .HasColumnType("decimal(65,30)");
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
 
-                    b.Property<DateTime>("StartedAt")
+                    b.Property<DateTime>("StartedAtUtc")
                         .HasColumnType("datetime(6)");
 
                     b.Property<uint>("StudentId")
                         .HasColumnType("int unsigned");
 
-                    b.Property<DateTime?>("SubmittedAt")
+                    b.Property<DateTime?>("SubmittedAtUtc")
                         .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
@@ -283,6 +285,58 @@ namespace Backend.Migrations
                     b.HasIndex("StudentId", "QuizId");
 
                     b.ToTable("QuizAttempts");
+                });
+
+            modelBuilder.Entity("Backend.Models.Entities.RefreshToken", b =>
+                {
+                    b.Property<uint>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int unsigned");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<uint>("Id"));
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedByIp")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("JwtId")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("ReasonRevoked")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ReplacedByTokenHash")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("RevokedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("RevokedByIp")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<uint>("UserId")
+                        .HasColumnType("int unsigned");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JwtId");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("Backend.Models.Entities.Section", b =>
@@ -354,7 +408,7 @@ namespace Backend.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<uint>("Id"));
 
-                    b.Property<DateTime?>("CompletedAt")
+                    b.Property<DateTime?>("CompletedAtUtc")
                         .HasColumnType("datetime(6)");
 
                     b.Property<bool>("IsCompleted")
@@ -415,15 +469,15 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("CourseInstructors", b =>
                 {
-                    b.Property<uint>("CourseId")
-                        .HasColumnType("int unsigned");
-
                     b.Property<uint>("InstructorsId")
                         .HasColumnType("int unsigned");
 
-                    b.HasKey("CourseId", "InstructorsId");
+                    b.Property<uint>("TeachingCoursesId")
+                        .HasColumnType("int unsigned");
 
-                    b.HasIndex("InstructorsId");
+                    b.HasKey("InstructorsId", "TeachingCoursesId");
+
+                    b.HasIndex("TeachingCoursesId");
 
                     b.ToTable("CourseInstructors");
                 });
@@ -431,7 +485,7 @@ namespace Backend.Migrations
             modelBuilder.Entity("Backend.Models.Entities.AnswerOption", b =>
                 {
                     b.HasOne("Backend.Models.Entities.Question", "Question")
-                        .WithMany()
+                        .WithMany("AnswerOptions")
                         .HasForeignKey("QuestionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -442,15 +496,15 @@ namespace Backend.Migrations
             modelBuilder.Entity("Backend.Models.Entities.Enrollment", b =>
                 {
                     b.HasOne("Backend.Models.Entities.Course", "Course")
-                        .WithMany()
+                        .WithMany("Enrollments")
                         .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Backend.Models.Entities.User", "Student")
-                        .WithMany()
+                        .WithMany("Enrollments")
                         .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Course");
@@ -461,7 +515,7 @@ namespace Backend.Migrations
             modelBuilder.Entity("Backend.Models.Entities.Lesson", b =>
                 {
                     b.HasOne("Backend.Models.Entities.Section", "Section")
-                        .WithMany()
+                        .WithMany("Lessons")
                         .HasForeignKey("SectionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -472,7 +526,7 @@ namespace Backend.Migrations
             modelBuilder.Entity("Backend.Models.Entities.LessonAttachment", b =>
                 {
                     b.HasOne("Backend.Models.Entities.Lesson", "Lesson")
-                        .WithMany()
+                        .WithMany("Attachments")
                         .HasForeignKey("LessonId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -483,7 +537,7 @@ namespace Backend.Migrations
             modelBuilder.Entity("Backend.Models.Entities.Question", b =>
                 {
                     b.HasOne("Backend.Models.Entities.Quiz", "Quiz")
-                        .WithMany()
+                        .WithMany("Questions")
                         .HasForeignKey("QuizId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -494,7 +548,7 @@ namespace Backend.Migrations
             modelBuilder.Entity("Backend.Models.Entities.Quiz", b =>
                 {
                     b.HasOne("Backend.Models.Entities.Section", "Section")
-                        .WithMany()
+                        .WithMany("Quizzes")
                         .HasForeignKey("SectionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -511,9 +565,9 @@ namespace Backend.Migrations
                         .IsRequired();
 
                     b.HasOne("Backend.Models.Entities.User", "Student")
-                        .WithMany()
+                        .WithMany("QuizAttempts")
                         .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Quiz");
@@ -521,10 +575,21 @@ namespace Backend.Migrations
                     b.Navigation("Student");
                 });
 
+            modelBuilder.Entity("Backend.Models.Entities.RefreshToken", b =>
+                {
+                    b.HasOne("Backend.Models.Entities.User", "User")
+                        .WithMany("RefreshTokens")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Backend.Models.Entities.Section", b =>
                 {
                     b.HasOne("Backend.Models.Entities.Course", "Course")
-                        .WithMany()
+                        .WithMany("Sections")
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -541,7 +606,7 @@ namespace Backend.Migrations
                         .IsRequired();
 
                     b.HasOne("Backend.Models.Entities.QuizAttempt", "QuizAttempt")
-                        .WithMany()
+                        .WithMany("StudentAnswers")
                         .HasForeignKey("QuizAttemptId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -560,9 +625,9 @@ namespace Backend.Migrations
                         .IsRequired();
 
                     b.HasOne("Backend.Models.Entities.User", "Student")
-                        .WithMany()
+                        .WithMany("LessonProgresses")
                         .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Lesson");
@@ -572,17 +637,62 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("CourseInstructors", b =>
                 {
-                    b.HasOne("Backend.Models.Entities.Course", null)
-                        .WithMany()
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Backend.Models.Entities.User", null)
                         .WithMany()
                         .HasForeignKey("InstructorsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Backend.Models.Entities.Course", null)
+                        .WithMany()
+                        .HasForeignKey("TeachingCoursesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Backend.Models.Entities.Course", b =>
+                {
+                    b.Navigation("Enrollments");
+
+                    b.Navigation("Sections");
+                });
+
+            modelBuilder.Entity("Backend.Models.Entities.Lesson", b =>
+                {
+                    b.Navigation("Attachments");
+                });
+
+            modelBuilder.Entity("Backend.Models.Entities.Question", b =>
+                {
+                    b.Navigation("AnswerOptions");
+                });
+
+            modelBuilder.Entity("Backend.Models.Entities.Quiz", b =>
+                {
+                    b.Navigation("Questions");
+                });
+
+            modelBuilder.Entity("Backend.Models.Entities.QuizAttempt", b =>
+                {
+                    b.Navigation("StudentAnswers");
+                });
+
+            modelBuilder.Entity("Backend.Models.Entities.Section", b =>
+                {
+                    b.Navigation("Lessons");
+
+                    b.Navigation("Quizzes");
+                });
+
+            modelBuilder.Entity("Backend.Models.Entities.User", b =>
+                {
+                    b.Navigation("Enrollments");
+
+                    b.Navigation("LessonProgresses");
+
+                    b.Navigation("QuizAttempts");
+
+                    b.Navigation("RefreshTokens");
                 });
 #pragma warning restore 612, 618
         }

@@ -2,12 +2,12 @@
 
 public class Enrollment {
     public uint Id { get; set; }
+
     public uint StudentId { get; set; }
-    public required User Student { get; set; }
+    public User Student { get; set; } = null!;
 
     public uint CourseId { get; set; }
-    public required Course Course { get; set; }
+    public Course Course { get; set; } = null!;
 
-    // Čas zápisu studenta do kurzu v UTC.
-    public DateTime EnrolledAt { get; set; } = DateTime.UtcNow;
+    public DateTime EnrolledAtUtc { get; set; } = DateTime.UtcNow;
 }

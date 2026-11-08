@@ -5,6 +5,7 @@ namespace Backend.Data;
 
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options) {
     public DbSet<User> Users => Set<User>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Course> Courses => Set<Course>();
     public DbSet<Enrollment> Enrollments => Set<Enrollment>();
     public DbSet<Section> Sections => Set<Section>();
@@ -21,116 +22,129 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     {
         base.OnModelCreating(modelBuilder);
 
-        // Jeden student může být v konkrétním kurzu zapsaný pouze jednou.
-        modelBuilder.Entity<Enrollment>()
-            .HasIndex(e => new { e.StudentId, e.CourseId })
-            .IsUnique();
+        // ==========================================
+        // USER & AUTH
+        // ==========================================
+        modelBuilder.Entity<User>(entity => {
+            entity.HasIndex(u => u.Username).IsUnique();
+            entity.HasIndex(u => u.Email).IsUnique();
+        });
 
-        // Přihlašovací údaje uživatele musí být v systému jedinečné.
-        modelBuilder.Entity<User>()
-            .HasIndex(u => u.Username)
-            .IsUnique();
-        modelBuilder.Entity<User>()
-            .HasIndex(u => u.Email)
-            .IsUnique();
+        modelBuilder.Entity<RefreshToken>(entity => {
+            entity.HasIndex(r => r.TokenHash).IsUnique();
+            entity.HasIndex(r => r.JwtId);
+            entity.HasOne(r => r.User)
+                .WithMany(u => u.RefreshTokens)
+                .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
-        // Zápis vždy odkazuje na existujícího studenta a kurz.
-        modelBuilder.Entity<Enrollment>()
-            .HasOne(e => e.Student)
-            .WithMany()
-            .HasForeignKey(e => e.StudentId)
-            .IsRequired()
-            .OnDelete(DeleteBehavior.Restrict);
-        modelBuilder.Entity<Enrollment>()
-            .HasOne(e => e.Course)
-            .WithMany()
-            .HasForeignKey(e => e.CourseId)
-            .IsRequired()
-            .OnDelete(DeleteBehavior.Restrict);
-
-        // Kurz může spravovat více lektorů; jeden lektor může spravovat více kurzů.
+        // ==========================================
+        // COURSE, SECTION & LESSON
+        // ==========================================
         modelBuilder.Entity<Course>()
             .HasMany(c => c.Instructors)
-            .WithMany()
+            .WithMany(u => u.TeachingCourses)
             .UsingEntity("CourseInstructors");
 
-        // Pro každého studenta a lekci existuje nejvýše jeden záznam průchodu.
-        modelBuilder.Entity<StudentLessonProgress>()
-            .HasIndex(p => new { p.StudentId, p.LessonId })
-            .IsUnique();
-        modelBuilder.Entity<StudentLessonProgress>()
-            .HasIndex(p => p.LessonId);
+        modelBuilder.Entity<Section>(entity => {
+            entity.HasIndex(s => new { s.CourseId, s.Order });
+            entity.HasOne(s => s.Course)
+                .WithMany(c => c.Sections)
+                .HasForeignKey(s => s.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
-        // Každý kvíz patří právě do jedné sekce; sekce může mít více kvízů.
-        // Vazba používá SectionId jako cizí klíč na straně kvízu.
-        modelBuilder.Entity<Quiz>()
-            .HasIndex(q => q.SectionId);
-        modelBuilder.Entity<Quiz>()
-            .HasOne(q => q.Section)
-            .WithMany()
-            .HasForeignKey(q => q.SectionId)
-            // Smazáním sekce se smažou i její kvízy.
-            .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<Lesson>(entity => {
+            entity.HasIndex(l => new { l.SectionId, l.Order });
+            entity.HasOne(l => l.Section)
+                .WithMany(s => s.Lessons)
+                .HasForeignKey(l => l.SectionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
-        // Lekce se načítají v pořadí v rámci tematické sekce.
-        modelBuilder.Entity<Lesson>()
-            .HasIndex(l => new { l.SectionId, l.Order });
-
-        // Sekce se načítají v pořadí v rámci kurzu.
-        modelBuilder.Entity<Section>()
-            .HasIndex(s => new { s.CourseId, s.Order });
-
-        // Každá příloha patří právě k jedné lekci.
         modelBuilder.Entity<LessonAttachment>()
             .HasOne(a => a.Lesson)
-            .WithMany()
+            .WithMany(l => l.Attachments)
             .HasForeignKey(a => a.LessonId)
-            // Smazáním lekce se smažou i její přílohy.
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Jedna otázka může mít více odpovědí, ale odpověď patří právě k jedné otázce.
-        modelBuilder.Entity<Question>()
-            .HasIndex(q => q.QuizId);
-        modelBuilder.Entity<AnswerOption>()
-            .HasIndex(a => a.QuestionId);
+        // ==========================================
+        // QUIZ, QUESTION & ANSWER OPTION
+        // ==========================================
+        modelBuilder.Entity<Quiz>(entity => {
+            entity.Property(q => q.PassingThresholdPercent).HasPrecision(5, 2);
+            entity.HasOne(q => q.Section)
+                .WithMany(s => s.Quizzes)
+                .HasForeignKey(q => q.SectionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Question>(entity => {
+            entity.HasOne(q => q.Quiz)
+                .WithMany(qz => qz.Questions)
+                .HasForeignKey(q => q.QuizId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<AnswerOption>()
             .HasOne(a => a.Question)
-            .WithMany()
+            .WithMany(q => q.AnswerOptions)
             .HasForeignKey(a => a.QuestionId)
-            .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Jeden pokus může obsahovat nejvýše jednu odpověď na konkrétní otázku.
-        modelBuilder.Entity<QuizAttempt>()
-            .HasIndex(a => new { a.StudentId, a.QuizId });
-        modelBuilder.Entity<StudentAnswer>()
-            .HasIndex(a => new { a.QuizAttemptId, a.QuestionId })
-            .IsUnique();
-        modelBuilder.Entity<StudentAnswer>()
-            .HasOne(a => a.QuizAttempt)
-            .WithMany()
-            .HasForeignKey(a => a.QuizAttemptId)
-            .IsRequired()
-            .OnDelete(DeleteBehavior.Cascade);
-        modelBuilder.Entity<StudentAnswer>()
-            .HasOne(a => a.Question)
-            .WithMany()
-            .HasForeignKey(a => a.QuestionId)
-            .IsRequired()
-            .OnDelete(DeleteBehavior.Restrict);
+        // ==========================================
+        // STUDENT RELATIONS (Enrollments, Progress, Attempts)
+        // ==========================================
+        modelBuilder.Entity<Enrollment>(entity => {
+            entity.HasIndex(e => new { e.StudentId, e.CourseId }).IsUnique();
+            entity.HasOne(e => e.Student)
+                .WithMany(u => u.Enrollments)
+                .HasForeignKey(e => e.StudentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Course)
+                .WithMany(c => c.Enrollments)
+                .HasForeignKey(e => e.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
 
-        // Průchod lekcí i pokus o kvíz vždy patří konkrétnímu studentovi.
-        modelBuilder.Entity<StudentLessonProgress>()
-            .HasOne(p => p.Student)
-            .WithMany()
-            .HasForeignKey(p => p.StudentId)
-            .IsRequired()
-            .OnDelete(DeleteBehavior.Restrict);
-        modelBuilder.Entity<QuizAttempt>()
-            .HasOne(a => a.Student)
-            .WithMany()
-            .HasForeignKey(a => a.StudentId)
-            .IsRequired()
-            .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<StudentLessonProgress>(entity => {
+            entity.HasIndex(p => new { p.StudentId, p.LessonId }).IsUnique();
+            entity.HasOne(p => p.Student)
+                .WithMany(u => u.LessonProgresses)
+                .HasForeignKey(p => p.StudentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(p => p.Lesson)
+                .WithMany()
+                .HasForeignKey(p => p.LessonId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<QuizAttempt>(entity => {
+            entity.Property(qa => qa.ScorePercent).HasPrecision(5, 2);
+            entity.HasIndex(a => new { a.StudentId, a.QuizId });
+            entity.HasOne(a => a.Student)
+                .WithMany(u => u.QuizAttempts)
+                .HasForeignKey(a => a.StudentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(a => a.Quiz)
+                .WithMany()
+                .HasForeignKey(a => a.QuizId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<StudentAnswer>(entity => {
+            entity.HasIndex(a => new { a.QuizAttemptId, a.QuestionId }).IsUnique();
+            entity.HasOne(a => a.QuizAttempt)
+                .WithMany(qa => qa.StudentAnswers)
+                .HasForeignKey(a => a.QuizAttemptId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Ponecháno na Restrict pro prevenci "multiple cascade paths" problému v SQL Server/MariaDB
+            entity.HasOne(a => a.Question)
+                .WithMany()
+                .HasForeignKey(a => a.QuestionId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
     }
 }

@@ -5,17 +5,17 @@ namespace Backend.Models.Entities;
 
 public class StudentAnswer : IValidatableObject {
     public uint Id { get; set; }
+
     public uint QuizAttemptId { get; set; }
-    public required QuizAttempt QuizAttempt { get; set; }
+    public QuizAttempt QuizAttempt { get; set; } = null!;
 
     public uint QuestionId { get; set; }
-    public required Question Question { get; set; }
+    public Question Question { get; set; } = null!;
 
-    [Required] [MaxLength(1024)]
-    // JSON seznam ID vybraných variant, protože otázka může mít více odpovědí.
+    [Required]
+    [MaxLength(1024)]
     public string SelectedOptionIdsJson { get; set; } = string.Empty;
 
-    // Odpověď získá body pouze při úplné správnosti.
     public bool IsFullyCorrect { get; set; }
 
     [Range(0, ushort.MaxValue)]

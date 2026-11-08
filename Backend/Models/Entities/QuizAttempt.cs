@@ -4,39 +4,38 @@ namespace Backend.Models.Entities;
 
 public class QuizAttempt : IValidatableObject {
     public uint Id { get; set; }
+
     public uint QuizId { get; set; }
-    public required Quiz Quiz { get; set; }
+    public Quiz Quiz { get; set; } = null!;
 
     public uint StudentId { get; set; }
-    public required User Student { get; set; }
+    public User Student { get; set; } = null!;
 
-    // Začátek pokusu v UTC.
-    public DateTime StartedAt { get; set; } = DateTime.UtcNow;
-
-    // Null znamená, že student pokus ještě neodevzdal.
-    public DateTime? SubmittedAt { get; set; }
+    public DateTime StartedAtUtc { get; set; } = DateTime.UtcNow;
+    public DateTime? SubmittedAtUtc { get; set; }
 
     [Range(0, 100)]
-    // Výsledek pokusu v procentech (0-100).
     public decimal ScorePercent { get; set; }
 
-    // Určuje, zda výsledek dosáhl prahu nastaveného u kvízu.
     public bool IsPassed { get; set; }
+
+    // Navigace na jednotlivé odpovědi v rámci pokusu
+    public ICollection<StudentAnswer> StudentAnswers { get; set; } = [];
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        if (SubmittedAt.HasValue && SubmittedAt.Value < StartedAt)
+        if (SubmittedAtUtc.HasValue && SubmittedAtUtc.Value < StartedAtUtc)
         {
             yield return new ValidationResult(
                 "Čas odevzdání nesmí předcházet času zahájení pokusu.",
-                [nameof(StartedAt), nameof(SubmittedAt)]);
+                [nameof(StartedAtUtc), nameof(SubmittedAtUtc)]);
         }
 
-        if (!SubmittedAt.HasValue && (ScorePercent != 0 || IsPassed))
+        if (!SubmittedAtUtc.HasValue && (ScorePercent != 0 || IsPassed))
         {
             yield return new ValidationResult(
                 "Neodevzdaný pokus nesmí mít výsledek ani být označen jako splněný.",
-                [nameof(SubmittedAt), nameof(ScorePercent), nameof(IsPassed)]);
+                [nameof(SubmittedAtUtc), nameof(ScorePercent), nameof(IsPassed)]);
         }
     }
 }

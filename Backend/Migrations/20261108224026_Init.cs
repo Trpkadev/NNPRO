@@ -19,7 +19,7 @@ namespace Backend.Migrations
                 name: "Courses",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<uint>(type: "int unsigned", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Title = table.Column<string>(type: "varchar(128)", maxLength: 128, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -38,7 +38,7 @@ namespace Backend.Migrations
                 name: "Users",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<uint>(type: "int unsigned", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Username = table.Column<string>(type: "varchar(32)", maxLength: 32, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -58,12 +58,12 @@ namespace Backend.Migrations
                 name: "Sections",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<uint>(type: "int unsigned", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Title = table.Column<string>(type: "varchar(128)", maxLength: 128, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Order = table.Column<int>(type: "int", nullable: false),
-                    CourseId = table.Column<int>(type: "int", nullable: false)
+                    Order = table.Column<ushort>(type: "smallint unsigned", nullable: false),
+                    CourseId = table.Column<uint>(type: "int unsigned", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -81,15 +81,15 @@ namespace Backend.Migrations
                 name: "CourseInstructors",
                 columns: table => new
                 {
-                    CourseId = table.Column<int>(type: "int", nullable: false),
-                    InstructorsId = table.Column<int>(type: "int", nullable: false)
+                    InstructorsId = table.Column<uint>(type: "int unsigned", nullable: false),
+                    TeachingCoursesId = table.Column<uint>(type: "int unsigned", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CourseInstructors", x => new { x.CourseId, x.InstructorsId });
+                    table.PrimaryKey("PK_CourseInstructors", x => new { x.InstructorsId, x.TeachingCoursesId });
                     table.ForeignKey(
-                        name: "FK_CourseInstructors_Courses_CourseId",
-                        column: x => x.CourseId,
+                        name: "FK_CourseInstructors_Courses_TeachingCoursesId",
+                        column: x => x.TeachingCoursesId,
                         principalTable: "Courses",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
@@ -106,11 +106,11 @@ namespace Backend.Migrations
                 name: "Enrollments",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<uint>(type: "int unsigned", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    StudentId = table.Column<int>(type: "int", nullable: false),
-                    CourseId = table.Column<int>(type: "int", nullable: false),
-                    EnrolledAt = table.Column<DateTime>(type: "datetime(6)", nullable: false)
+                    StudentId = table.Column<uint>(type: "int unsigned", nullable: false),
+                    CourseId = table.Column<uint>(type: "int unsigned", nullable: false),
+                    EnrolledAtUtc = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -120,13 +120,48 @@ namespace Backend.Migrations
                         column: x => x.CourseId,
                         principalTable: "Courses",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Enrollments_Users_StudentId",
                         column: x => x.StudentId,
                         principalTable: "Users",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "RefreshTokens",
+                columns: table => new
+                {
+                    Id = table.Column<uint>(type: "int unsigned", nullable: false)
+                        .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
+                    TokenHash = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    JwtId = table.Column<string>(type: "varchar(255)", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    UserId = table.Column<uint>(type: "int unsigned", nullable: false),
+                    ExpiresAtUtc = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatedAtUtc = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    CreatedByIp = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    RevokedAtUtc = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    RevokedByIp = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ReasonRevoked = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ReplacedByTokenHash = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RefreshTokens", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RefreshTokens_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -134,7 +169,7 @@ namespace Backend.Migrations
                 name: "Lessons",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<uint>(type: "int unsigned", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Title = table.Column<string>(type: "varchar(128)", maxLength: 128, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -142,8 +177,8 @@ namespace Backend.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     VideoUrl = table.Column<string>(type: "varchar(512)", maxLength: 512, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Order = table.Column<int>(type: "int", nullable: false),
-                    SectionId = table.Column<int>(type: "int", nullable: false)
+                    Order = table.Column<ushort>(type: "smallint unsigned", nullable: false),
+                    SectionId = table.Column<uint>(type: "int unsigned", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -161,14 +196,14 @@ namespace Backend.Migrations
                 name: "Quizzes",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<uint>(type: "int unsigned", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Title = table.Column<string>(type: "varchar(128)", maxLength: 128, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    SectionId = table.Column<int>(type: "int", nullable: false),
-                    MaxAttempts = table.Column<int>(type: "int", nullable: true),
-                    TimeLimitSeconds = table.Column<int>(type: "int", nullable: true),
-                    PassingThresholdPercent = table.Column<double>(type: "double", nullable: false),
+                    SectionId = table.Column<uint>(type: "int unsigned", nullable: false),
+                    MaxAttempts = table.Column<ushort>(type: "smallint unsigned", nullable: true),
+                    TimeLimitSeconds = table.Column<uint>(type: "int unsigned", nullable: true),
+                    PassingThresholdPercent = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: false),
                     RandomizeQuestions = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     RandomizeAnswers = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
@@ -188,7 +223,7 @@ namespace Backend.Migrations
                 name: "LessonAttachments",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<uint>(type: "int unsigned", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     FileName = table.Column<string>(type: "varchar(256)", maxLength: 256, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -197,7 +232,7 @@ namespace Backend.Migrations
                     ContentType = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     SizeBytes = table.Column<long>(type: "bigint", nullable: true),
-                    LessonId = table.Column<int>(type: "int", nullable: false)
+                    LessonId = table.Column<uint>(type: "int unsigned", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -215,12 +250,12 @@ namespace Backend.Migrations
                 name: "StudentLessonProgresses",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<uint>(type: "int unsigned", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    StudentId = table.Column<int>(type: "int", nullable: false),
-                    LessonId = table.Column<int>(type: "int", nullable: false),
+                    StudentId = table.Column<uint>(type: "int unsigned", nullable: false),
+                    LessonId = table.Column<uint>(type: "int unsigned", nullable: false),
                     IsCompleted = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    CompletedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    CompletedAtUtc = table.Column<DateTime>(type: "datetime(6)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -236,7 +271,7 @@ namespace Backend.Migrations
                         column: x => x.StudentId,
                         principalTable: "Users",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -244,15 +279,15 @@ namespace Backend.Migrations
                 name: "Questions",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<uint>(type: "int unsigned", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Text = table.Column<string>(type: "varchar(2048)", maxLength: 2048, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ImageUrl = table.Column<string>(type: "varchar(2048)", maxLength: 2048, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Type = table.Column<int>(type: "int", nullable: false),
-                    Points = table.Column<int>(type: "int", nullable: false),
-                    QuizId = table.Column<int>(type: "int", nullable: false)
+                    Points = table.Column<ushort>(type: "smallint unsigned", nullable: false),
+                    QuizId = table.Column<uint>(type: "int unsigned", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -270,13 +305,13 @@ namespace Backend.Migrations
                 name: "QuizAttempts",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<uint>(type: "int unsigned", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    QuizId = table.Column<int>(type: "int", nullable: false),
-                    StudentId = table.Column<int>(type: "int", nullable: false),
-                    StartedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    SubmittedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    ScorePercent = table.Column<double>(type: "double", nullable: false),
+                    QuizId = table.Column<uint>(type: "int unsigned", nullable: false),
+                    StudentId = table.Column<uint>(type: "int unsigned", nullable: false),
+                    StartedAtUtc = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    SubmittedAtUtc = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    ScorePercent = table.Column<decimal>(type: "decimal(5,2)", precision: 5, scale: 2, nullable: false),
                     IsPassed = table.Column<bool>(type: "tinyint(1)", nullable: false)
                 },
                 constraints: table =>
@@ -293,7 +328,7 @@ namespace Backend.Migrations
                         column: x => x.StudentId,
                         principalTable: "Users",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -301,14 +336,14 @@ namespace Backend.Migrations
                 name: "AnswerOptions",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<uint>(type: "int unsigned", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
                     Text = table.Column<string>(type: "varchar(1024)", maxLength: 1024, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ImageUrl = table.Column<string>(type: "varchar(2048)", maxLength: 2048, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     IsCorrect = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    QuestionId = table.Column<int>(type: "int", nullable: false)
+                    QuestionId = table.Column<uint>(type: "int unsigned", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -326,14 +361,14 @@ namespace Backend.Migrations
                 name: "StudentAnswers",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<uint>(type: "int unsigned", nullable: false)
                         .Annotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn),
-                    QuizAttemptId = table.Column<int>(type: "int", nullable: false),
-                    QuestionId = table.Column<int>(type: "int", nullable: false),
+                    QuizAttemptId = table.Column<uint>(type: "int unsigned", nullable: false),
+                    QuestionId = table.Column<uint>(type: "int unsigned", nullable: false),
                     SelectedOptionIdsJson = table.Column<string>(type: "varchar(1024)", maxLength: 1024, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     IsFullyCorrect = table.Column<bool>(type: "tinyint(1)", nullable: false),
-                    AwardedPoints = table.Column<int>(type: "int", nullable: false)
+                    AwardedPoints = table.Column<ushort>(type: "smallint unsigned", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -359,9 +394,9 @@ namespace Backend.Migrations
                 column: "QuestionId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_CourseInstructors_InstructorsId",
+                name: "IX_CourseInstructors_TeachingCoursesId",
                 table: "CourseInstructors",
-                column: "InstructorsId");
+                column: "TeachingCoursesId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Enrollments_CourseId",
@@ -403,6 +438,22 @@ namespace Backend.Migrations
                 name: "IX_Quizzes_SectionId",
                 table: "Quizzes",
                 column: "SectionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RefreshTokens_JwtId",
+                table: "RefreshTokens",
+                column: "JwtId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RefreshTokens_TokenHash",
+                table: "RefreshTokens",
+                column: "TokenHash",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RefreshTokens_UserId",
+                table: "RefreshTokens",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Sections_CourseId_Order",
@@ -458,6 +509,9 @@ namespace Backend.Migrations
 
             migrationBuilder.DropTable(
                 name: "LessonAttachments");
+
+            migrationBuilder.DropTable(
+                name: "RefreshTokens");
 
             migrationBuilder.DropTable(
                 name: "StudentAnswers");
