@@ -1,7 +1,7 @@
 ﻿namespace Backend.Models.Entities;
 
-public enum QuestionType {
-    SingleChoice, //Jednoznačná volba
-    MultipleChoice, // Výběr více odpovědí
-    TrueFalse // Pravda / nepravda
+public enum QuestionType : byte {
+    SingleChoice = 0, //Jednoznačná volba
+    MultipleChoice = 1, // Výběr více odpovědí
+    TrueFalse = 2 // Pravda / nepravda
 }
