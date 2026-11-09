@@ -17,8 +17,8 @@ public static class QueryableExtensions {
 
         var property = typeof(T).GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.IgnoreCase);
 
-        if (property is null)
-            throw new ArgumentException(string.Format(Resources.ErrorInvalidPropertyForType, propertyName, typeof(T).Name), nameof(propertyName));
+        if (property is null || !IsSortableProperty(property))
+            throw new InvalidSortException(propertyName);
 
         var parameter = Expression.Parameter(typeof(T), "x");
         var propertyAccess = Expression.Property(parameter, property);
@@ -29,6 +29,24 @@ public static class QueryableExtensions {
         var resultExpression = Expression.Call(typeof(Queryable), methodName, [typeof(T), property.PropertyType], source.Expression, Expression.Quote(selector));
 
         return source.Provider.CreateQuery<T>(resultExpression);
+    }
+
+    private static bool IsSortableProperty(PropertyInfo property)
+    {
+        if (property.GetMethod is null || property.GetIndexParameters().Length > 0)
+            return false;
+
+        var propertyType = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+        return propertyType.IsPrimitive
+               || propertyType.IsEnum
+               || propertyType == typeof(string)
+               || propertyType == typeof(decimal)
+               || propertyType == typeof(DateTime)
+               || propertyType == typeof(DateTimeOffset)
+               || propertyType == typeof(DateOnly)
+               || propertyType == typeof(TimeOnly)
+               || propertyType == typeof(TimeSpan)
+               || propertyType == typeof(Guid);
     }
 
     /// <summary>
@@ -49,7 +67,12 @@ public static class QueryableExtensions {
         // Paging is ON
         if (request is { Page: {} page, PageSize: {} pageSize })
         {
-            var pagedItems = await query.Skip((page - 1) * pageSize).Take(pageSize).ToArrayAsync(ct);
+            int totalPages = totalItems > 0 ? 1 + (totalItems - 1) / pageSize : 0;
+            if (page > totalPages)
+                return ([], new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = totalItems });
+
+            int skip = (int)((long)(page - 1) * pageSize);
+            var pagedItems = await query.Skip(skip).Take(pageSize).ToArrayAsync(ct);
             return (pagedItems, new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = totalItems });
         }
 
@@ -85,31 +108,35 @@ public static class QueryableExtensions {
             var propertyAccess = Expression.Property(parameter, property);
             var targetType = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
 
+            object? convertedValue;
             try
             {
                 var converter = TypeDescriptor.GetConverter(targetType);
-                object? convertedValue = converter.ConvertFromInvariantString(rawValue);
-                var constant = Expression.Constant(convertedValue, targetType);
-
-                Expression filterCondition;
-
-                if (targetType == typeof(string))
-                {
-                    var containsMethod = typeof(string).GetMethod(nameof(string.Contains), [typeof(string)])!;
-                    filterCondition = Expression.Call(propertyAccess, containsMethod, constant);
-                }
-                else
-                {
-                    Expression adjustedPropertyAccess = property.PropertyType != targetType ? Expression.Convert(propertyAccess, targetType) : propertyAccess;
-                    filterCondition = Expression.Equal(adjustedPropertyAccess, constant);
-                }
-
-                combinedExpression = combinedExpression is null ? filterCondition : Expression.AndAlso(combinedExpression, filterCondition);
+                convertedValue = converter.ConvertFromInvariantString(rawValue);
             }
-            catch
+            catch (Exception exception) when (exception is FormatException or NotSupportedException or ArgumentException or OverflowException)
             {
-                // If conversion fails we ignore the filter (fe. client sent "abc" in uint ID)
+                throw new InvalidFilterException(key);
             }
+
+            if (convertedValue is null && targetType.IsValueType)
+                throw new InvalidFilterException(key);
+
+            var constant = Expression.Constant(convertedValue, targetType);
+            Expression filterCondition;
+
+            if (targetType == typeof(string))
+            {
+                var containsMethod = typeof(string).GetMethod(nameof(string.Contains), [typeof(string)])!;
+                filterCondition = Expression.Call(propertyAccess, containsMethod, constant);
+            }
+            else
+            {
+                Expression adjustedPropertyAccess = property.PropertyType != targetType ? Expression.Convert(propertyAccess, targetType) : propertyAccess;
+                filterCondition = Expression.Equal(adjustedPropertyAccess, constant);
+            }
+
+            combinedExpression = combinedExpression is null ? filterCondition : Expression.AndAlso(combinedExpression, filterCondition);
         }
 
         if (combinedExpression is null)

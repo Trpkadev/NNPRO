@@ -13,7 +13,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [HttpGet("{id:uint}")]
     //[Authorize]
     [EndpointSummary("Get course detail")]
-    [EndpointDescription("Returns the full details of a course including title, description, and optional access key.")]
+    [EndpointDescription("Returns the full details of a course including its title and description.")]
     [ProducesResponseType<Wrapper<CourseResponseDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CourseResponseDto>> GetCourseById(uint id, CancellationToken cancellationToken)

@@ -51,6 +51,7 @@ builder.Services.AddStackExchangeRedisCache(options => {
 // CORE API SERVICES
 // ==========================================
 builder.Services.AddControllers(options => { options.Filters.Add<ApiResponseWrapperFilter>(); })
+    .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()))
     .ConfigureApiBehaviorOptions(options => {
         options.InvalidModelStateResponseFactory = context => {
             var problemDetails = new ValidationProblemDetails(context.ModelState) {
@@ -76,6 +77,7 @@ builder.Services.AddCors(options => {
 });
 
 builder.Services.AddRateLimiter(options => {
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     options.AddFixedWindowLimiter("PublicGetPolicy",
         opt => {
             opt.PermitLimit = 100;
@@ -122,6 +124,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<PaginationNeededExceptionHandler>();
 builder.Services.AddExceptionHandler<InvalidFilterExceptionHandler>();
+builder.Services.AddExceptionHandler<InvalidSortExceptionHandler>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 // ==========================================

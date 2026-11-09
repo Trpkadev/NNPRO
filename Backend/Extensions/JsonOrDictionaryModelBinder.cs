@@ -17,34 +17,42 @@ public class JsonOrDictionaryModelBinder : IModelBinder {
         {
             string rawValue = valueProviderResult.FirstValue.Trim();
 
-            // try parse JSON (fe. {"title":"C#"})
-            if (rawValue.StartsWith('{') && rawValue.EndsWith('}'))
+            // JSON object (e.g. {"title":"C#"})
+            if (rawValue.StartsWith('{') || rawValue.EndsWith('}'))
             {
                 try
                 {
-                    var jsonDict = JsonSerializer.Deserialize<Dictionary<string, string>>(rawValue);
-                    if (jsonDict is not null)
-                    {
-                        foreach ((string k, string v) in jsonDict)
-                            resultDict[k] = v;
+                    var jsonDict = JsonSerializer.Deserialize<Dictionary<string, string?>>(rawValue);
+                    if (jsonDict is null || jsonDict.Any(pair => pair.Value is null))
+                        throw new JsonException("The filter JSON must contain string values.");
 
-                        bindingContext.Result = ModelBindingResult.Success(resultDict);
-                        return Task.CompletedTask;
-                    }
+                    foreach ((string key, string? value) in jsonDict)
+                        resultDict[key] = value!;
+
+                    bindingContext.Result = ModelBindingResult.Success(resultDict);
+                    return Task.CompletedTask;
                 }
-                catch
+                catch (JsonException)
                 {
-                    // If JSON fails, we continue into other formats
+                    bindingContext.ModelState.TryAddModelError(prefix, "Filters must be a valid JSON object or a comma-separated list of key=value pairs.");
+                    bindingContext.Result = ModelBindingResult.Failed();
+                    return Task.CompletedTask;
                 }
             }
 
-            // Key=Value (fe. title=C#; title=C#,description=úvod)
-            string[] pairs = rawValue.Split(',', StringSplitOptions.RemoveEmptyEntries);
+            // Key=Value (e.g. title=C#,description=intro)
+            string[] pairs = rawValue.Split(',');
             foreach (string pair in pairs)
             {
                 string[] parts = pair.Split('=', 2);
-                if (parts.Length == 2)
-                    resultDict[parts[0].Trim()] = parts[1].Trim();
+                if (parts.Length != 2 || string.IsNullOrWhiteSpace(parts[0]) || string.IsNullOrWhiteSpace(parts[1]))
+                {
+                    bindingContext.ModelState.TryAddModelError(prefix, "Filters must be a valid JSON object or a comma-separated list of key=value pairs.");
+                    bindingContext.Result = ModelBindingResult.Failed();
+                    return Task.CompletedTask;
+                }
+
+                resultDict[parts[0].Trim()] = parts[1].Trim();
             }
         }
 

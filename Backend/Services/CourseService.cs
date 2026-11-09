@@ -15,7 +15,7 @@ public class CourseService(AppDbContext dbContext, IOptions<DatabaseLimitsOption
     {
         return await dbContext.Courses.AsNoTracking()
             .Where(x => x.Id == id)
-            .Select(x => new CourseResponseDto(x.Id, x.Title, x.Description, x.AccessKey))
+            .Select(x => new CourseResponseDto(x.Id, x.Title, x.Description))
             .FirstOrDefaultAsync(ct);
     }
 
@@ -25,7 +25,7 @@ public class CourseService(AppDbContext dbContext, IOptions<DatabaseLimitsOption
             .ApplyCourseSearch(requestDto.Search)
             .Filter(requestDto.Filters)
             .OrderByProperty(requestDto.Sorting)
-            .Select(x => new CourseResponseDto(x.Id, x.Title, x.Description, x.AccessKey))
+            .Select(x => new CourseResponseDto(x.Id, x.Title, x.Description))
             .ToPagedResultAsync(requestDto, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
 
         return (courses, new Metadata(paginationMetadata, requestDto));

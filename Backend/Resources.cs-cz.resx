@@ -378,6 +378,9 @@
   <data name="ExceptionTitleInvalidFilter" xml:space="preserve">
         <value>Parametr {0} je ve filtru neplatný</value>
   </data>
+  <data name="ExceptionTitleInvalidSort" xml:space="preserve">
+    <value>Vlastnost řazení {0} je neplatná</value>
+  </data>
   <data name="ExceptionTitlePaginationNeeded" xml:space="preserve">
     <value>Stránkování musí být zapnuto pro tento požadavek</value>
   </data>

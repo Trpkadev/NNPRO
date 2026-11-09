@@ -381,6 +381,9 @@
   <data name="ExceptionTitleInvalidFilter" xml:space="preserve">
         <value>Property {0} in filter is invalid</value>
   </data>
+  <data name="ExceptionTitleInvalidSort" xml:space="preserve">
+    <value>Sort property {0} is invalid</value>
+  </data>
   <data name="ExceptionTitlePaginationNeeded" xml:space="preserve">
     <value>Pagination is required for this request</value>
   </data>
