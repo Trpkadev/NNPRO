@@ -11,14 +11,14 @@ namespace Backend.Controllers;
 public class SectionController : ApiControllerBase {
     [HttpGet("{sectionId:uint}")]
     //[Authorize(Roles = "Instructor,Admin")]
-    [EndpointSummary("")]
-    [EndpointDescription("")]
-    [ProducesResponseType<Wrapper<uint>>(StatusCodes.Status201Created)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<uint>> GetSectionById(string sectionId, [FromBody] RequestQuery requestQuery, CancellationToken cancellationToken)
+    [EndpointSummary("Get section detail")]
+    [EndpointDescription("Returns the details of a section.")]
+    [ProducesResponseType<Wrapper<SectionResponseDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<SectionResponseDto>> GetSectionById([FromRoute] uint sectionId, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
-        return Ok();
+        return Ok(new SectionResponseDto(sectionId, "Dummy Section", 1, 1));
     }
 
     [HttpPost]
@@ -31,7 +31,7 @@ public class SectionController : ApiControllerBase {
     {
         await Task.CompletedTask;
         const uint newSectionId = 1;
-        return CreatedAtAction(nameof(GetSectionById), new { id = newSectionId }, newSectionId);
+        return CreatedAtAction(nameof(GetSectionById), new { sectionId = newSectionId }, newSectionId);
     }
 
     [HttpPut("{sectionId:uint}")]

@@ -42,7 +42,7 @@ public class AuthController : ApiControllerBase {
     public async Task<ActionResult<AuthResponseDto>> RefreshToken([FromBody] RefreshTokenRequestDto refreshTokenRequest, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
-        return Ok(new AuthResponseDto("new_access_token", "new_refresh_token", DateTimeOffset.UtcNow.AddMinutes(5)));
+        return Ok(new AuthResponseDto("access_token_dummy", "refresh_token_dummy", DateTimeOffset.UtcNow.AddMinutes(5)));
     }
 
     [HttpPost("logout")]
@@ -51,5 +51,9 @@ public class AuthController : ApiControllerBase {
     [EndpointDescription("Revokes the current refresh token and invalidates the user session.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
-    public async Task<ActionResult> Logout([FromBody] LogoutRequestDto logoutRequest, CancellationToken cancellationToken) => NoContent();
+    public async Task<ActionResult> Logout([FromBody] LogoutRequestDto logoutRequest, CancellationToken cancellationToken)
+    {
+        await Task.CompletedTask;
+        return NoContent();
+    }
 }

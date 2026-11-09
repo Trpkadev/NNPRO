@@ -1,5 +1,6 @@
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
+using Backend.Models.Entities;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers;
@@ -9,6 +10,17 @@ namespace Backend.Controllers;
 [Route("api/questions")]
 [Tags("Questions")]
 public class QuestionController : ApiControllerBase {
+    [HttpGet("{questionId:uint}")]
+    //[Authorize]
+    [EndpointSummary("Get question detail")]
+    [ProducesResponseType<Wrapper<QuestionResponseDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<QuestionResponseDto>> GetQuestion(uint questionId, CancellationToken cancellationToken)
+    {
+        await Task.CompletedTask;
+        return Ok(new QuestionResponseDto(questionId, "Dummy question?", null, QuestionType.SingleChoice, 1, 1));
+    }
+
     [HttpPost]
     //[Authorize(Roles = "Instructor,Admin")]
     [EndpointSummary("Create a question")]
@@ -18,7 +30,7 @@ public class QuestionController : ApiControllerBase {
     {
         await Task.CompletedTask;
         const uint newQuestionId = 1;
-        return CreatedAtAction(nameof(CreateQuestion), new { id = newQuestionId }, newQuestionId);
+        return CreatedAtAction(nameof(GetQuestion), new { questionId = newQuestionId }, newQuestionId);
     }
 
     [HttpPut("{questionId:uint}")]

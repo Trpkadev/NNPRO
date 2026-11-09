@@ -19,7 +19,7 @@ public class EnrollmentController : ApiControllerBase {
     public async Task<ActionResult<EnrollmentResponseDto>> GetEnrolledUsers([FromRoute] uint courseId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
-        return Ok(new EnrollmentResponseDto([new UserResponseDto(1, "test", "test@test.test", "Student")]));
+        return Ok(new EnrollmentResponseDto([new UserResponseDto(1, "dummy_user", "dummy@example.com", "Student")]));
     }
 
     [HttpPost]

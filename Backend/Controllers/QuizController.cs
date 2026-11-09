@@ -63,7 +63,7 @@ public class QuizController : ApiControllerBase {
     public async Task<ActionResult<QuizResponseDto>> GetQuizEditor(uint quizId, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
-        return Ok(new QuizResponseDto(quizId, "Editor Quiz", 1, null, 75.0m, 1));
+        return Ok(new QuizResponseDto(quizId, "Dummy Quiz", 1, null, 75.0m, 1));
     }
 
     [HttpGet("{quizId:uint}/attempts")]
@@ -74,7 +74,7 @@ public class QuizController : ApiControllerBase {
     public async Task<ActionResult<QuizAttemptResponseDto[]>> GetAttempts(uint quizId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
-        return Ok(Array.Empty<QuizAttemptResponseDto>());
+        return Ok(new[] { new QuizAttemptResponseDto(1, quizId, 1, DateTime.UtcNow, null, 0, false) });
     }
 
     [HttpGet("attempt/{attemptId:uint}")]
@@ -96,7 +96,7 @@ public class QuizController : ApiControllerBase {
     public async Task<ActionResult<uint>> StartAttempt([FromBody] StartAttemptRequestDto requestDto, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
-        uint newAttemptId = 1;
+        const uint newAttemptId = 1;
         return CreatedAtAction(nameof(GetAttempt), new { attemptId = newAttemptId }, newAttemptId);
     }
 

@@ -18,7 +18,7 @@ public class LessonController : ApiControllerBase {
     public async Task<ActionResult<LessonResponseDto>> GetLessonById(uint id, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
-        return Ok(new LessonResponseDto(id, "Dummy Lesson", "Content", null, 1, 1));
+        return Ok(new LessonResponseDto(id, "Dummy Lesson", "Dummy lesson content.", null, 1, 1));
     }
 
     [HttpPost]
@@ -29,7 +29,7 @@ public class LessonController : ApiControllerBase {
     public async Task<ActionResult<uint>> CreateLesson([FromBody] CreateLessonRequestDto requestDto, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
-        uint newLessonId = 1;
+        const uint newLessonId = 1;
         return CreatedAtAction(nameof(GetLessonById), new { id = newLessonId }, newLessonId);
     }
 
@@ -76,7 +76,7 @@ public class LessonController : ApiControllerBase {
     public async Task<ActionResult<uint>> AddAttachment([FromBody] AttachmentRequestDto dto, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
-        return CreatedAtAction(nameof(GetLessonById), new { id = dto.LessonId }, 1);
+        return CreatedAtAction(nameof(GetLessonById), new { id = dto.LessonId }, 1u);
     }
 
     [HttpDelete("{lessonId:uint}/attachments/{attachmentId:uint}")]

@@ -17,7 +17,7 @@ public class UserController : ApiControllerBase {
     public async Task<ActionResult<UserResponseDto[]>> GetUsers([FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
-        return Ok(Array.Empty<UserResponseDto>());
+        return Ok(new[] { new UserResponseDto(1, "dummy_user", "dummy@example.com", "Student") });
     }
 
     [HttpGet("{userId:uint}")]
@@ -28,7 +28,7 @@ public class UserController : ApiControllerBase {
     public async Task<ActionResult<UserResponseDto>> GetUserById(uint userId, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
-        return Ok(new UserResponseDto(userId, "dummy_user", "dummy@email.com", "Student"));
+        return Ok(new UserResponseDto(userId, "dummy_user", "dummy@example.com", "Student"));
     }
 
     [HttpPost]
@@ -40,7 +40,7 @@ public class UserController : ApiControllerBase {
     public async Task<ActionResult<uint>> CreateUser([FromBody] CreateUserRequestDto requestDto, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
-        uint newUserId = 1;
+        const uint newUserId = 1;
         return CreatedAtAction(nameof(GetUserById), new { userId = newUserId }, newUserId);
     }
 

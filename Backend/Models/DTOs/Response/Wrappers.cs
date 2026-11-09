@@ -34,7 +34,7 @@ public record PaginationMetadata {
     public int Page { get; init; }
     public int PageSize { get; init; }
     public int TotalItems { get; init; }
-    public int TotalPages => PageSize > 0 ? (TotalItems + PageSize - 1) / PageSize : 0;
+    public int TotalPages => PageSize > 0 && TotalItems > 0 ? 1 + (TotalItems - 1) / PageSize : 0;
     public bool HasNextPage => Page < TotalPages;
     public bool HasPreviousPage => Page > 1;
 }

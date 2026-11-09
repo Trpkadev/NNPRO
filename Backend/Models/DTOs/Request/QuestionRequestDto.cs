@@ -8,4 +8,4 @@ public record CreateQuestionRequestDto(
     [Url] [MaxLength(2048)] string? ImageUrl,
     [Required] [EnumDataType(typeof(QuestionType))] string Type,
     [Range(1, ushort.MaxValue)] ushort Points,
-    [Required] uint QuizId);
+    [Range(1, uint.MaxValue)] uint QuizId);
