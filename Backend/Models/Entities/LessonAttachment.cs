@@ -1,0 +1,25 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Backend.Models.Entities;
+
+public class LessonAttachment {
+    public uint Id { get; set; }
+
+    [Required]
+    [MaxLength(256)]
+    public string FileName { get; set; } = string.Empty;
+
+    [Required]
+    [Url]
+    [MaxLength(2048)]
+    public string Url { get; set; } = string.Empty;
+
+    [MaxLength(100)]
+    public string? ContentType { get; set; }
+
+    [Range(0, long.MaxValue)]
+    public long? SizeBytes { get; set; }
+
+    public uint LessonId { get; set; }
+    public Lesson Lesson { get; set; } = null!;
+}

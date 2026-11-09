@@ -17,6 +17,7 @@
 /dataSources/
 /dataSources.local.xml
 /vcs.xml
-/backend/obj
-/backend/.idea
-/backend/bin
+/Backend/obj
+/Backend/.idea
+/Backend/bin
+/Backend/Backend.sln.DotSettings.user

@@ -1,6 +1,6 @@
 ﻿services:
   db:
-    image: mariadb:11.4
+    image: mariadb:12.3
     container_name: db
     restart: unless-stopped
     environment:
@@ -8,35 +8,56 @@
       MARIADB_DATABASE: nnpro
       MARIADB_USER: nnpro
       MARIADB_PASSWORD: nnpro
+      MARIADB_AUTO_UPGRADE: "1"
     ports:
       - "3306:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
       - ./database/init:/docker-entrypoint-initdb.d
     healthcheck:
-      test: ["CMD", "mariadb-admin", "ping", "--user=nnpro", "--password=nnpro"]
+      test: [ "CMD", "mariadb-admin", "ping", "--user=nnpro", "--password=nnpro" ]
       interval: 10s
       timeout: 5s
+      retries: 5
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
       retries: 5
 
   backend:
     build:
-      context: ./backend
+      context: ./Backend
       dockerfile: Dockerfile
+      target: development
+      #target: production
     container_name: backend
     restart: unless-stopped
     ports:
       - "8080:8080"
       - "8081:8081"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
       - ConnectionStrings__DefaultConnection=Server=db;Port=3306;Database=nnpro;User=nnpro;Password=nnpro;
       - Jwt__Secret=SuperSecretKeyKteraMaMnohemViceNez32Znaku123!
       - Jwt__Issuer=ELearningApi
       - Jwt__Audience=ELearningClient
+    volumes:
+      - dp_keys:/home/app/dp_keys
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
 volumes:
   mariadb_data:
+  redis_data:
+  dp_keys:
