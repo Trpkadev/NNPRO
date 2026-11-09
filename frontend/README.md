@@ -11,7 +11,7 @@
     - **Server State:** [TanStack Vue Query](https://tanstack.com/query/latest) (cachování, synchronizace API dat)
     - **Client State:** [Pinia](https://pinia.vuejs.org/) (Setup stores, správa UI stavu a auth)
 - **UI & Stylování:** [OpenVue](https://openvue.org/) (komunitní MIT fork PrimeVue 4), [Tailwind CSS v4](https://tailwindcss.com/) (`tailwindcss-primeui`), [@openvue/openicons](https://openvue.org/) (`oi oi-*` ikony)
-- **Formuláře & Validace:** [VeeValidate](https://vee-validate.logaretm.com/) + [Zod](https://zod.dev/) (přes Standard Schema)
+- **Formuláře & Validace:** [VeeValidate](https://vee-validate.logaretm.com/)
 - **HTTP & Auth:** [Axios](https://axios-http.com/) (interceptory pro JWT a 401), `jwt-decode`
 - **Lokalizace:** [Vue I18n](https://vue-i18n.intlify.dev/)
 - **Utilities:** [VueUse](https://vueuse.org/)
