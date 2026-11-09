@@ -1,18 +1,17 @@
-using System.ComponentModel.DataAnnotations;
-
 namespace Backend.Models.DTOs.Response;
 
-public class LessonDto {
-    [Required] [MaxLength(128)]
-    public string Title { get; set; } = string.Empty;
+public record LessonResponseDto(
+    uint Id,
+    string Title,
+    string Content,
+    string? VideoUrl,
+    ushort Order,
+    uint SectionId);
 
-    // Formátovaný text lekce včetně odkazů a dalšího vzdělávacího obsahu.
-    [Required] [MaxLength(16_384)]
-    public string Content { get; set; } = string.Empty;
-
-    [Url] [MaxLength(512)]
-    public string? VideoUrl { get; set; }
-
-    [Range(0, ushort.MaxValue)]
-    public ushort Order { get; set; }
-}
+public record AttachmentResponseDto(
+    uint Id,
+    string FileName,
+    string Url,
+    string? ContentType,
+    long? SizeBytes,
+    uint LessonId);
