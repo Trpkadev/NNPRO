@@ -9,3 +9,13 @@ public record CreateQuestionRequestDto(
     [Required] [EnumDataType(typeof(QuestionType))] string Type,
     [Range(1, ushort.MaxValue)] ushort Points,
     [Range(1, uint.MaxValue)] uint QuizId);
+
+public sealed record CreateAnswerOptionRequestDto(
+    [Required] [MaxLength(1024)] string Text,
+    [Url] [MaxLength(2048)] string? ImageUrl,
+    bool IsCorrect);
+
+public sealed record UpdateAnswerOptionRequestDto(
+    [Required] [MaxLength(1024)] string Text,
+    [Url] [MaxLength(2048)] string? ImageUrl,
+    bool IsCorrect);

@@ -1,3 +1,4 @@
+using Backend.Extensions;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
 using Backend.Services.Interfaces;
@@ -27,6 +28,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     }
 
     [HttpGet]
+    [RequiresPaging]
     [ResponseCache(Duration = 60, VaryByQueryKeys = ["*"])]
     //[Authorize]
     [EndpointSummary("Get all courses")]
@@ -38,6 +40,48 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
         var (courses, metadata) = await courseService.GetAsync(requestQuery, cancellationToken);
 
         return Ok(courses, metadata);
+    }
+
+    [HttpGet("{courseId:uint}/sections")]
+    //[Authorize]
+    [RequiresPaging]
+    [EndpointSummary("Get course sections")]
+    [ProducesResponseType<Wrapper<SectionResponseDto[]>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<SectionResponseDto[]>> GetCourseSections(uint courseId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
+    {
+        await Task.CompletedTask;
+        var sections = new[] {
+            new SectionResponseDto(1, "Introduction", 1, courseId),
+            new SectionResponseDto(2, "Advanced topics", 2, courseId)
+        };
+        return OkPaged(sections, requestQuery);
+    }
+
+    [HttpGet("{courseId:uint}/instructors")]
+    //[Authorize]
+    [RequiresPaging]
+    [EndpointSummary("Get course instructors")]
+    [ProducesResponseType<Wrapper<CourseInstructorResponseDto[]>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<CourseInstructorResponseDto[]>> GetCourseInstructors(uint courseId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
+    {
+        await Task.CompletedTask;
+        var instructors = new[] {
+            new CourseInstructorResponseDto(1, "dummy_instructor"),
+            new CourseInstructorResponseDto(2, "another_instructor")
+        };
+        return OkPaged(instructors, requestQuery);
+    }
+
+    [HttpGet("{courseId:uint}/sections")]
+    //[Authorize]
+    [EndpointSummary("Get course sections")]
+    [EndpointDescription("Returns the sections belonging to a course.")]
+    [ProducesResponseType<Wrapper<SectionResponseDto[]>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<SectionResponseDto[]>> GetCourseSections(uint courseId, CancellationToken cancellationToken)
+    {
+        await Task.CompletedTask;
+        return Ok(new[] { new SectionResponseDto(1, "Dummy Section", 1, courseId) });
     }
 
     [HttpPost]
@@ -86,6 +130,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     }
 
     [HttpGet("thumbnails")]
+    [RequiresPaging]
     [ResponseCache(Duration = 60, VaryByQueryKeys = ["*"])]
     //[Authorize]
     [EndpointSummary("Get course thumbnails")]

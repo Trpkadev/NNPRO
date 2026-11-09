@@ -13,3 +13,7 @@ public record CourseThumbnailResponseDto(
     string ShortDescription) {
     public static implicit operator CourseThumbnailResponseDto(Course c) => new(c.Id, c.Title, c.Description);
 }
+
+public sealed record CourseInstructorResponseDto(
+    uint Id,
+    string Username);

@@ -1,5 +1,7 @@
-﻿using Backend.Models.DTOs.Request;
+﻿using Backend.Extensions;
+using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers;
@@ -11,13 +13,46 @@ namespace Backend.Controllers;
 public class UserController : ApiControllerBase {
     [HttpGet]
     //[Authorize(Roles = "Admin")]
+    [RequiresPaging]
     [EndpointSummary("Get all users")]
     [EndpointDescription("Returns a paginated list of users registered in the system.")]
     [ProducesResponseType<Wrapper<UserResponseDto[]>>(StatusCodes.Status200OK)]
     public async Task<ActionResult<UserResponseDto[]>> GetUsers([FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
-        return Ok(new[] { new UserResponseDto(1, "dummy_user", "dummy@example.com", "Student") });
+        return OkPaged([new UserResponseDto(1, "dummy_user", "dummy@example.com", "Student")], requestQuery);
+    }
+
+    [HttpGet("me/courses")]
+    [Authorize]
+    [RequiresPaging]
+    [EndpointSummary("Get my courses")]
+    [ProducesResponseType<Wrapper<UserCourseResponseDto[]>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<UserCourseResponseDto[]>> GetMyCourses([FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
+    {
+        await Task.CompletedTask;
+        var courses = new[] {
+            new UserCourseResponseDto(1, "Dummy Course", "A short course description."),
+            new UserCourseResponseDto(2, "Another Course", "Another short description.")
+        };
+        return OkPaged(courses, requestQuery);
+    }
+
+    [HttpGet("me/progress")]
+    [Authorize]
+    [RequiresPaging]
+    [EndpointSummary("Get my learning progress")]
+    [ProducesResponseType<Wrapper<UserLessonProgressResponseDto[]>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<UserLessonProgressResponseDto[]>> GetMyProgress([FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
+    {
+        await Task.CompletedTask;
+        var progress = new[] {
+            new UserLessonProgressResponseDto(1, "Introduction", 1, 1, true, DateTime.UtcNow.AddDays(-1)),
+            new UserLessonProgressResponseDto(2, "Advanced topic", 1, 1, false, null)
+        };
+        return OkPaged(progress, requestQuery);
     }
 
     [HttpGet("{userId:uint}")]

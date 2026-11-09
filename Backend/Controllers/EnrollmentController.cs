@@ -1,5 +1,7 @@
+using Backend.Extensions;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers;
@@ -11,15 +13,20 @@ namespace Backend.Controllers;
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
 public class EnrollmentController : ApiControllerBase {
     [HttpGet("{courseId:uint}")]
-    //[Authorize(Roles = "Admin, Instructor")]
+    [Authorize(Roles = "Admin,Instructor")]
+    [RequiresPaging]
     [EndpointSummary("Get list of enrolled users in a course")]
     [EndpointDescription("Returns a paginated list of all students enrolled in a specific course.")]
-    [ProducesResponseType<Wrapper<EnrollmentResponseDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Wrapper<UserResponseDto[]>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<EnrollmentResponseDto>> GetEnrolledUsers([FromRoute] uint courseId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
+    public async Task<ActionResult<UserResponseDto[]>> GetEnrolledUsers([FromRoute] uint courseId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
-        return Ok(new EnrollmentResponseDto([new UserResponseDto(1, "dummy_user", "dummy@example.com", "Student")]));
+        var students = new[] {
+            new UserResponseDto(1, "dummy_student", "student@example.com", "Student"),
+            new UserResponseDto(2, "another_student", "another@example.com", "Student")
+        };
+        return OkPaged(students, requestQuery);
     }
 
     [HttpPost]
@@ -31,7 +38,7 @@ public class EnrollmentController : ApiControllerBase {
     {
         await Task.CompletedTask;
         const uint newEnrollmentId = 1;
-        return CreatedAtAction(nameof(GetEnrolledUsers), new { courseId = enrollmentRequest.CourseId }, newEnrollmentId);
+        return CreatedAtAction(nameof(GetEnrolledUsers), new { courseId = enrollmentRequest.CourseId, page = 1, pageSize = 10 }, newEnrollmentId);
     }
 
     [HttpPost("forceenroll")]
@@ -42,7 +49,7 @@ public class EnrollmentController : ApiControllerBase {
     {
         await Task.CompletedTask;
         const uint newEnrollmentId = 1;
-        return CreatedAtAction(nameof(GetEnrolledUsers), new { courseId = forceEnrollmentRequest.CourseId }, newEnrollmentId);
+        return CreatedAtAction(nameof(GetEnrolledUsers), new { courseId = forceEnrollmentRequest.CourseId, page = 1, pageSize = 10 }, newEnrollmentId);
     }
 
     [HttpDelete("{courseId:uint}")]

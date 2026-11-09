@@ -1,4 +1,5 @@
-﻿using Backend.Models.DTOs.Request;
+﻿using Backend.Extensions;
+using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,6 +20,33 @@ public class LessonController : ApiControllerBase {
     {
         await Task.CompletedTask;
         return Ok(new LessonResponseDto(id, "Dummy Lesson", "Dummy lesson content.", null, 1, 1));
+    }
+
+    [HttpGet("{lessonId:uint}/attachments")]
+    //[Authorize]
+    [RequiresPaging]
+    [EndpointSummary("Get lesson attachments")]
+    [ProducesResponseType<Wrapper<AttachmentResponseDto[]>>(StatusCodes.Status200OK)]
+    public async Task<ActionResult<AttachmentResponseDto[]>> GetAttachments([FromRoute] uint lessonId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
+    {
+        await Task.CompletedTask;
+        var attachments = new[] {
+            new AttachmentResponseDto(1, "guide.pdf", "https://example.com/guide.pdf", "application/pdf", 1024, lessonId),
+            new AttachmentResponseDto(2, "example.zip", "https://example.com/example.zip", "application/zip", 2048, lessonId)
+        };
+        return OkPaged(attachments, requestQuery);
+    }
+
+    [HttpGet("{lessonId:uint}/attachments")]
+    //[Authorize]
+    [EndpointSummary("Get lesson attachments")]
+    [EndpointDescription("Returns the attachments belonging to a lesson.")]
+    [ProducesResponseType<Wrapper<AttachmentResponseDto[]>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<AttachmentResponseDto[]>> GetAttachments([FromRoute] uint lessonId, CancellationToken cancellationToken)
+    {
+        await Task.CompletedTask;
+        return Ok(new[] { new AttachmentResponseDto(1, "dummy-file.pdf", "https://example.com/dummy-file.pdf", "application/pdf", 1024, lessonId) });
     }
 
     [HttpPost]
