@@ -12,9 +12,14 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     Button: typeof import('openvue/button')['default']
+    Card: typeof import('openvue/card')['default']
     ConfirmDialog: typeof import('openvue/confirmdialog')['default']
+    Drawer: typeof import('openvue/drawer')['default']
+    RoleGuard: typeof import('./components/auth/RoleGuard.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    Skeleton: typeof import('openvue/skeleton')['default']
+    Tag: typeof import('openvue/tag')['default']
     Toast: typeof import('openvue/toast')['default']
   }
 }

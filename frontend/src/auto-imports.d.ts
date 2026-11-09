@@ -8,12 +8,16 @@
 // biome-ignore lint: disable
 export {}
 declare global {
+  const ACCESS_TOKEN_KEY: typeof import('./services/api').ACCESS_TOKEN_KEY
   const EffectScope: typeof import('vue').EffectScope
   const FieldContextKey: typeof import('vee-validate').FieldContextKey
   const FormContextKey: typeof import('vee-validate').FormContextKey
+  const REFRESH_TOKEN_KEY: typeof import('./services/api').REFRESH_TOKEN_KEY
+  const TOKEN_EXPIRES_KEY: typeof import('./services/api').TOKEN_EXPIRES_KEY
   const acceptHMRUpdate: typeof import('pinia').acceptHMRUpdate
   const api: typeof import('./services/api').api
   const asyncComputed: typeof import('@vueuse/core').asyncComputed
+  const authService: typeof import('./services/auth.service').authService
   const autoResetRef: typeof import('@vueuse/core').autoResetRef
   const computed: typeof import('vue').computed
   const computedAsync: typeof import('@vueuse/core').computedAsync
@@ -23,6 +27,7 @@ declare global {
   const configure: typeof import('vee-validate').configure
   const controlledComputed: typeof import('@vueuse/core').controlledComputed
   const controlledRef: typeof import('@vueuse/core').controlledRef
+  const coursesService: typeof import('./services/courses.service').coursesService
   const createApp: typeof import('vue').createApp
   const createDisposableDirective: typeof import('@vueuse/core').createDisposableDirective
   const createEventHook: typeof import('@vueuse/core').createEventHook
@@ -38,14 +43,17 @@ declare global {
   const customRef: typeof import('vue').customRef
   const debouncedRef: typeof import('@vueuse/core').debouncedRef
   const debouncedWatch: typeof import('@vueuse/core').debouncedWatch
+  const decodeJwtUser: typeof import('./services/api').decodeJwtUser
   const defineAsyncComponent: typeof import('vue').defineAsyncComponent
   const defineComponent: typeof import('vue').defineComponent
   const defineRule: typeof import('vee-validate').defineRule
   const defineStore: typeof import('pinia').defineStore
   const eagerComputed: typeof import('@vueuse/core').eagerComputed
   const effectScope: typeof import('vue').effectScope
+  const enrollmentsService: typeof import('./services/enrollments.service').enrollmentsService
   const extendRef: typeof import('@vueuse/core').extendRef
   const getActivePinia: typeof import('pinia').getActivePinia
+  const getApiErrorMessage: typeof import('./services/api').getApiErrorMessage
   const getCurrentInstance: typeof import('vue').getCurrentInstance
   const getCurrentScope: typeof import('vue').getCurrentScope
   const getCurrentWatcher: typeof import('vue').getCurrentWatcher
@@ -61,6 +69,7 @@ declare global {
   const isShallow: typeof import('vue').isShallow
   const isTokenValid: typeof import('./services/api').isTokenValid
   const jwtDecode: typeof import('jwt-decode').jwtDecode
+  const lessonsService: typeof import('./services/lessons.service').lessonsService
   const makeDestructurable: typeof import('@vueuse/core').makeDestructurable
   const mapActions: typeof import('pinia').mapActions
   const mapGetters: typeof import('pinia').mapGetters
@@ -69,6 +78,7 @@ declare global {
   const mapWritableState: typeof import('pinia').mapWritableState
   const markRaw: typeof import('vue').markRaw
   const nextTick: typeof import('vue').nextTick
+  const normalizeUserRole: typeof import('./services/api').normalizeUserRole
   const onActivated: typeof import('vue').onActivated
   const onBeforeMount: typeof import('vue').onBeforeMount
   const onBeforeRouteLeave: typeof import('vue-router').onBeforeRouteLeave
@@ -93,6 +103,9 @@ declare global {
   const pausableWatch: typeof import('@vueuse/core').pausableWatch
   const provide: typeof import('vue').provide
   const provideLocal: typeof import('@vueuse/core').provideLocal
+  const queryKeys: typeof import('./composables/queryKeys').queryKeys
+  const questionsService: typeof import('./services/questions.service').questionsService
+  const quizzesService: typeof import('./services/quizzes.service').quizzesService
   const reactify: typeof import('@vueuse/core').reactify
   const reactifyObject: typeof import('@vueuse/core').reactifyObject
   const reactive: typeof import('vue').reactive
@@ -108,6 +121,8 @@ declare global {
   const refThrottled: typeof import('@vueuse/core').refThrottled
   const refWithControl: typeof import('@vueuse/core').refWithControl
   const resolveComponent: typeof import('vue').resolveComponent
+  const sectionsService: typeof import('./services/sections.service').sectionsService
+  const serializeQueryParams: typeof import('./services/api').serializeQueryParams
   const setActivePinia: typeof import('pinia').setActivePinia
   const setMapStoreSuffix: typeof import('pinia').setMapStoreSuffix
   const shallowReactive: typeof import('vue').shallowReactive
@@ -133,6 +148,7 @@ declare global {
   const unrefElement: typeof import('@vueuse/core').unrefElement
   const until: typeof import('@vueuse/core').until
   const useActiveElement: typeof import('@vueuse/core').useActiveElement
+  const useAddLessonAttachmentMutation: typeof import('./composables/useLessonsQueries').useAddLessonAttachmentMutation
   const useAnimate: typeof import('@vueuse/core').useAnimate
   const useArrayDifference: typeof import('@vueuse/core').useArrayDifference
   const useArrayEvery: typeof import('@vueuse/core').useArrayEvery
@@ -164,7 +180,16 @@ declare global {
   const useConfirmDialog: typeof import('@vueuse/core').useConfirmDialog
   const useCountdown: typeof import('@vueuse/core').useCountdown
   const useCounter: typeof import('@vueuse/core').useCounter
-  const useCounterStore: typeof import('./stores/counter').useCounterStore
+  const useCourseDetailQuery: typeof import('./composables/useCoursesQueries').useCourseDetailQuery
+  const useCourseEnrollmentsQuery: typeof import('./composables/useEnrollmentsQueries').useCourseEnrollmentsQuery
+  const useCourseThumbnailsQuery: typeof import('./composables/useCoursesQueries').useCourseThumbnailsQuery
+  const useCoursesQuery: typeof import('./composables/useCoursesQueries').useCoursesQuery
+  const useCreateCourseMutation: typeof import('./composables/useCoursesQueries').useCreateCourseMutation
+  const useCreateLessonMutation: typeof import('./composables/useLessonsQueries').useCreateLessonMutation
+  const useCreateQuestionMutation: typeof import('./composables/useQuestionsQueries').useCreateQuestionMutation
+  const useCreateQuizMutation: typeof import('./composables/useQuizzesQueries').useCreateQuizMutation
+  const useCreateSectionMutation: typeof import('./composables/useSectionsQueries').useCreateSectionMutation
+  const useCreateUserMutation: typeof import('./composables/useUsersQueries').useCreateUserMutation
   const useCssModule: typeof import('vue').useCssModule
   const useCssSupports: typeof import('@vueuse/core').useCssSupports
   const useCssVar: typeof import('@vueuse/core').useCssVar
@@ -176,6 +201,13 @@ declare global {
   const useDebounce: typeof import('@vueuse/core').useDebounce
   const useDebounceFn: typeof import('@vueuse/core').useDebounceFn
   const useDebouncedRefHistory: typeof import('@vueuse/core').useDebouncedRefHistory
+  const useDeleteCourseMutation: typeof import('./composables/useCoursesQueries').useDeleteCourseMutation
+  const useDeleteLessonAttachmentMutation: typeof import('./composables/useLessonsQueries').useDeleteLessonAttachmentMutation
+  const useDeleteLessonMutation: typeof import('./composables/useLessonsQueries').useDeleteLessonMutation
+  const useDeleteQuestionMutation: typeof import('./composables/useQuestionsQueries').useDeleteQuestionMutation
+  const useDeleteQuizMutation: typeof import('./composables/useQuizzesQueries').useDeleteQuizMutation
+  const useDeleteSectionMutation: typeof import('./composables/useSectionsQueries').useDeleteSectionMutation
+  const useDeleteUserMutation: typeof import('./composables/useUsersQueries').useDeleteUserMutation
   const useDeviceMotion: typeof import('@vueuse/core').useDeviceMotion
   const useDeviceOrientation: typeof import('@vueuse/core').useDeviceOrientation
   const useDevicePixelRatio: typeof import('@vueuse/core').useDevicePixelRatio
@@ -190,6 +222,8 @@ declare global {
   const useElementOverflow: typeof import('@vueuse/core').useElementOverflow
   const useElementSize: typeof import('@vueuse/core').useElementSize
   const useElementVisibility: typeof import('@vueuse/core').useElementVisibility
+  const useEndQuizAttemptMutation: typeof import('./composables/useQuizzesQueries').useEndQuizAttemptMutation
+  const useEnrollCourseMutation: typeof import('./composables/useEnrollmentsQueries').useEnrollCourseMutation
   const useEventBus: typeof import('@vueuse/core').useEventBus
   const useEventListener: typeof import('@vueuse/core').useEventListener
   const useEventSource: typeof import('@vueuse/core').useEventSource
@@ -204,6 +238,7 @@ declare global {
   const useFileSystemAccess: typeof import('@vueuse/core').useFileSystemAccess
   const useFocus: typeof import('@vueuse/core').useFocus
   const useFocusWithin: typeof import('@vueuse/core').useFocusWithin
+  const useForceEnrollMutation: typeof import('./composables/useEnrollmentsQueries').useForceEnrollMutation
   const useForm: typeof import('vee-validate').useForm
   const useFormErrors: typeof import('vee-validate').useFormErrors
   const useFormValues: typeof import('vee-validate').useFormValues
@@ -228,9 +263,12 @@ declare global {
   const useIsSubmitting: typeof import('vee-validate').useIsSubmitting
   const useKeyModifier: typeof import('@vueuse/core').useKeyModifier
   const useLastChanged: typeof import('@vueuse/core').useLastChanged
+  const useLessonDetailQuery: typeof import('./composables/useLessonsQueries').useLessonDetailQuery
   const useLink: typeof import('vue-router').useLink
   const useLiveAnnouncer: typeof import('@vueuse/core').useLiveAnnouncer
   const useLocalStorage: typeof import('@vueuse/core').useLocalStorage
+  const useLoginMutation: typeof import('./composables/useAuthQueries').useLoginMutation
+  const useLogoutMutation: typeof import('./composables/useAuthQueries').useLogoutMutation
   const useMagicKeys: typeof import('@vueuse/core').useMagicKeys
   const useManualRefHistory: typeof import('@vueuse/core').useManualRefHistory
   const useMediaControls: typeof import('@vueuse/core').useMediaControls
@@ -255,6 +293,7 @@ declare global {
   const useParentElement: typeof import('@vueuse/core').useParentElement
   const usePerformanceObserver: typeof import('@vueuse/core').usePerformanceObserver
   const usePermission: typeof import('@vueuse/core').usePermission
+  const usePermissions: typeof import('./composables/usePermissions').usePermissions
   const usePointer: typeof import('@vueuse/core').usePointer
   const usePointerLock: typeof import('@vueuse/core').usePointerLock
   const usePointerSwipe: typeof import('@vueuse/core').usePointerSwipe
@@ -267,8 +306,15 @@ declare global {
   const usePrevious: typeof import('@vueuse/core').usePrevious
   const useQuery: typeof import('@tanstack/vue-query').useQuery
   const useQueryClient: typeof import('@tanstack/vue-query').useQueryClient
+  const useQuestionDetailQuery: typeof import('./composables/useQuestionsQueries').useQuestionDetailQuery
+  const useQuizAttemptDetailQuery: typeof import('./composables/useQuizzesQueries').useQuizAttemptDetailQuery
+  const useQuizAttemptsQuery: typeof import('./composables/useQuizzesQueries').useQuizAttemptsQuery
+  const useQuizDetailQuery: typeof import('./composables/useQuizzesQueries').useQuizDetailQuery
+  const useQuizEditorQuery: typeof import('./composables/useQuizzesQueries').useQuizEditorQuery
   const useRafFn: typeof import('@vueuse/core').useRafFn
   const useRefHistory: typeof import('@vueuse/core').useRefHistory
+  const useRegisterMutation: typeof import('./composables/useAuthQueries').useRegisterMutation
+  const useRemoveStudentEnrollmentMutation: typeof import('./composables/useEnrollmentsQueries').useRemoveStudentEnrollmentMutation
   const useResetForm: typeof import('vee-validate').useResetForm
   const useResizeObserver: typeof import('@vueuse/core').useResizeObserver
   const useRoute: typeof import('vue-router').useRoute
@@ -279,12 +325,14 @@ declare global {
   const useScriptTag: typeof import('@vueuse/core').useScriptTag
   const useScroll: typeof import('@vueuse/core').useScroll
   const useScrollLock: typeof import('@vueuse/core').useScrollLock
+  const useSectionDetailQuery: typeof import('./composables/useSectionsQueries').useSectionDetailQuery
   const useSessionStorage: typeof import('@vueuse/core').useSessionStorage
   const useShare: typeof import('@vueuse/core').useShare
   const useSlots: typeof import('vue').useSlots
   const useSorted: typeof import('@vueuse/core').useSorted
   const useSpeechRecognition: typeof import('@vueuse/core').useSpeechRecognition
   const useSpeechSynthesis: typeof import('@vueuse/core').useSpeechSynthesis
+  const useStartQuizAttemptMutation: typeof import('./composables/useQuizzesQueries').useStartQuizAttemptMutation
   const useStepper: typeof import('@vueuse/core').useStepper
   const useStorage: typeof import('@vueuse/core').useStorage
   const useStorageAsync: typeof import('@vueuse/core').useStorageAsync
@@ -313,8 +361,18 @@ declare global {
   const useToString: typeof import('@vueuse/core').useToString
   const useToggle: typeof import('@vueuse/core').useToggle
   const useTransition: typeof import('@vueuse/core').useTransition
+  const useUnenrollCourseMutation: typeof import('./composables/useEnrollmentsQueries').useUnenrollCourseMutation
+  const useUpdateCourseMutation: typeof import('./composables/useCoursesQueries').useUpdateCourseMutation
+  const useUpdateLessonMutation: typeof import('./composables/useLessonsQueries').useUpdateLessonMutation
+  const useUpdateLessonProgressMutation: typeof import('./composables/useLessonsQueries').useUpdateLessonProgressMutation
+  const useUpdateQuestionMutation: typeof import('./composables/useQuestionsQueries').useUpdateQuestionMutation
+  const useUpdateQuizMutation: typeof import('./composables/useQuizzesQueries').useUpdateQuizMutation
+  const useUpdateSectionMutation: typeof import('./composables/useSectionsQueries').useUpdateSectionMutation
+  const useUpdateUserMutation: typeof import('./composables/useUsersQueries').useUpdateUserMutation
   const useUrlSearchParams: typeof import('@vueuse/core').useUrlSearchParams
+  const useUserDetailQuery: typeof import('./composables/useUsersQueries').useUserDetailQuery
   const useUserMedia: typeof import('@vueuse/core').useUserMedia
+  const useUsersQuery: typeof import('./composables/useUsersQueries').useUsersQuery
   const useVModel: typeof import('@vueuse/core').useVModel
   const useVModels: typeof import('@vueuse/core').useVModels
   const useValidateField: typeof import('vee-validate').useValidateField
@@ -330,6 +388,7 @@ declare global {
   const useWindowFocus: typeof import('@vueuse/core').useWindowFocus
   const useWindowScroll: typeof import('@vueuse/core').useWindowScroll
   const useWindowSize: typeof import('@vueuse/core').useWindowSize
+  const usersService: typeof import('./services/users.service').usersService
   const validate: typeof import('vee-validate').validate
   const watch: typeof import('vue').watch
   const watchArray: typeof import('@vueuse/core').watchArray
@@ -360,12 +419,16 @@ import { UnwrapRef } from 'vue'
 declare module 'vue' {
   interface GlobalComponents {}
   interface ComponentCustomProperties {
+    readonly ACCESS_TOKEN_KEY: UnwrapRef<typeof import('./services/api')['ACCESS_TOKEN_KEY']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly FieldContextKey: UnwrapRef<typeof import('vee-validate')['FieldContextKey']>
     readonly FormContextKey: UnwrapRef<typeof import('vee-validate')['FormContextKey']>
+    readonly REFRESH_TOKEN_KEY: UnwrapRef<typeof import('./services/api')['REFRESH_TOKEN_KEY']>
+    readonly TOKEN_EXPIRES_KEY: UnwrapRef<typeof import('./services/api')['TOKEN_EXPIRES_KEY']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
     readonly api: UnwrapRef<typeof import('./services/api')['api']>
     readonly asyncComputed: UnwrapRef<typeof import('@vueuse/core')['asyncComputed']>
+    readonly authService: UnwrapRef<typeof import('./services/auth.service')['authService']>
     readonly autoResetRef: UnwrapRef<typeof import('@vueuse/core')['autoResetRef']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
     readonly computedAsync: UnwrapRef<typeof import('@vueuse/core')['computedAsync']>
@@ -375,6 +438,7 @@ declare module 'vue' {
     readonly configure: UnwrapRef<typeof import('vee-validate')['configure']>
     readonly controlledComputed: UnwrapRef<typeof import('@vueuse/core')['controlledComputed']>
     readonly controlledRef: UnwrapRef<typeof import('@vueuse/core')['controlledRef']>
+    readonly coursesService: UnwrapRef<typeof import('./services/courses.service')['coursesService']>
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
     readonly createDisposableDirective: UnwrapRef<typeof import('@vueuse/core')['createDisposableDirective']>
     readonly createEventHook: UnwrapRef<typeof import('@vueuse/core')['createEventHook']>
@@ -390,14 +454,17 @@ declare module 'vue' {
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
     readonly debouncedRef: UnwrapRef<typeof import('@vueuse/core')['debouncedRef']>
     readonly debouncedWatch: UnwrapRef<typeof import('@vueuse/core')['debouncedWatch']>
+    readonly decodeJwtUser: UnwrapRef<typeof import('./services/api')['decodeJwtUser']>
     readonly defineAsyncComponent: UnwrapRef<typeof import('vue')['defineAsyncComponent']>
     readonly defineComponent: UnwrapRef<typeof import('vue')['defineComponent']>
     readonly defineRule: UnwrapRef<typeof import('vee-validate')['defineRule']>
     readonly defineStore: UnwrapRef<typeof import('pinia')['defineStore']>
     readonly eagerComputed: UnwrapRef<typeof import('@vueuse/core')['eagerComputed']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
+    readonly enrollmentsService: UnwrapRef<typeof import('./services/enrollments.service')['enrollmentsService']>
     readonly extendRef: UnwrapRef<typeof import('@vueuse/core')['extendRef']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
+    readonly getApiErrorMessage: UnwrapRef<typeof import('./services/api')['getApiErrorMessage']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
     readonly getCurrentWatcher: UnwrapRef<typeof import('vue')['getCurrentWatcher']>
@@ -413,6 +480,7 @@ declare module 'vue' {
     readonly isShallow: UnwrapRef<typeof import('vue')['isShallow']>
     readonly isTokenValid: UnwrapRef<typeof import('./services/api')['isTokenValid']>
     readonly jwtDecode: UnwrapRef<typeof import('jwt-decode')['jwtDecode']>
+    readonly lessonsService: UnwrapRef<typeof import('./services/lessons.service')['lessonsService']>
     readonly makeDestructurable: UnwrapRef<typeof import('@vueuse/core')['makeDestructurable']>
     readonly mapActions: UnwrapRef<typeof import('pinia')['mapActions']>
     readonly mapGetters: UnwrapRef<typeof import('pinia')['mapGetters']>
@@ -421,6 +489,7 @@ declare module 'vue' {
     readonly mapWritableState: UnwrapRef<typeof import('pinia')['mapWritableState']>
     readonly markRaw: UnwrapRef<typeof import('vue')['markRaw']>
     readonly nextTick: UnwrapRef<typeof import('vue')['nextTick']>
+    readonly normalizeUserRole: UnwrapRef<typeof import('./services/api')['normalizeUserRole']>
     readonly onActivated: UnwrapRef<typeof import('vue')['onActivated']>
     readonly onBeforeMount: UnwrapRef<typeof import('vue')['onBeforeMount']>
     readonly onBeforeRouteLeave: UnwrapRef<typeof import('vue-router')['onBeforeRouteLeave']>
@@ -445,6 +514,9 @@ declare module 'vue' {
     readonly pausableWatch: UnwrapRef<typeof import('@vueuse/core')['pausableWatch']>
     readonly provide: UnwrapRef<typeof import('vue')['provide']>
     readonly provideLocal: UnwrapRef<typeof import('@vueuse/core')['provideLocal']>
+    readonly queryKeys: UnwrapRef<typeof import('./composables/queryKeys')['queryKeys']>
+    readonly questionsService: UnwrapRef<typeof import('./services/questions.service')['questionsService']>
+    readonly quizzesService: UnwrapRef<typeof import('./services/quizzes.service')['quizzesService']>
     readonly reactify: UnwrapRef<typeof import('@vueuse/core')['reactify']>
     readonly reactifyObject: UnwrapRef<typeof import('@vueuse/core')['reactifyObject']>
     readonly reactive: UnwrapRef<typeof import('vue')['reactive']>
@@ -460,6 +532,8 @@ declare module 'vue' {
     readonly refThrottled: UnwrapRef<typeof import('@vueuse/core')['refThrottled']>
     readonly refWithControl: UnwrapRef<typeof import('@vueuse/core')['refWithControl']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
+    readonly sectionsService: UnwrapRef<typeof import('./services/sections.service')['sectionsService']>
+    readonly serializeQueryParams: UnwrapRef<typeof import('./services/api')['serializeQueryParams']>
     readonly setActivePinia: UnwrapRef<typeof import('pinia')['setActivePinia']>
     readonly setMapStoreSuffix: UnwrapRef<typeof import('pinia')['setMapStoreSuffix']>
     readonly shallowReactive: UnwrapRef<typeof import('vue')['shallowReactive']>
@@ -485,6 +559,7 @@ declare module 'vue' {
     readonly unrefElement: UnwrapRef<typeof import('@vueuse/core')['unrefElement']>
     readonly until: UnwrapRef<typeof import('@vueuse/core')['until']>
     readonly useActiveElement: UnwrapRef<typeof import('@vueuse/core')['useActiveElement']>
+    readonly useAddLessonAttachmentMutation: UnwrapRef<typeof import('./composables/useLessonsQueries')['useAddLessonAttachmentMutation']>
     readonly useAnimate: UnwrapRef<typeof import('@vueuse/core')['useAnimate']>
     readonly useArrayDifference: UnwrapRef<typeof import('@vueuse/core')['useArrayDifference']>
     readonly useArrayEvery: UnwrapRef<typeof import('@vueuse/core')['useArrayEvery']>
@@ -516,6 +591,16 @@ declare module 'vue' {
     readonly useConfirmDialog: UnwrapRef<typeof import('@vueuse/core')['useConfirmDialog']>
     readonly useCountdown: UnwrapRef<typeof import('@vueuse/core')['useCountdown']>
     readonly useCounter: UnwrapRef<typeof import('@vueuse/core')['useCounter']>
+    readonly useCourseDetailQuery: UnwrapRef<typeof import('./composables/useCoursesQueries')['useCourseDetailQuery']>
+    readonly useCourseEnrollmentsQuery: UnwrapRef<typeof import('./composables/useEnrollmentsQueries')['useCourseEnrollmentsQuery']>
+    readonly useCourseThumbnailsQuery: UnwrapRef<typeof import('./composables/useCoursesQueries')['useCourseThumbnailsQuery']>
+    readonly useCoursesQuery: UnwrapRef<typeof import('./composables/useCoursesQueries')['useCoursesQuery']>
+    readonly useCreateCourseMutation: UnwrapRef<typeof import('./composables/useCoursesQueries')['useCreateCourseMutation']>
+    readonly useCreateLessonMutation: UnwrapRef<typeof import('./composables/useLessonsQueries')['useCreateLessonMutation']>
+    readonly useCreateQuestionMutation: UnwrapRef<typeof import('./composables/useQuestionsQueries')['useCreateQuestionMutation']>
+    readonly useCreateQuizMutation: UnwrapRef<typeof import('./composables/useQuizzesQueries')['useCreateQuizMutation']>
+    readonly useCreateSectionMutation: UnwrapRef<typeof import('./composables/useSectionsQueries')['useCreateSectionMutation']>
+    readonly useCreateUserMutation: UnwrapRef<typeof import('./composables/useUsersQueries')['useCreateUserMutation']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
     readonly useCssSupports: UnwrapRef<typeof import('@vueuse/core')['useCssSupports']>
     readonly useCssVar: UnwrapRef<typeof import('@vueuse/core')['useCssVar']>
@@ -527,6 +612,13 @@ declare module 'vue' {
     readonly useDebounce: UnwrapRef<typeof import('@vueuse/core')['useDebounce']>
     readonly useDebounceFn: UnwrapRef<typeof import('@vueuse/core')['useDebounceFn']>
     readonly useDebouncedRefHistory: UnwrapRef<typeof import('@vueuse/core')['useDebouncedRefHistory']>
+    readonly useDeleteCourseMutation: UnwrapRef<typeof import('./composables/useCoursesQueries')['useDeleteCourseMutation']>
+    readonly useDeleteLessonAttachmentMutation: UnwrapRef<typeof import('./composables/useLessonsQueries')['useDeleteLessonAttachmentMutation']>
+    readonly useDeleteLessonMutation: UnwrapRef<typeof import('./composables/useLessonsQueries')['useDeleteLessonMutation']>
+    readonly useDeleteQuestionMutation: UnwrapRef<typeof import('./composables/useQuestionsQueries')['useDeleteQuestionMutation']>
+    readonly useDeleteQuizMutation: UnwrapRef<typeof import('./composables/useQuizzesQueries')['useDeleteQuizMutation']>
+    readonly useDeleteSectionMutation: UnwrapRef<typeof import('./composables/useSectionsQueries')['useDeleteSectionMutation']>
+    readonly useDeleteUserMutation: UnwrapRef<typeof import('./composables/useUsersQueries')['useDeleteUserMutation']>
     readonly useDeviceMotion: UnwrapRef<typeof import('@vueuse/core')['useDeviceMotion']>
     readonly useDeviceOrientation: UnwrapRef<typeof import('@vueuse/core')['useDeviceOrientation']>
     readonly useDevicePixelRatio: UnwrapRef<typeof import('@vueuse/core')['useDevicePixelRatio']>
@@ -541,6 +633,8 @@ declare module 'vue' {
     readonly useElementOverflow: UnwrapRef<typeof import('@vueuse/core')['useElementOverflow']>
     readonly useElementSize: UnwrapRef<typeof import('@vueuse/core')['useElementSize']>
     readonly useElementVisibility: UnwrapRef<typeof import('@vueuse/core')['useElementVisibility']>
+    readonly useEndQuizAttemptMutation: UnwrapRef<typeof import('./composables/useQuizzesQueries')['useEndQuizAttemptMutation']>
+    readonly useEnrollCourseMutation: UnwrapRef<typeof import('./composables/useEnrollmentsQueries')['useEnrollCourseMutation']>
     readonly useEventBus: UnwrapRef<typeof import('@vueuse/core')['useEventBus']>
     readonly useEventListener: UnwrapRef<typeof import('@vueuse/core')['useEventListener']>
     readonly useEventSource: UnwrapRef<typeof import('@vueuse/core')['useEventSource']>
@@ -555,6 +649,7 @@ declare module 'vue' {
     readonly useFileSystemAccess: UnwrapRef<typeof import('@vueuse/core')['useFileSystemAccess']>
     readonly useFocus: UnwrapRef<typeof import('@vueuse/core')['useFocus']>
     readonly useFocusWithin: UnwrapRef<typeof import('@vueuse/core')['useFocusWithin']>
+    readonly useForceEnrollMutation: UnwrapRef<typeof import('./composables/useEnrollmentsQueries')['useForceEnrollMutation']>
     readonly useForm: UnwrapRef<typeof import('vee-validate')['useForm']>
     readonly useFormErrors: UnwrapRef<typeof import('vee-validate')['useFormErrors']>
     readonly useFormValues: UnwrapRef<typeof import('vee-validate')['useFormValues']>
@@ -579,9 +674,12 @@ declare module 'vue' {
     readonly useIsSubmitting: UnwrapRef<typeof import('vee-validate')['useIsSubmitting']>
     readonly useKeyModifier: UnwrapRef<typeof import('@vueuse/core')['useKeyModifier']>
     readonly useLastChanged: UnwrapRef<typeof import('@vueuse/core')['useLastChanged']>
+    readonly useLessonDetailQuery: UnwrapRef<typeof import('./composables/useLessonsQueries')['useLessonDetailQuery']>
     readonly useLink: UnwrapRef<typeof import('vue-router')['useLink']>
     readonly useLiveAnnouncer: UnwrapRef<typeof import('@vueuse/core')['useLiveAnnouncer']>
     readonly useLocalStorage: UnwrapRef<typeof import('@vueuse/core')['useLocalStorage']>
+    readonly useLoginMutation: UnwrapRef<typeof import('./composables/useAuthQueries')['useLoginMutation']>
+    readonly useLogoutMutation: UnwrapRef<typeof import('./composables/useAuthQueries')['useLogoutMutation']>
     readonly useMagicKeys: UnwrapRef<typeof import('@vueuse/core')['useMagicKeys']>
     readonly useManualRefHistory: UnwrapRef<typeof import('@vueuse/core')['useManualRefHistory']>
     readonly useMediaControls: UnwrapRef<typeof import('@vueuse/core')['useMediaControls']>
@@ -606,6 +704,7 @@ declare module 'vue' {
     readonly useParentElement: UnwrapRef<typeof import('@vueuse/core')['useParentElement']>
     readonly usePerformanceObserver: UnwrapRef<typeof import('@vueuse/core')['usePerformanceObserver']>
     readonly usePermission: UnwrapRef<typeof import('@vueuse/core')['usePermission']>
+    readonly usePermissions: UnwrapRef<typeof import('./composables/usePermissions')['usePermissions']>
     readonly usePointer: UnwrapRef<typeof import('@vueuse/core')['usePointer']>
     readonly usePointerLock: UnwrapRef<typeof import('@vueuse/core')['usePointerLock']>
     readonly usePointerSwipe: UnwrapRef<typeof import('@vueuse/core')['usePointerSwipe']>
@@ -618,8 +717,15 @@ declare module 'vue' {
     readonly usePrevious: UnwrapRef<typeof import('@vueuse/core')['usePrevious']>
     readonly useQuery: UnwrapRef<typeof import('@tanstack/vue-query')['useQuery']>
     readonly useQueryClient: UnwrapRef<typeof import('@tanstack/vue-query')['useQueryClient']>
+    readonly useQuestionDetailQuery: UnwrapRef<typeof import('./composables/useQuestionsQueries')['useQuestionDetailQuery']>
+    readonly useQuizAttemptDetailQuery: UnwrapRef<typeof import('./composables/useQuizzesQueries')['useQuizAttemptDetailQuery']>
+    readonly useQuizAttemptsQuery: UnwrapRef<typeof import('./composables/useQuizzesQueries')['useQuizAttemptsQuery']>
+    readonly useQuizDetailQuery: UnwrapRef<typeof import('./composables/useQuizzesQueries')['useQuizDetailQuery']>
+    readonly useQuizEditorQuery: UnwrapRef<typeof import('./composables/useQuizzesQueries')['useQuizEditorQuery']>
     readonly useRafFn: UnwrapRef<typeof import('@vueuse/core')['useRafFn']>
     readonly useRefHistory: UnwrapRef<typeof import('@vueuse/core')['useRefHistory']>
+    readonly useRegisterMutation: UnwrapRef<typeof import('./composables/useAuthQueries')['useRegisterMutation']>
+    readonly useRemoveStudentEnrollmentMutation: UnwrapRef<typeof import('./composables/useEnrollmentsQueries')['useRemoveStudentEnrollmentMutation']>
     readonly useResetForm: UnwrapRef<typeof import('vee-validate')['useResetForm']>
     readonly useResizeObserver: UnwrapRef<typeof import('@vueuse/core')['useResizeObserver']>
     readonly useRoute: UnwrapRef<typeof import('vue-router')['useRoute']>
@@ -630,12 +736,14 @@ declare module 'vue' {
     readonly useScriptTag: UnwrapRef<typeof import('@vueuse/core')['useScriptTag']>
     readonly useScroll: UnwrapRef<typeof import('@vueuse/core')['useScroll']>
     readonly useScrollLock: UnwrapRef<typeof import('@vueuse/core')['useScrollLock']>
+    readonly useSectionDetailQuery: UnwrapRef<typeof import('./composables/useSectionsQueries')['useSectionDetailQuery']>
     readonly useSessionStorage: UnwrapRef<typeof import('@vueuse/core')['useSessionStorage']>
     readonly useShare: UnwrapRef<typeof import('@vueuse/core')['useShare']>
     readonly useSlots: UnwrapRef<typeof import('vue')['useSlots']>
     readonly useSorted: UnwrapRef<typeof import('@vueuse/core')['useSorted']>
     readonly useSpeechRecognition: UnwrapRef<typeof import('@vueuse/core')['useSpeechRecognition']>
     readonly useSpeechSynthesis: UnwrapRef<typeof import('@vueuse/core')['useSpeechSynthesis']>
+    readonly useStartQuizAttemptMutation: UnwrapRef<typeof import('./composables/useQuizzesQueries')['useStartQuizAttemptMutation']>
     readonly useStepper: UnwrapRef<typeof import('@vueuse/core')['useStepper']>
     readonly useStorage: UnwrapRef<typeof import('@vueuse/core')['useStorage']>
     readonly useStorageAsync: UnwrapRef<typeof import('@vueuse/core')['useStorageAsync']>
@@ -664,8 +772,18 @@ declare module 'vue' {
     readonly useToString: UnwrapRef<typeof import('@vueuse/core')['useToString']>
     readonly useToggle: UnwrapRef<typeof import('@vueuse/core')['useToggle']>
     readonly useTransition: UnwrapRef<typeof import('@vueuse/core')['useTransition']>
+    readonly useUnenrollCourseMutation: UnwrapRef<typeof import('./composables/useEnrollmentsQueries')['useUnenrollCourseMutation']>
+    readonly useUpdateCourseMutation: UnwrapRef<typeof import('./composables/useCoursesQueries')['useUpdateCourseMutation']>
+    readonly useUpdateLessonMutation: UnwrapRef<typeof import('./composables/useLessonsQueries')['useUpdateLessonMutation']>
+    readonly useUpdateLessonProgressMutation: UnwrapRef<typeof import('./composables/useLessonsQueries')['useUpdateLessonProgressMutation']>
+    readonly useUpdateQuestionMutation: UnwrapRef<typeof import('./composables/useQuestionsQueries')['useUpdateQuestionMutation']>
+    readonly useUpdateQuizMutation: UnwrapRef<typeof import('./composables/useQuizzesQueries')['useUpdateQuizMutation']>
+    readonly useUpdateSectionMutation: UnwrapRef<typeof import('./composables/useSectionsQueries')['useUpdateSectionMutation']>
+    readonly useUpdateUserMutation: UnwrapRef<typeof import('./composables/useUsersQueries')['useUpdateUserMutation']>
     readonly useUrlSearchParams: UnwrapRef<typeof import('@vueuse/core')['useUrlSearchParams']>
+    readonly useUserDetailQuery: UnwrapRef<typeof import('./composables/useUsersQueries')['useUserDetailQuery']>
     readonly useUserMedia: UnwrapRef<typeof import('@vueuse/core')['useUserMedia']>
+    readonly useUsersQuery: UnwrapRef<typeof import('./composables/useUsersQueries')['useUsersQuery']>
     readonly useVModel: UnwrapRef<typeof import('@vueuse/core')['useVModel']>
     readonly useVModels: UnwrapRef<typeof import('@vueuse/core')['useVModels']>
     readonly useValidateField: UnwrapRef<typeof import('vee-validate')['useValidateField']>
@@ -681,6 +799,7 @@ declare module 'vue' {
     readonly useWindowFocus: UnwrapRef<typeof import('@vueuse/core')['useWindowFocus']>
     readonly useWindowScroll: UnwrapRef<typeof import('@vueuse/core')['useWindowScroll']>
     readonly useWindowSize: UnwrapRef<typeof import('@vueuse/core')['useWindowSize']>
+    readonly usersService: UnwrapRef<typeof import('./services/users.service')['usersService']>
     readonly validate: UnwrapRef<typeof import('vee-validate')['validate']>
     readonly watch: UnwrapRef<typeof import('vue')['watch']>
     readonly watchArray: UnwrapRef<typeof import('@vueuse/core')['watchArray']>
