@@ -15,6 +15,8 @@ import {
 } from '@/types/api'
 import type { AuthenticatedUser } from '@/types/auth'
 
+let refreshPromise: Promise<AuthResponseDto | null> | null = null
+
 export const useAuthStore = defineStore('auth', () => {
   const token = useStorage<string | null>(ACCESS_TOKEN_KEY, null)
   const refreshToken = useStorage<string | null>(REFRESH_TOKEN_KEY, null)
@@ -72,21 +74,30 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function refreshTokens(): Promise<AuthResponseDto | null> {
+    if (refreshPromise) return refreshPromise
+
     if (!token.value || !refreshToken.value) {
       clearAuth()
       return null
     }
-    try {
-      const authData = await authService.refresh({
-        accessToken: token.value,
-        refreshToken: refreshToken.value,
-      })
-      setAuth(authData)
-      return authData
-    } catch {
-      clearAuth()
-      return null
-    }
+
+    refreshPromise = (async () => {
+      try {
+        const authData = await authService.refresh({
+          accessToken: token.value!,
+          refreshToken: refreshToken.value!,
+        })
+        setAuth(authData)
+        return authData
+      } catch {
+        clearAuth()
+        return null
+      } finally {
+        refreshPromise = null
+      }
+    })()
+
+    return refreshPromise
   }
 
   async function logout(): Promise<void> {
@@ -95,8 +106,8 @@ export const useAuthStore = defineStore('auth', () => {
     if (currentRefreshToken) {
       try {
         await authService.logout({ refreshToken: currentRefreshToken })
-      } catch {
-        // Ignorujeme chybu při odhlašování na serveru, lokální session je již smazána
+      } catch (error) {
+        throw error
       }
     }
   }

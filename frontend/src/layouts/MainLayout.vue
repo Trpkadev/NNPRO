@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useToast } from 'openvue/usetoast'
 import { UserRoles } from '@/types/api'
+import { getApiErrorMessage } from '@/services/api'
 
 const { t, locale } = useI18n()
 const router = useRouter()
@@ -64,13 +65,22 @@ const roleLabel = computed(() => {
 
 async function handleLogout() {
   mobileMenuVisible.value = false
-  await logoutMutation.mutateAsync()
-  toast.add({
-    severity: 'info',
-    summary: t('auth.logoutSuccess'),
-    life: 3000,
-  })
-  await router.push({ name: 'login' })
+  try {
+    await logoutMutation.mutateAsync()
+    toast.add({
+      severity: 'info',
+      summary: t('auth.logoutSuccess'),
+      life: 3000,
+    })
+  } catch (error) {
+    toast.add({
+      severity: 'error',
+      summary: getApiErrorMessage(error, t('auth.logoutError')),
+      life: 5000,
+    })
+  } finally {
+    await router.push({ name: 'login' })
+  }
 }
 </script>
 
@@ -266,4 +276,3 @@ async function handleLogout() {
     </main>
   </div>
 </template>
-

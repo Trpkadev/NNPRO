@@ -50,6 +50,8 @@ const messages = {
       loginSuccess: 'Přihlášení proběhlo úspěšně',
       registerSuccess: 'Registrace proběhla úspěšně',
       logoutSuccess: 'Byli jste úspěšně odhlášeni',
+      logoutError: 'Odhlášení na serveru se nezdařilo, lokální relace byla ukončena',
+      loggedInAs: 'Přihlášen jako',
       loginError: 'Neplatné přihlašovací údaje',
       registerError: 'Registrace se nezdařila',
     },
@@ -70,6 +72,17 @@ const messages = {
       email: 'Zadejte platný e-mail',
       minLength: 'Minimální délka je {min} znaků',
       passwordsDontMatch: 'Hesla se neshodují',
+    },
+    courses: {
+      empty: 'Žádné kurzy k zobrazení.',
+      loadError: 'Kurzy se nepodařilo načíst.',
+    },
+    admin: {
+      id: 'ID',
+      username: 'Uživatelské jméno',
+      email: 'E-mail',
+      role: 'Role',
+      usersLoadError: 'Uživatele se nepodařilo načíst.',
     },
   },
   en: {
@@ -121,6 +134,8 @@ const messages = {
       loginSuccess: 'Successfully signed in',
       registerSuccess: 'Account created successfully',
       logoutSuccess: 'You have been signed out',
+      logoutError: 'Server sign-out failed, but your local session was ended',
+      loggedInAs: 'Signed in as',
       loginError: 'Invalid credentials',
       registerError: 'Registration failed',
     },
@@ -141,6 +156,17 @@ const messages = {
       email: 'Enter a valid email',
       minLength: 'Minimum length is {min} characters',
       passwordsDontMatch: 'Passwords do not match',
+    },
+    courses: {
+      empty: 'No courses to display.',
+      loadError: 'Courses could not be loaded.',
+    },
+    admin: {
+      id: 'ID',
+      username: 'Username',
+      email: 'Email',
+      role: 'Role',
+      usersLoadError: 'Users could not be loaded.',
     },
   },
 }

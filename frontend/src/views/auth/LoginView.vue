@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { z } from 'zod'
 import { useToast } from 'openvue/usetoast'
 import { getApiErrorMessage } from '@/services/api'
 
@@ -11,15 +10,11 @@ const toast = useToast()
 const loginMutation = useLoginMutation()
 const serverError = ref<string | null>(null)
 
-const validationSchema = computed(() =>
-  z.object({
-    identifier: z.string().min(1, t('validation.required')),
-    password: z.string().min(1, t('validation.required')),
-  }),
-)
-
 const { handleSubmit, errors, defineField } = useForm({
-  validationSchema,
+  validationSchema: {
+    identifier: (value: string) => value.trim().length > 0 || t('validation.required'),
+    password: (value: string) => value.length > 0 || t('validation.required'),
+  },
   initialValues: {
     identifier: '',
     password: '',
@@ -128,4 +123,3 @@ const onSubmit = handleSubmit(async (values) => {
     </div>
   </div>
 </template>
-

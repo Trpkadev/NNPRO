@@ -2,14 +2,7 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { jwtDecode } from 'jwt-decode'
 import router from '@/router'
 import { useAuthStore } from '@/stores/auth'
-import {
-  UserRoles,
-  type ApiWrapper,
-  type AuthResponseDto,
-  type ProblemDetails,
-  type QueryParameters,
-  type UserRole,
-} from '@/types/api'
+import { UserRoles, type ProblemDetails, type QueryParameters, type UserRole } from '@/types/api'
 import type { AuthenticatedUser, JwtPayload } from '@/types/auth'
 
 export const ACCESS_TOKEN_KEY = 'access_token'
@@ -32,7 +25,7 @@ export function isTokenValid(token: string | null | undefined, bufferSeconds = 1
   if (!token) return false
   try {
     const decoded = jwtDecode<JwtPayload>(token)
-    if (!decoded.exp) return true
+    if (typeof decoded.exp !== 'number' || !Number.isFinite(decoded.exp)) return false
     const currentTime = Date.now() / 1000
     return decoded.exp > currentTime + bufferSeconds
   } catch {
@@ -95,11 +88,7 @@ export function decodeJwtUser(token: string | null | undefined): AuthenticatedUs
       payload.roles ??
       payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
 
-    const rawRoles = Array.isArray(rawRoleClaim)
-      ? rawRoleClaim
-      : rawRoleClaim
-        ? [rawRoleClaim]
-        : []
+    const rawRoles = Array.isArray(rawRoleClaim) ? rawRoleClaim : rawRoleClaim ? [rawRoleClaim] : []
 
     const roles = rawRoles
       .map((r) => normalizeUserRole(String(r)))
@@ -126,7 +115,7 @@ export function serializeQueryParams<T extends QueryParameters>(
   params?: T,
 ): Record<string, unknown> | undefined {
   if (!params) return undefined
-  const result: Record<string, unknown> = { ...params }
+  const result: Record<string, unknown> = { ...params } as Record<string, unknown>
   if (params.Filters && typeof params.Filters === 'object') {
     result.Filters = JSON.stringify(params.Filters)
   }
@@ -240,23 +229,11 @@ api.interceptors.response.use(
       isRefreshing = true
 
       try {
-        const response = await axios.post<ApiWrapper<AuthResponseDto>>(
-          `${api.defaults.baseURL}/api/auth/refresh`,
-          {
-            accessToken,
-            refreshToken,
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Accept: 'application/json',
-            },
-          },
-        )
-
-        const authData = response.data.data
         const authStore = useAuthStore()
-        authStore.setAuth(authData)
+        const authData = await authStore.refreshTokens()
+        if (!authData) {
+          throw error
+        }
 
         processQueue(null, authData.accessToken)
         originalRequest.headers.Authorization = `Bearer ${authData.accessToken}`

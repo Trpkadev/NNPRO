@@ -13,8 +13,13 @@ declare module 'vue' {
   export interface GlobalComponents {
     Button: typeof import('openvue/button')['default']
     Card: typeof import('openvue/card')['default']
+    Column: typeof import('openvue/column')['default']
     ConfirmDialog: typeof import('openvue/confirmdialog')['default']
+    DataTable: typeof import('openvue/datatable')['default']
     Drawer: typeof import('openvue/drawer')['default']
+    InputText: typeof import('openvue/inputtext')['default']
+    Message: typeof import('openvue/message')['default']
+    Password: typeof import('openvue/password')['default']
     RoleGuard: typeof import('./components/auth/RoleGuard.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { z } from 'zod'
 import { useToast } from 'openvue/usetoast'
 import { getApiErrorMessage } from '@/services/api'
 
@@ -10,22 +9,13 @@ const toast = useToast()
 const registerMutation = useRegisterMutation()
 const serverError = ref<string | null>(null)
 
-const validationSchema = computed(() =>
-  z
-    .object({
-      username: z.string().min(3, t('validation.minLength', { min: 3 })),
-      email: z.email(t('validation.email')),
-      password: z.string().min(6, t('validation.minLength', { min: 6 })),
-      confirmPassword: z.string().min(1, t('validation.required')),
-    })
-    .refine((data) => data.password === data.confirmPassword, {
-      message: t('validation.passwordsDontMatch'),
-      path: ['confirmPassword'],
-    }),
-)
-
-const { handleSubmit, errors, defineField } = useForm({
-  validationSchema,
+const { validate, values, errors, defineField, setFieldError } = useForm({
+  validationSchema: {
+    username: (value: string) => value.trim().length >= 3 || t('validation.minLength', { min: 3 }),
+    email: (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || t('validation.email'),
+    password: (value: string) => value.length >= 6 || t('validation.minLength', { min: 6 }),
+    confirmPassword: (value: string) => value.length > 0 || t('validation.required'),
+  },
   initialValues: {
     username: '',
     email: '',
@@ -39,8 +29,17 @@ const [email, emailAttrs] = defineField('email')
 const [password, passwordAttrs] = defineField('password')
 const [confirmPassword, confirmPasswordAttrs] = defineField('confirmPassword')
 
-const onSubmit = handleSubmit(async (values) => {
+const onSubmit = async () => {
   serverError.value = null
+
+  const validation = await validate()
+  if (!validation.valid) return
+
+  if (values.password !== values.confirmPassword) {
+    setFieldError('confirmPassword', t('validation.passwordsDontMatch'))
+    return
+  }
+
   try {
     await registerMutation.mutateAsync({
       username: values.username.trim(),
@@ -58,7 +57,7 @@ const onSubmit = handleSubmit(async (values) => {
   } catch (err) {
     serverError.value = getApiErrorMessage(err, t('auth.registerError'))
   }
-})
+}
 </script>
 
 <template>
@@ -172,4 +171,3 @@ const onSubmit = handleSubmit(async (values) => {
     </div>
   </div>
 </template>
-
