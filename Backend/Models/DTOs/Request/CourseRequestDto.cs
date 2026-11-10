@@ -26,6 +26,6 @@ public sealed record CourseThumbnailRequestDto(
             yield break;
 
         if (!AllowedSortProperties.Contains(SortBy))
-            yield return new ValidationResult($"Invalid sort property: {SortBy}", [nameof(SortBy)]);
+            yield return new ValidationResult(string.Format(Resources.ValidationCourseSortPropertyInvalid, SortBy), [nameof(SortBy)]);
     }
 }

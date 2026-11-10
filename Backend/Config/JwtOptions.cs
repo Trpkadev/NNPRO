@@ -7,9 +7,9 @@ public class JwtOptions {
     public required string Issuer { get; init; }
     public required string Audience { get; init; }
 
-    // Krátká životnost Access Tokenu (např. 15 minut)
+    // Access-token lifetime in minutes.
     public int AccessTokenExpirationMinutes { get; init; } = 15;
 
-    // Dlouhá životnost Refresh Tokenu (např. 7 dní / 10080 minut)
+    // Refresh-token lifetime in days.
     public int RefreshTokenExpirationDays { get; init; } = 7;
 }

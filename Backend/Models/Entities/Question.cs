@@ -22,6 +22,5 @@ public class Question {
     public uint QuizId { get; set; }
     public Quiz Quiz { get; set; } = null!;
 
-    // Navigace
     public ICollection<AnswerOption> AnswerOptions { get; set; } = [];
 }

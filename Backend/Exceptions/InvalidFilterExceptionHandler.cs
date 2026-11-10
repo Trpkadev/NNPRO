@@ -11,8 +11,8 @@ public class InvalidFilterExceptionHandler : IExceptionHandler {
 
         var problemDetails = new ProblemDetails {
             Status = StatusCodes.Status400BadRequest,
-            Title = string.Format(Resources.ExceptionTitleInvalidFilter, typedException.FilterParam),
-            Detail = string.Format(Resources.ExceptionTitleInvalidFilter, typedException.FilterParam)
+            Title = string.Format(Resources.ErrorInvalidFilter, typedException.FilterParam),
+            Detail = string.Format(Resources.ErrorInvalidFilter, typedException.FilterParam)
         };
 
         httpContext.Response.StatusCode = problemDetails.Status.Value;

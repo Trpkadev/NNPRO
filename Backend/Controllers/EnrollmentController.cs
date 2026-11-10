@@ -1,7 +1,6 @@
 using Backend.Extensions;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers;
@@ -13,7 +12,7 @@ namespace Backend.Controllers;
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
 public class EnrollmentController : ApiControllerBase {
     [HttpGet("{courseId:uint}")]
-    [Authorize(Roles = "Admin,Instructor")]
+    //[Authorize(Roles = "Admin,Instructor")]
     [RequiresPaging]
     [EndpointSummary("Get list of enrolled users in a course")]
     [EndpointDescription("Returns a paginated list of all students enrolled in a specific course.")]

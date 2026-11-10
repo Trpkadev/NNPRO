@@ -1,5 +1,6 @@
 ﻿**/.dockerignore
 **/.env
+**/*.pfx
 **/.git
 **/.gitignore
 **/.project

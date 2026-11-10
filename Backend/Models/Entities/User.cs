@@ -22,7 +22,6 @@ public class User {
     [EnumDataType(typeof(UserRole))]
     public UserRole Role { get; set; } = UserRole.Student;
 
-    // Navigační vlastnosti
     public ICollection<Course> TeachingCourses { get; set; } = [];
     public ICollection<Enrollment> Enrollments { get; set; } = [];
     public ICollection<RefreshToken> RefreshTokens { get; set; } = [];

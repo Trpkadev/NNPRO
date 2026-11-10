@@ -19,7 +19,7 @@ RUN dotnet publish "Backend.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:U
 FROM base AS final
 WORKDIR /app
 
-# Příprava složek pod uživatelem root
+# Prepare writable directories as root.
 USER root
 RUN mkdir -p /https /home/app/dp_keys && \
     chown -R $APP_UID:$APP_UID /https /home/app
@@ -31,7 +31,6 @@ USER $APP_UID
 ENV ASPNETCORE_HTTP_PORTS=""
 ENV ASPNETCORE_HTTPS_PORTS=""
 ENV ASPNETCORE_Kestrel__Certificates__Default__Path="/https/aspnetapp.pfx"
-ENV ASPNETCORE_Kestrel__Certificates__Default__Password="nnpro"
 
 ENTRYPOINT ["dotnet", "Backend.dll"]
 

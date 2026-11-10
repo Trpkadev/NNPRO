@@ -24,11 +24,7 @@ public class StudentAnswer : IValidatableObject {
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (!IsValidOptionArray(SelectedOptionIdsJson))
-        {
-            yield return new ValidationResult(
-                "SelectedOptionIdsJson musí obsahovat platné JSON pole.",
-                [nameof(SelectedOptionIdsJson)]);
-        }
+            yield return new ValidationResult(Resources.ValidationStudentAnswerOptionIdsMustBeJsonArray, [nameof(SelectedOptionIdsJson)]);
     }
 
     private static bool IsValidOptionArray(string json)

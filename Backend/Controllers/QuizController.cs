@@ -2,7 +2,6 @@
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
 using Backend.Models.Entities;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers;
@@ -87,7 +86,7 @@ public class QuizController : ApiControllerBase {
     }
 
     [HttpGet("{quizId:uint}/attempts")]
-    [Authorize(Roles = "Admin,Instructor")]
+    //[Authorize(Roles = "Admin,Instructor")]
     [RequiresPaging]
     [EndpointSummary("Get all attempts for a quiz")]
     [ProducesResponseType<Wrapper<QuizAttemptResponseDto[]>>(StatusCodes.Status200OK)]
@@ -103,7 +102,7 @@ public class QuizController : ApiControllerBase {
     }
 
     [HttpGet("{quizId:uint}/my-attempts")]
-    [Authorize]
+    //[Authorize]
     [RequiresPaging]
     [EndpointSummary("Get my quiz attempts")]
     [ProducesResponseType<Wrapper<MyQuizAttemptResponseDto[]>>(StatusCodes.Status200OK)]

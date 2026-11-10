@@ -19,12 +19,11 @@ public class JsonOrDictionaryModelBinder : IModelBinder {
 
             // JSON object (e.g. {"title":"C#"})
             if (rawValue.StartsWith('{') || rawValue.EndsWith('}'))
-            {
                 try
                 {
                     var jsonDict = JsonSerializer.Deserialize<Dictionary<string, string?>>(rawValue);
                     if (jsonDict is null || jsonDict.Any(pair => pair.Value is null))
-                        throw new JsonException("The filter JSON must contain string values.");
+                        throw new JsonException(Resources.FilterJsonValuesMustBeStrings);
 
                     foreach ((string key, string? value) in jsonDict)
                         resultDict[key] = value!;
@@ -34,11 +33,10 @@ public class JsonOrDictionaryModelBinder : IModelBinder {
                 }
                 catch (JsonException)
                 {
-                    bindingContext.ModelState.TryAddModelError(prefix, "Filters must be a valid JSON object or a comma-separated list of key=value pairs.");
+                    bindingContext.ModelState.TryAddModelError(prefix, Resources.FiltersMustBeJsonObjectOrKeyValuePairs);
                     bindingContext.Result = ModelBindingResult.Failed();
                     return Task.CompletedTask;
                 }
-            }
 
             // Key=Value (e.g. title=C#,description=intro)
             string[] pairs = rawValue.Split(',');
@@ -47,7 +45,7 @@ public class JsonOrDictionaryModelBinder : IModelBinder {
                 string[] parts = pair.Split('=', 2);
                 if (parts.Length != 2 || string.IsNullOrWhiteSpace(parts[0]) || string.IsNullOrWhiteSpace(parts[1]))
                 {
-                    bindingContext.ModelState.TryAddModelError(prefix, "Filters must be a valid JSON object or a comma-separated list of key=value pairs.");
+                    bindingContext.ModelState.TryAddModelError(prefix, Resources.FiltersMustBeJsonObjectOrKeyValuePairs);
                     bindingContext.Result = ModelBindingResult.Failed();
                     return Task.CompletedTask;
                 }

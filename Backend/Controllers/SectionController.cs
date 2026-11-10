@@ -37,6 +37,18 @@ public class SectionController : ApiControllerBase {
         return OkPaged(lessons, requestQuery);
     }
 
+    [HttpGet("{sectionId:uint}/lessons")]
+    //[Authorize]
+    [EndpointSummary("Get section lessons")]
+    [EndpointDescription("Returns the lessons belonging to a section.")]
+    [ProducesResponseType<Wrapper<LessonResponseDto[]>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<LessonResponseDto[]>> GetSectionLessons([FromRoute] uint sectionId, CancellationToken cancellationToken)
+    {
+        await Task.CompletedTask;
+        return Ok(new[] { new LessonResponseDto(1, "Dummy Lesson", "Dummy lesson content.", null, 1, sectionId) });
+    }
+
     [HttpGet("{sectionId:uint}/quizzes")]
     //[Authorize]
     [RequiresPaging]
@@ -50,18 +62,6 @@ public class SectionController : ApiControllerBase {
             new QuizResponseDto(2, "Final quiz", 2, 1800, 80.0m, sectionId)
         };
         return OkPaged(quizzes, requestQuery);
-    }
-
-    [HttpGet("{sectionId:uint}/lessons")]
-    //[Authorize]
-    [EndpointSummary("Get section lessons")]
-    [EndpointDescription("Returns the lessons belonging to a section.")]
-    [ProducesResponseType<Wrapper<LessonResponseDto[]>>(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<LessonResponseDto[]>> GetSectionLessons([FromRoute] uint sectionId, CancellationToken cancellationToken)
-    {
-        await Task.CompletedTask;
-        return Ok(new[] { new LessonResponseDto(1, "Dummy Lesson", "Dummy lesson content.", null, 1, sectionId) });
     }
 
     [HttpGet("{sectionId:uint}/quizzes")]

@@ -21,7 +21,7 @@ dotnet dev-certs https --trust -ep ./Backend/aspnetapp.pfx -p nnpro
 
 ## 2. Spuštění pomocí Docker Compose
 
-Všechny Docker příkazy spouštěj z kořene repozitáře:
+Všechny Docker příkazy spouštěj z kořene repozitáře. Před prvním spuštěním vytvoř lokální konfiguraci z šablony: `cp .env.example .env`. Hodnoty v `.env` jsou určeny pouze pro lokální vývoj; pro produkci nastav vlastní tajné údaje. Backend spuštěný přímo přes Rider načte tento kořenový `.env` automaticky v prostředí Development.
 
 ```bash
 docker compose up -d --build

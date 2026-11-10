@@ -15,7 +15,6 @@ public class Course {
     [MaxLength(128)]
     public string? AccessKey { get; set; }
 
-    // Relační vazby
     public ICollection<User> Instructors { get; set; } = [];
     public ICollection<Section> Sections { get; set; } = [];
     public ICollection<Enrollment> Enrollments { get; set; } = [];

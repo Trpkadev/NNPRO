@@ -11,8 +11,8 @@ public class PaginationNeededExceptionHandler : IExceptionHandler {
 
         var problemDetails = new ProblemDetails {
             Status = StatusCodes.Status400BadRequest,
-            Title = Resources.ExceptionTitlePaginationNeeded,
-            Detail = Resources.ExceptionTitlePaginationNeeded
+            Title = Resources.ErrorPaginationRequired,
+            Detail = Resources.ErrorPaginationRequired
         };
 
         httpContext.Response.StatusCode = problemDetails.Status.Value;

@@ -1,7 +1,6 @@
 ﻿using Backend.Extensions;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers;
@@ -24,7 +23,7 @@ public class UserController : ApiControllerBase {
     }
 
     [HttpGet("me/courses")]
-    [Authorize]
+    //[Authorize]
     [RequiresPaging]
     [EndpointSummary("Get my courses")]
     [ProducesResponseType<Wrapper<UserCourseResponseDto[]>>(StatusCodes.Status200OK)]
@@ -40,7 +39,7 @@ public class UserController : ApiControllerBase {
     }
 
     [HttpGet("me/progress")]
-    [Authorize]
+    //[Authorize]
     [RequiresPaging]
     [EndpointSummary("Get my learning progress")]
     [ProducesResponseType<Wrapper<UserLessonProgressResponseDto[]>>(StatusCodes.Status200OK)]

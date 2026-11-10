@@ -4,7 +4,6 @@ using System.Reflection;
 using Backend.Exceptions;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
-using Backend.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Extensions;
@@ -55,16 +54,12 @@ public static class QueryableExtensions {
     public static IQueryable<T> OrderByProperty<T>(this IQueryable<T> source, SortingMetadata? sortingMetadata) => sortingMetadata is null ? source : source.OrderByProperty(sortingMetadata.SortBy, sortingMetadata.IsDescending);
 
     /// <summary>
-    ///     Universal method for pagination of any IQueryable type.
-    ///     If pagination params are unset, checks if DB would return more rows than specified in config -> throws
-    ///     PaginationNeededException.
-    ///     Applies Skip & Take and returns the according data page.
+    ///     Applies pagination, or requires pagination when the result exceeds the configured limit.
     /// </summary>
     public async static Task<(T[] Items, PaginationMetadata Metadata)> ToPagedResultAsync<T>(this IQueryable<T> query, RequestQuery request, int maxItemsWithoutPagination, CancellationToken ct = default)
     {
         int totalItems = await query.CountAsync(ct);
 
-        // Paging is ON
         if (request is { Page: {} page, PageSize: {} pageSize })
         {
             int totalPages = totalItems > 0 ? 1 + (totalItems - 1) / pageSize : 0;
@@ -76,7 +71,6 @@ public static class QueryableExtensions {
             return (pagedItems, new PaginationMetadata { Page = page, PageSize = pageSize, TotalItems = totalItems });
         }
 
-        // Paging is OFF
         if (totalItems > maxItemsWithoutPagination)
             throw new PaginationNeededException();
 
@@ -145,9 +139,4 @@ public static class QueryableExtensions {
         var lambda = Expression.Lambda<Func<T, bool>>(combinedExpression, parameter);
         return source.Where(lambda);
     }
-
-    /// <summary>
-    ///     Applies fulltext search on courses.
-    /// </summary>
-    public static IQueryable<Course> ApplyCourseSearch(this IQueryable<Course> query, string? search) => string.IsNullOrWhiteSpace(search) ? query : query.Where(x => x.Title.Contains(search) || x.Description.Contains(search));
 }

@@ -15,7 +15,6 @@ public class Section {
     public uint CourseId { get; set; }
     public Course Course { get; set; } = null!;
 
-    // Navigační kolekce
     public ICollection<Lesson> Lessons { get; set; } = [];
     public ICollection<Quiz> Quizzes { get; set; } = [];
 }

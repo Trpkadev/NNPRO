@@ -4,10 +4,10 @@
     container_name: db
     restart: unless-stopped
     environment:
-      MARIADB_ROOT_PASSWORD: nnpro
-      MARIADB_DATABASE: nnpro
-      MARIADB_USER: nnpro
-      MARIADB_PASSWORD: nnpro
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in .env}
+      MARIADB_DATABASE: ${DB_NAME:?Set DB_NAME in .env}
+      MARIADB_USER: ${DB_USER:?Set DB_USER in .env}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
       MARIADB_AUTO_UPGRADE: "1"
     ports:
       - "3306:3306"
@@ -15,7 +15,7 @@
       - mariadb_data:/var/lib/mysql
       - ./database/init:/docker-entrypoint-initdb.d
     healthcheck:
-      test: [ "CMD", "mariadb-admin", "ping", "--user=nnpro", "--password=nnpro" ]
+      test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -45,10 +45,12 @@
       - "8080:8080"
       - "8081:8081"
     environment:
-      - ConnectionStrings__DefaultConnection=Server=db;Port=3306;Database=nnpro;User=nnpro;Password=nnpro;
-      - Jwt__Secret=SuperSecretKeyKteraMaMnohemViceNez32Znaku123!
-      - Jwt__Issuer=ELearningApi
-      - Jwt__Audience=ELearningClient
+      ASPNETCORE_Kestrel__Certificates__Default__Password: ${ASPNETCORE_Kestrel__Certificates__Default__Password:?Set ASPNETCORE_Kestrel__Certificates__Default__Password in .env}
+      ConnectionStrings__DefaultConnection: ${DOCKER_DB_CONNECTION_STRING:?Set DOCKER_DB_CONNECTION_STRING in .env}
+      ConnectionStrings__Redis: ${REDIS_DOCKER_CONNECTION:?Set REDIS_DOCKER_CONNECTION in .env}
+      Jwt__SecretKey: ${Jwt__SecretKey:?Set Jwt__SecretKey in .env}
+      Jwt__Issuer: ${Jwt__Issuer:?Set Jwt__Issuer in .env}
+      Jwt__Audience: ${Jwt__Audience:?Set Jwt__Audience in .env}
     volumes:
       - dp_keys:/home/app/dp_keys
       - ./Backend/aspnetapp.pfx:/https/aspnetapp.pfx:ro

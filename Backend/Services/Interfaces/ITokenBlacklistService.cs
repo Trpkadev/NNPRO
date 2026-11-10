@@ -2,12 +2,12 @@ namespace Backend.Services.Interfaces;
 
 public interface ITokenBlacklistService {
     /// <summary>
-    ///     Zaznamená JTI zablokovaného Access Tokenu do sdílené cache s expirací nastavenou na zbývající čas tokenu.
+    ///     Adds a token ID to the shared cache until the token's remaining lifetime expires.
     /// </summary>
     Task BlacklistTokenAsync(string jwtId, TimeSpan remainingLifetime, CancellationToken ct = default);
 
     /// <summary>
-    ///     Ověří, zda je daný JTI přítomen na blacklistu (voláno v JWT Bearer middleware).
+    ///     Checks whether a token ID is present in the blacklist.
     /// </summary>
     Task<bool> IsBlacklistedAsync(string jwtId, CancellationToken ct = default);
 }

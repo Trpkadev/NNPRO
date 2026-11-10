@@ -9,7 +9,7 @@ public sealed record LoginRequestDto(
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (string.IsNullOrWhiteSpace(Username) && string.IsNullOrWhiteSpace(Email))
-            yield return new ValidationResult("Must provide either Username or Email for login.", [nameof(Username), nameof(Email)]);
+            yield return new ValidationResult(Resources.ValidationLoginIdentifierRequired, [nameof(Username), nameof(Email)]);
     }
 }
 

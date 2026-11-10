@@ -1,65 +1,249 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!--
-                  Microsoft ResX Schema 
-                  
-                  Version 2.0
-                  
-                  The primary goals of this format is to allow a simple XML format 
-                  that is mostly human readable. The generation and parsing of the 
-                  various data types are done through the TypeConverter classes 
-                  associated with the data types.
-                  
-                  Example:
-                  
-                  ... ado.net/XML headers & schema ...
-                  <resheader name="resmimetype">text/microsoft-resx</resheader>
-                  <resheader name="version">2.0</resheader>
-                  <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
-                  <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
-                  <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
-                  <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
-                  <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
-                      <value>[base64 mime encoded serialized .NET Framework object]</value>
-                  </data>
-                  <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
-                      <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
-                      <comment>This is a comment</comment>
-                  </data>
-                  
-                  There are any number of "resheader" rows that contain simple 
-                  name/value pairs.
-                  
-                  Each data row contains a name, and value. The row also contains a 
-                  type or mimetype. Type corresponds to a .NET class that support 
-                  text/value conversion through the TypeConverter architecture. 
-                  Classes that don't support this are serialized and stored with the 
-                  mimetype set.
-                  
-                  The mimetype is used for serialized objects, and tells the 
-                  ResXResourceReader how to depersist the object. This is currently not 
-                  extensible. For a given mimetype the value must be set accordingly:
-                  
-                  Note - application/x-microsoft.net.object.binary.base64 is the format 
-                  that the ResXResourceWriter will generate, however the reader can 
-                  read any of the formats listed below.
-                  
-                  mimetype: application/x-microsoft.net.object.binary.base64
-                  value   : The object must be serialized with 
-                          : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
-                          : and then encoded with base64 encoding.
-                  
-                  mimetype: application/x-microsoft.net.object.soap.base64
-                  value   : The object must be serialized with 
-                          : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
-                          : and then encoded with base64 encoding.
-                  
-                  mimetype: application/x-microsoft.net.object.bytearray.base64
-                  value   : The object must be serialized into a byte array 
-                          : using a System.ComponentModel.TypeConverter
-                          : and then encoded with base64 encoding.
-                  -->
+                            Microsoft ResX Schema 
+                            
+                            Version 2.0
+                            
+                            The primary goals of this format is to allow a simple XML format 
+                            that is mostly human readable. The generation and parsing of the 
+                            various data types are done through the TypeConverter classes 
+                            associated with the data types.
+                            
+                            Example:
+                            
+                            ... ado.net/XML headers & schema ...
+                            <resheader name="resmimetype">text/microsoft-resx</resheader>
+                            <resheader name="version">2.0</resheader>
+                            <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+                            <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+                            <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+                            <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+                            <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+                                <value>[base64 mime encoded serialized .NET Framework object]</value>
+                            </data>
+                            <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+                                <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+                                <comment>This is a comment</comment>
+                            </data>
+                            
+                            There are any number of "resheader" rows that contain simple 
+                            name/value pairs.
+                            
+                            Each data row contains a name, and value. The row also contains a 
+                            type or mimetype. Type corresponds to a .NET class that support 
+                            text/value conversion through the TypeConverter architecture. 
+                            Classes that don't support this are serialized and stored with the 
+                            mimetype set.
+                            
+                            The mimetype is used for serialized objects, and tells the 
+                            ResXResourceReader how to depersist the object. This is currently not 
+                            extensible. For a given mimetype the value must be set accordingly:
+                            
+                            Note - application/x-microsoft.net.object.binary.base64 is the format 
+                            that the ResXResourceWriter will generate, however the reader can 
+                            read any of the formats listed below.
+                            
+                            mimetype: application/x-microsoft.net.object.binary.base64
+                            value   : The object must be serialized with 
+                                    : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+                                    : and then encoded with base64 encoding.
+                            
+                            mimetype: application/x-microsoft.net.object.soap.base64
+                            value   : The object must be serialized with 
+                                    : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+                                    : and then encoded with base64 encoding.
+                            
+                            mimetype: application/x-microsoft.net.object.bytearray.base64
+                            value   : The object must be serialized into a byte array 
+                                    : using a System.ComponentModel.TypeConverter
+                                    : and then encoded with base64 encoding.
+                            -->
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" id="root" xmlns="">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" id="root" xmlns="">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" id="root" xmlns="">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" id="root" xmlns="">
     <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
     <xsd:element name="root" msdata:IsDataSet="true">
       <xsd:complexType>
@@ -400,17 +584,32 @@
             PublicKeyToken=b77a5c561934e089
         </value>
   </resheader>
-  <data name="Course" xml:space="preserve">
-        <value>Courses</value>
-    </data>
-  <data name="ErrorDescriptionBadRequest" xml:space="preserve">
+  <data name="ErrorAccessTokenRevoked" xml:space="preserve">
+    <value>The access token has been revoked.</value>
+  </data>
+  <data name="ErrorBadRequestDescription" xml:space="preserve">
         <value>One or more values in the request are invalid.</value>
     </data>
-  <data name="ErrorDescriptionInvalidSortBy" xml:space="preserve">
-        <value>Can't sort {0} by property '{1}'.</value>
+  <data name="ErrorBadRequestTitle" xml:space="preserve">
+        <value>Invalid request data</value>
     </data>
-  <data name="ErrorInvalidPropertyForType" xml:space="preserve">
-    <value>Property '{0}' doesn't exist for type '{1}'.</value>
+  <data name="ErrorDefaultConnectionStringMissing" xml:space="preserve">
+    <value>Connection string 'DefaultConnection' was not found.</value>
+  </data>
+  <data name="ErrorInternalServerError" xml:space="preserve">
+        <value>An unexpected error occurred</value>
+    </data>
+  <data name="ErrorInvalidFilter" xml:space="preserve">
+        <value>Property {0} in filter is invalid</value>
+    </data>
+  <data name="ErrorInvalidSort" xml:space="preserve">
+    <value>Sort property {0} is invalid</value>
+  </data>
+  <data name="ErrorJwtConfigurationMissing" xml:space="preserve">
+    <value>The JWT configuration section is missing.</value>
+  </data>
+  <data name="ErrorPaginationRequired" xml:space="preserve">
+    <value>Pagination is required for this request</value>
   </data>
   <data name="ErrorPagingInvalidParams" xml:space="preserve">
         <value>Both Page and PageSize must be either set or unset together.</value>
@@ -418,22 +617,40 @@
   <data name="ErrorPagingRequired" xml:space="preserve">
     <value>Both Page and PageSize are required for this endpoint.</value>
   </data>
-  <data name="ErrorTitleBadRequest" xml:space="preserve">
-        <value>Invalid request data</value>
-    </data>
-  <data name="ErrorTitleInvalidSortBy" xml:space="preserve">
-        <value>Invalid sorting</value>
-    </data>
-  <data name="ExceptionTitleGlobalInternalServerError" xml:space="preserve">
-        <value>An unexpected error occurred</value>
-    </data>
-  <data name="ExceptionTitleInvalidFilter" xml:space="preserve">
-        <value>Property {0} in filter is invalid</value>
+  <data name="ErrorRequiresPagingActionParameterMissing" xml:space="preserve">
+    <value>The {0} attribute requires an action parameter of type {1}.</value>
   </data>
-  <data name="ExceptionTitleInvalidSort" xml:space="preserve">
-    <value>Sort property {0} is invalid</value>
+  <data name="FilterJsonValuesMustBeStrings" xml:space="preserve">
+    <value>Filter JSON values must be strings.</value>
   </data>
-  <data name="ExceptionTitlePaginationNeeded" xml:space="preserve">
-    <value>Pagination is required for this request</value>
+  <data name="FiltersMustBeJsonObjectOrKeyValuePairs" xml:space="preserve">
+    <value>Filters must be a valid JSON object or a comma-separated list of key=value pairs.</value>
+  </data>
+  <data name="OpenApiBearerDescription" xml:space="preserve">
+    <value>Enter the JWT access token.</value>
+  </data>
+  <data name="OpenApiDescription" xml:space="preserve">
+    <value>API for managing courses, lessons, and quizzes with JWT authentication.</value>
+  </data>
+  <data name="OpenApiTitle" xml:space="preserve">
+    <value>E-learning System API</value>
+  </data>
+  <data name="ValidationCourseSortPropertyInvalid" xml:space="preserve">
+    <value>Invalid sort property: {0}</value>
+  </data>
+  <data name="ValidationLoginIdentifierRequired" xml:space="preserve">
+    <value>Provide either a username or an email address to log in.</value>
+  </data>
+  <data name="ValidationQuizAttemptSubmissionBeforeStart" xml:space="preserve">
+    <value>The submission time cannot be earlier than the attempt start time.</value>
+  </data>
+  <data name="ValidationStudentAnswerOptionIdsMustBeJsonArray" xml:space="preserve">
+    <value>SelectedOptionIdsJson must contain a valid JSON array.</value>
+  </data>
+  <data name="ValidationStudentLessonProgressCompletionTimestamp" xml:space="preserve">
+    <value>A completed lesson must have a completion time, and an incomplete lesson must not have one.</value>
+  </data>
+  <data name="ValidationUnsubmittedQuizAttemptMustNotHaveResult" xml:space="preserve">
+    <value>An unsubmitted attempt cannot have a score or be marked as passed.</value>
   </data>
 </root>
