@@ -1,21 +1,19 @@
+
 <script setup lang="ts">
 import { UserRoles } from '@/types/api'
-import { getApiErrorMessage } from '@/services/api'
+import { mockCourses } from '@/mocks/courses'
 
 const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 
-const { data: thumbnailsResponse, isLoading, isError, error } = useCourseThumbnailsQuery({
-  Page: 1,
-  PageSize: 12,
-  MaxDescriptionLength: 140,
-})
+// Dočasná mockovací data místo backendového API
+const courses = mockCourses
 
-const courses = computed(() => thumbnailsResponse.value?.data ?? [])
-const coursesError = computed(() =>
-  getApiErrorMessage(error.value, t('courses.loadError')),
-)
+// Otevření detailu vybraného kurzu
+function openCourse(id: number) {
+  router.push(`/courses/${id}`)
+}
 </script>
 
 <template>
@@ -26,10 +24,14 @@ const coursesError = computed(() =>
     >
       <div class="space-y-1">
         <h1 class="text-2xl font-bold">{{ t('welcome') }}</h1>
-        <p class="text-sm text-surface-600 dark:text-surface-400">
+
+        <p
+          v-if="authStore.user"
+          class="text-sm text-surface-600 dark:text-surface-400"
+        >
           {{ t('auth.loggedInAs') }}
           <span class="font-semibold text-surface-900 dark:text-surface-0">
-            {{ authStore.user?.username || authStore.user?.email }}
+            {{ authStore.user.username || authStore.user.email }}
           </span>
         </p>
       </div>
@@ -59,38 +61,58 @@ const coursesError = computed(() =>
       </div>
     </div>
 
-    <!-- Přehled kurzů (Katalog) -->
+    <!-- Katalog kurzů -->
     <section class="space-y-4">
       <div class="flex items-center justify-between">
-        <h2 class="text-lg font-semibold">{{ t('nav.courses') }}</h2>
+        <h2 class="text-lg font-semibold">
+          {{ t('nav.courses') }}
+        </h2>
       </div>
-
-      <div v-if="isLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Skeleton v-for="n in 6" :key="n" height="9rem" class="rounded-xl" />
-      </div>
-
-      <Message v-else-if="isError" severity="error" :closable="false">
-        {{ coursesError }}
-      </Message>
 
       <div
-        v-else-if="courses.length === 0"
+        v-if="courses.length === 0"
         class="p-8 rounded-2xl bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 text-center text-surface-500 text-sm"
       >
         {{ t('courses.empty') }}
       </div>
 
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div
+        v-else
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+      >
         <Card
           v-for="course in courses"
           :key="course.id"
-          class="border border-surface-200 dark:border-surface-800"
+          class="border border-surface-200 dark:border-surface-800 cursor-pointer transition-colors hover:border-emerald-500 focus-within:border-emerald-500"
         >
-          <template #title>{{ course.title }}</template>
+          <template #title>
+            <RouterLink
+              :to="`/courses/${course.id}`"
+              class="block text-inherit no-underline focus-visible:outline-2 focus-visible:outline-emerald-500 rounded"
+              :aria-label="t(course.titleKey)"
+            >
+              {{ t(course.titleKey) }}
+            </RouterLink>
+          </template>
+
           <template #content>
-            <p class="text-sm text-surface-600 dark:text-surface-400">
-              {{ course.shortDescription }}
+            <p
+              class="text-sm text-surface-600 dark:text-surface-400"
+            >
+              {{ t(course.descriptionKey) }}
             </p>
+
+            <div class="mt-4">
+              <Button
+                :label="t('courses.courseContent')"
+                icon="oi oi-arrow-right"
+                iconPos="right"
+                severity="secondary"
+                text
+                size="small"
+                @click="openCourse(course.id)"
+              />
+            </div>
           </template>
         </Card>
       </div>
