@@ -24,7 +24,6 @@ using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 
 if (string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Development", StringComparison.OrdinalIgnoreCase))
-{
     for (DirectoryInfo? directory = new(Directory.GetCurrentDirectory()); directory is not null; directory = directory.Parent)
     {
         string envFilePath = Path.Combine(directory.FullName, ".env");
@@ -34,7 +33,6 @@ if (string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), 
         Env.Load(envFilePath, new LoadOptions(clobberExistingVars: false));
         break;
     }
-}
 
 var builder = WebApplication.CreateBuilder(args);
 Console.WriteLine($"[Startup] ASP.NET Core environment: {builder.Environment.EnvironmentName}");
@@ -79,11 +77,13 @@ builder.Services.AddCors(options =>
             if (allowedOrigins.Length > 0)
                 policy.WithOrigins(allowedOrigins)
                     .AllowAnyHeader()
-                    .AllowAnyMethod();
+                    .AllowAnyMethod()
+                    .AllowCredentials();
             else if (builder.Environment.IsDevelopment())
                 policy.WithOrigins("http://localhost:5173", "https://localhost:5173")
                     .AllowAnyHeader()
-                    .AllowAnyMethod();
+                    .AllowAnyMethod()
+                    .AllowCredentials();
         })
 );
 
@@ -97,6 +97,10 @@ builder.Services.AddRateLimiter(options => {
 });
 
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? throw new InvalidOperationException(Resources.ErrorJwtConfigurationMissing);
+if (Encoding.UTF8.GetByteCount(jwtOptions.SecretKey) < 32)
+    throw new InvalidOperationException(Resources.ErrorJwtSigningKeyTooShort);
+if (jwtOptions.AccessTokenExpirationMinutes <= 0 || jwtOptions.RefreshTokenExpirationDays <= 0)
+    throw new InvalidOperationException(Resources.ErrorJwtTokenLifetimesMustBePositive);
 
 builder.Services.AddAuthentication(options => {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -107,11 +111,16 @@ builder.Services.AddAuthentication(options => {
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
+        RequireExpirationTime = true,
+        ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+        NameClaimType = "name",
+        RoleClaimType = "role",
         ValidIssuer = jwtOptions.Issuer,
         ValidAudience = jwtOptions.Audience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey)),
         ClockSkew = TimeSpan.Zero
     };
+    options.MapInboundClaims = false;
 
     // Check the Redis token blacklist after validating the JWT.
     options.Events = new JwtBearerEvents {
@@ -147,32 +156,74 @@ builder.Services.AddOpenApi(options => {
             In = ParameterLocation.Header,
             Description = Resources.OpenApiBearerDescription
         };
+        document.Components.SecuritySchemes["RefreshCookie"] = new OpenApiSecurityScheme {
+            Type = SecuritySchemeType.ApiKey,
+            In = ParameterLocation.Cookie,
+            Name = "refreshToken",
+            Description = "HttpOnly refresh-token cookie set by login/register and rotated by the refresh endpoint."
+        };
 
         return Task.CompletedTask;
     });
 
     options.AddOperationTransformer((operation, context, _) => {
-        if (operation.Parameters is not null)
-            foreach (var param in operation.Parameters)
-                if (param.Name != null && param.Name.Equals("filters", StringComparison.OrdinalIgnoreCase) && param is OpenApiParameter concreteParam)
-                    concreteParam.Schema = new OpenApiSchema {
-                        Type = JsonSchemaType.String,
-                        Examples = [JsonValue.Create("{\"title\":\"C#\"}")]
-                    };
+        var filterParam = operation.Parameters?.OfType<OpenApiParameter>()
+            .FirstOrDefault(p => p.Name?.Equals("filters", StringComparison.OrdinalIgnoreCase) == true);
+
+        filterParam?.Schema = new OpenApiSchema {
+            Type = JsonSchemaType.String,
+            Examples = [JsonValue.Create("{\"title\":\"C#\"}")]
+        };
+
+        operation.Security ??= [];
+        operation.Security.Clear();
+
+        string relativePath = context.Description.RelativePath?.TrimStart('/') ?? string.Empty;
+
+        if (relativePath.StartsWith("api/auth/", StringComparison.OrdinalIgnoreCase))
+        {
+            string action = relativePath[9..].ToLowerInvariant();
+
+            var cookieHeader = action switch {
+                "refresh" => ("200", "Rotated HttpOnly refreshToken cookie."),
+                "login" or "register" => ("200", "HttpOnly refreshToken cookie for the new session."),
+                "logout" => ("204", "Expires the HttpOnly refreshToken cookie."),
+                _ => default((string StatusCode, string Description)?)
+            };
+
+            if (cookieHeader.HasValue)
+                AddSetCookieResponseHeader(operation, cookieHeader.Value.StatusCode, cookieHeader.Value.Description);
+
+            switch (action)
+            {
+                case "refresh":
+                    operation.Security.Add(new OpenApiSecurityRequirement { [new OpenApiSecuritySchemeReference("RefreshCookie", context.Document)] = [] });
+                    operation.Parameters ??= [];
+                    operation.Parameters.Add(new OpenApiParameter {
+                        Name = "Origin",
+                        In = ParameterLocation.Header,
+                        Required = true,
+                        Description = "Must match an allowed frontend origin or the API origin.",
+                        Schema = new OpenApiSchema { Type = JsonSchemaType.String }
+                    });
+                    return Task.CompletedTask;
+
+                case "login":
+                    operation.Security.Add(new OpenApiSecurityRequirement());
+                    operation.Security.Add(new OpenApiSecurityRequirement { [new OpenApiSecuritySchemeReference("Bearer", context.Document)] = [] });
+                    return Task.CompletedTask;
+            }
+
+        }
 
         var metadata = context.Description.ActionDescriptor.EndpointMetadata;
         bool hasAuthorize = metadata.OfType<IAuthorizeData>().Any();
         bool hasAllowAnonymous = metadata.OfType<IAllowAnonymous>().Any();
 
-        operation.Security ??= [];
-        operation.Security.Clear();
-
-        if (!hasAuthorize || hasAllowAnonymous)
-            return Task.CompletedTask;
-
-        var schemeRef = new OpenApiSecuritySchemeReference("Bearer");
-
-        operation.Security.Add(new OpenApiSecurityRequirement { [schemeRef] = [] });
+        if (hasAuthorize && !hasAllowAnonymous)
+            operation.Security.Add(new OpenApiSecurityRequirement {
+                [new OpenApiSecuritySchemeReference("Bearer", context.Document)] = []
+            });
 
         return Task.CompletedTask;
     });
@@ -186,6 +237,7 @@ builder.Services.AddScoped<ILessonService, LessonService>();
 builder.Services.AddSingleton<ITokenBlacklistService, TokenBlacklistService>();
 builder.Services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 
 builder.Services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(@"/home/app/dp_keys"));
 var app = builder.Build();
@@ -212,6 +264,7 @@ if (app.Environment.IsDevelopment())
     await using var context = await factory.CreateDbContextAsync();
     await context.Database.MigrateAsync();
 
+    await DbInitializer.SeedUsersAsync(factory);
     await DbInitializer.SeedCoursesAsync(factory);
 
     app.MapOpenApi();
@@ -222,3 +275,18 @@ app.MapControllers();
 app.MapHealthChecks("/health");
 
 await app.RunAsync();
+return;
+
+static void AddSetCookieResponseHeader(OpenApiOperation operation, string statusCode, string description)
+{
+    if (operation.Responses is null
+        || !operation.Responses.TryGetValue(statusCode, out var response)
+        || response is not OpenApiResponse concreteResponse)
+        return;
+
+    concreteResponse.Headers ??= new Dictionary<string, IOpenApiHeader>();
+    concreteResponse.Headers["Set-Cookie"] = new OpenApiHeader {
+        Description = description,
+        Schema = new OpenApiSchema { Type = JsonSchemaType.String }
+    };
+}

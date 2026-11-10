@@ -30,6 +30,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<RefreshToken>(entity => {
             entity.HasIndex(r => r.TokenHash).IsUnique();
             entity.HasIndex(r => r.JwtId);
+            entity.HasIndex(r => r.TokenFamilyId);
+            entity.HasIndex(r => r.UserId);
             entity.HasOne(r => r.User)
                 .WithMany(u => u.RefreshTokens)
                 .HasForeignKey(r => r.UserId)
