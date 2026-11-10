@@ -1,10 +1,14 @@
 <script setup lang="ts">
+import { LOCALE_STORAGE_KEY } from '@/i18n'
+
 const { t, locale } = useI18n()
 const isDark = useDark()
 const toggleDark = useToggle(isDark)
 
 function toggleLanguage() {
-  locale.value = locale.value === 'cs' ? 'en' : 'cs'
+  const nextLocale = locale.value === 'cs' ? 'en' : 'cs'
+  locale.value = nextLocale
+  localStorage.setItem(LOCALE_STORAGE_KEY, nextLocale)
 }
 </script>
 
@@ -61,4 +65,3 @@ function toggleLanguage() {
     </main>
   </div>
 </template>
-

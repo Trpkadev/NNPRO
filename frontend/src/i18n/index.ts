@@ -1,5 +1,18 @@
 import { createI18n } from 'vue-i18n'
 
+export const LOCALE_STORAGE_KEY = 'app_locale'
+export type SupportedLocale = 'cs' | 'en'
+
+function getInitialLocale(): SupportedLocale {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const saved = window.localStorage.getItem(LOCALE_STORAGE_KEY)
+    if (saved === 'cs' || saved === 'en') {
+      return saved
+    }
+  }
+  return 'cs'
+}
+
 const messages = {
   cs: {
     app: {
@@ -71,6 +84,7 @@ const messages = {
       required: 'Toto pole je povinné',
       email: 'Zadejte platný e-mail',
       minLength: 'Minimální délka je {min} znaků',
+      usernameNoAt: "Uživatelské jméno nesmí obsahovat znak {'@'}",
       passwordsDontMatch: 'Hesla se neshodují',
     },
     courses: {
@@ -155,6 +169,7 @@ const messages = {
       required: 'This field is required',
       email: 'Enter a valid email',
       minLength: 'Minimum length is {min} characters',
+      usernameNoAt: "Username cannot contain the {'@'} character",
       passwordsDontMatch: 'Passwords do not match',
     },
     courses: {
@@ -173,7 +188,7 @@ const messages = {
 
 export const i18n = createI18n({
   legacy: false, // Nutné pro Composition API
-  locale: 'cs',
+  locale: getInitialLocale(),
   fallbackLocale: 'en',
   messages,
 })

@@ -8,11 +8,9 @@
 // biome-ignore lint: disable
 export {}
 declare global {
-  const ACCESS_TOKEN_KEY: typeof import('./services/api').ACCESS_TOKEN_KEY
   const EffectScope: typeof import('vue').EffectScope
   const FieldContextKey: typeof import('vee-validate').FieldContextKey
   const FormContextKey: typeof import('vee-validate').FormContextKey
-  const TOKEN_EXPIRES_KEY: typeof import('./services/api').TOKEN_EXPIRES_KEY
   const acceptHMRUpdate: typeof import('pinia').acceptHMRUpdate
   const adminService: typeof import('./services/admin.service').adminService
   const api: typeof import('./services/api').api
@@ -61,6 +59,7 @@ declare global {
   const ignorableWatch: typeof import('@vueuse/core').ignorableWatch
   const inject: typeof import('vue').inject
   const injectLocal: typeof import('@vueuse/core').injectLocal
+  const isAuthInvalidError: typeof import('./services/api').isAuthInvalidError
   const isDefined: typeof import('@vueuse/core').isDefined
   const isProxy: typeof import('vue').isProxy
   const isReactive: typeof import('vue').isReactive
@@ -438,11 +437,9 @@ import { UnwrapRef } from 'vue'
 declare module 'vue' {
   interface GlobalComponents {}
   interface ComponentCustomProperties {
-    readonly ACCESS_TOKEN_KEY: UnwrapRef<typeof import('./services/api')['ACCESS_TOKEN_KEY']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly FieldContextKey: UnwrapRef<typeof import('vee-validate')['FieldContextKey']>
     readonly FormContextKey: UnwrapRef<typeof import('vee-validate')['FormContextKey']>
-    readonly TOKEN_EXPIRES_KEY: UnwrapRef<typeof import('./services/api')['TOKEN_EXPIRES_KEY']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
     readonly adminService: UnwrapRef<typeof import('./services/admin.service')['adminService']>
     readonly api: UnwrapRef<typeof import('./services/api')['api']>
@@ -491,6 +488,7 @@ declare module 'vue' {
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
+    readonly isAuthInvalidError: UnwrapRef<typeof import('./services/api')['isAuthInvalidError']>
     readonly isDefined: UnwrapRef<typeof import('@vueuse/core')['isDefined']>
     readonly isProxy: UnwrapRef<typeof import('vue')['isProxy']>
     readonly isReactive: UnwrapRef<typeof import('vue')['isReactive']>

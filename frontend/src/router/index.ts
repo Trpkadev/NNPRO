@@ -10,8 +10,11 @@ const router = createRouter({
 router.beforeEach(async (to) => {
   const authStore = useAuthStore()
 
-  // Pokud vypršel access token, zkusíme tichý refresh pomocí HttpOnly refreshToken cookie
-  if (!authStore.isAuthenticated && authStore.token) {
+  // Po obnovení stránky (F5) zavoláme /api/auth/refresh pro získání access tokenu do paměti
+  if (!authStore.isInitialized) {
+    await authStore.initializeAuth()
+  } else if (!authStore.isAuthenticated && authStore.token) {
+    // Pokud access token v paměti mezitím vypršel, zkusíme tichý refresh
     await authStore.refreshTokens()
   }
 

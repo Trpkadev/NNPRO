@@ -2,19 +2,28 @@
 import { useToast } from 'openvue/usetoast'
 import { getApiErrorMessage } from '@/services/api'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 const toast = useToast()
 
 const registerMutation = useRegisterMutation()
 const serverError = ref<string | null>(null)
 
-const { validate, values, errors, defineField, setFieldError } = useForm({
+const { handleSubmit, values, errors, defineField, validateField } = useForm({
   validationSchema: {
-    username: (value: string) => value.trim().length >= 3 || t('validation.minLength', { min: 3 }),
+    username: (value: string) => {
+      const trimmed = value.trim()
+      if (trimmed.length < 3) return t('validation.minLength', { min: 3 })
+      if (trimmed.includes('@')) return t('validation.usernameNoAt')
+      return true
+    },
     email: (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || t('validation.email'),
-    password: (value: string) => value.length >= 6 || t('validation.minLength', { min: 6 }),
-    confirmPassword: (value: string) => value.length > 0 || t('validation.required'),
+    password: (value: string) => value.length >= 8 || t('validation.minLength', { min: 8 }),
+    confirmPassword: (value: string) => {
+      if (value.length === 0) return t('validation.required')
+      if (value !== values.password) return t('validation.passwordsDontMatch')
+      return true
+    },
   },
   initialValues: {
     username: '',
@@ -29,22 +38,24 @@ const [email, emailAttrs] = defineField('email')
 const [password, passwordAttrs] = defineField('password')
 const [confirmPassword, confirmPasswordAttrs] = defineField('confirmPassword')
 
-const onSubmit = async () => {
-  serverError.value = null
-
-  const validation = await validate()
-  if (!validation.valid) return
-
-  if (values.password !== values.confirmPassword) {
-    setFieldError('confirmPassword', t('validation.passwordsDontMatch'))
-    return
+watch(locale, () => {
+  for (const field of Object.keys(errors.value) as Array<
+    'username' | 'email' | 'password' | 'confirmPassword'
+  >) {
+    if (errors.value[field]) {
+      validateField(field)
+    }
   }
+})
+
+const onSubmit = handleSubmit(async (formValues) => {
+  serverError.value = null
 
   try {
     await registerMutation.mutateAsync({
-      username: values.username.trim(),
-      email: values.email.trim(),
-      password: values.password,
+      username: formValues.username.trim(),
+      email: formValues.email.trim(),
+      password: formValues.password,
     })
 
     toast.add({
@@ -57,7 +68,7 @@ const onSubmit = async () => {
   } catch (err) {
     serverError.value = getApiErrorMessage(err, t('auth.registerError'))
   }
-}
+})
 </script>
 
 <template>
