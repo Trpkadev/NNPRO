@@ -1,10 +1,12 @@
-import { api } from './api'
+import { api, serializeQueryParams } from './api'
 import type {
   AttachmentRequestDto,
   CreateLessonRequestDto,
   LessonResponseDto,
+  QueryParameters,
   UpdateLessonRequestDto,
   UpdateProgressDto,
+  WrapperOfAttachmentResponseDtoList,
   WrapperOfLessonResponseDto,
   WrapperOfUint,
 } from '@/types/api'
@@ -16,6 +18,22 @@ export const lessonsService = {
   async getById(id: number): Promise<LessonResponseDto> {
     const { data } = await api.get<WrapperOfLessonResponseDto>(`/api/lessons/${id}`)
     return data.data
+  },
+
+  /**
+   * Seznam příloh lekce (GET /api/lessons/{lessonId}/attachments)
+   */
+  async getAttachments(
+    lessonId: number,
+    params?: QueryParameters,
+  ): Promise<WrapperOfAttachmentResponseDtoList> {
+    const { data } = await api.get<WrapperOfAttachmentResponseDtoList>(
+      `/api/lessons/${lessonId}/attachments`,
+      {
+        params: serializeQueryParams(params),
+      },
+    )
+    return data
   },
 
   /**
@@ -62,4 +80,3 @@ export const lessonsService = {
     await api.delete(`/api/lessons/${lessonId}/attachments/${attachmentId}`)
   },
 }
-

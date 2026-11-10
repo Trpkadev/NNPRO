@@ -6,12 +6,12 @@ import { UserRoles, type ProblemDetails, type QueryParameters, type UserRole } f
 import type { AuthenticatedUser, JwtPayload } from '@/types/auth'
 
 export const ACCESS_TOKEN_KEY = 'access_token'
-export const REFRESH_TOKEN_KEY = 'refresh_token'
 export const TOKEN_EXPIRES_KEY = 'token_expires_at'
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'https://localhost:8081',
   timeout: 15000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
@@ -201,9 +201,8 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY)
-      const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY)
 
-      if (!accessToken || !refreshToken) {
+      if (!accessToken) {
         const authStore = useAuthStore()
         authStore.clearAuth()
         const currentRoute = router.currentRoute.value

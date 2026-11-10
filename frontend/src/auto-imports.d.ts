@@ -12,9 +12,9 @@ declare global {
   const EffectScope: typeof import('vue').EffectScope
   const FieldContextKey: typeof import('vee-validate').FieldContextKey
   const FormContextKey: typeof import('vee-validate').FormContextKey
-  const REFRESH_TOKEN_KEY: typeof import('./services/api').REFRESH_TOKEN_KEY
   const TOKEN_EXPIRES_KEY: typeof import('./services/api').TOKEN_EXPIRES_KEY
   const acceptHMRUpdate: typeof import('pinia').acceptHMRUpdate
+  const adminService: typeof import('./services/admin.service').adminService
   const api: typeof import('./services/api').api
   const asyncComputed: typeof import('@vueuse/core').asyncComputed
   const authService: typeof import('./services/auth.service').authService
@@ -149,6 +149,9 @@ declare global {
   const until: typeof import('@vueuse/core').until
   const useActiveElement: typeof import('@vueuse/core').useActiveElement
   const useAddLessonAttachmentMutation: typeof import('./composables/useLessonsQueries').useAddLessonAttachmentMutation
+  const useAdminUserDetailQuery: typeof import('./composables/useAdminQueries').useAdminUserDetailQuery
+  const useAdminUserSessionsQuery: typeof import('./composables/useAdminQueries').useAdminUserSessionsQuery
+  const useAdminUsersQuery: typeof import('./composables/useAdminQueries').useAdminUsersQuery
   const useAnimate: typeof import('@vueuse/core').useAnimate
   const useArrayDifference: typeof import('@vueuse/core').useArrayDifference
   const useArrayEvery: typeof import('@vueuse/core').useArrayEvery
@@ -182,14 +185,16 @@ declare global {
   const useCounter: typeof import('@vueuse/core').useCounter
   const useCourseDetailQuery: typeof import('./composables/useCoursesQueries').useCourseDetailQuery
   const useCourseEnrollmentsQuery: typeof import('./composables/useEnrollmentsQueries').useCourseEnrollmentsQuery
+  const useCourseInstructorsQuery: typeof import('./composables/useCoursesQueries').useCourseInstructorsQuery
+  const useCourseSectionsQuery: typeof import('./composables/useCoursesQueries').useCourseSectionsQuery
   const useCourseThumbnailsQuery: typeof import('./composables/useCoursesQueries').useCourseThumbnailsQuery
   const useCoursesQuery: typeof import('./composables/useCoursesQueries').useCoursesQuery
+  const useCreateAnswerOptionMutation: typeof import('./composables/useQuestionsQueries').useCreateAnswerOptionMutation
   const useCreateCourseMutation: typeof import('./composables/useCoursesQueries').useCreateCourseMutation
   const useCreateLessonMutation: typeof import('./composables/useLessonsQueries').useCreateLessonMutation
   const useCreateQuestionMutation: typeof import('./composables/useQuestionsQueries').useCreateQuestionMutation
   const useCreateQuizMutation: typeof import('./composables/useQuizzesQueries').useCreateQuizMutation
   const useCreateSectionMutation: typeof import('./composables/useSectionsQueries').useCreateSectionMutation
-  const useCreateUserMutation: typeof import('./composables/useUsersQueries').useCreateUserMutation
   const useCssModule: typeof import('vue').useCssModule
   const useCssSupports: typeof import('@vueuse/core').useCssSupports
   const useCssVar: typeof import('@vueuse/core').useCssVar
@@ -201,7 +206,9 @@ declare global {
   const useDebounce: typeof import('@vueuse/core').useDebounce
   const useDebounceFn: typeof import('@vueuse/core').useDebounceFn
   const useDebouncedRefHistory: typeof import('@vueuse/core').useDebouncedRefHistory
+  const useDeleteAnswerOptionMutation: typeof import('./composables/useQuestionsQueries').useDeleteAnswerOptionMutation
   const useDeleteCourseMutation: typeof import('./composables/useCoursesQueries').useDeleteCourseMutation
+  const useDeleteCurrentUserMutation: typeof import('./composables/useUsersQueries').useDeleteCurrentUserMutation
   const useDeleteLessonAttachmentMutation: typeof import('./composables/useLessonsQueries').useDeleteLessonAttachmentMutation
   const useDeleteLessonMutation: typeof import('./composables/useLessonsQueries').useDeleteLessonMutation
   const useDeleteQuestionMutation: typeof import('./composables/useQuestionsQueries').useDeleteQuestionMutation
@@ -263,6 +270,7 @@ declare global {
   const useIsSubmitting: typeof import('vee-validate').useIsSubmitting
   const useKeyModifier: typeof import('@vueuse/core').useKeyModifier
   const useLastChanged: typeof import('@vueuse/core').useLastChanged
+  const useLessonAttachmentsQuery: typeof import('./composables/useLessonsQueries').useLessonAttachmentsQuery
   const useLessonDetailQuery: typeof import('./composables/useLessonsQueries').useLessonDetailQuery
   const useLink: typeof import('vue-router').useLink
   const useLiveAnnouncer: typeof import('@vueuse/core').useLiveAnnouncer
@@ -282,6 +290,9 @@ declare global {
   const useMousePressed: typeof import('@vueuse/core').useMousePressed
   const useMutation: typeof import('@tanstack/vue-query').useMutation
   const useMutationObserver: typeof import('@vueuse/core').useMutationObserver
+  const useMyCoursesQuery: typeof import('./composables/useUsersQueries').useMyCoursesQuery
+  const useMyProgressQuery: typeof import('./composables/useUsersQueries').useMyProgressQuery
+  const useMyQuizAttemptsQuery: typeof import('./composables/useQuizzesQueries').useMyQuizAttemptsQuery
   const useNavigatorLanguage: typeof import('@vueuse/core').useNavigatorLanguage
   const useNetwork: typeof import('@vueuse/core').useNetwork
   const useNow: typeof import('@vueuse/core').useNow
@@ -307,16 +318,21 @@ declare global {
   const useQuery: typeof import('@tanstack/vue-query').useQuery
   const useQueryClient: typeof import('@tanstack/vue-query').useQueryClient
   const useQuestionDetailQuery: typeof import('./composables/useQuestionsQueries').useQuestionDetailQuery
+  const useQuestionOptionsEditorQuery: typeof import('./composables/useQuestionsQueries').useQuestionOptionsEditorQuery
+  const useQuestionOptionsQuery: typeof import('./composables/useQuestionsQueries').useQuestionOptionsQuery
   const useQuizAttemptDetailQuery: typeof import('./composables/useQuizzesQueries').useQuizAttemptDetailQuery
   const useQuizAttemptsQuery: typeof import('./composables/useQuizzesQueries').useQuizAttemptsQuery
   const useQuizDetailQuery: typeof import('./composables/useQuizzesQueries').useQuizDetailQuery
   const useQuizEditorQuery: typeof import('./composables/useQuizzesQueries').useQuizEditorQuery
+  const useQuizQuestionsQuery: typeof import('./composables/useQuizzesQueries').useQuizQuestionsQuery
   const useRafFn: typeof import('@vueuse/core').useRafFn
   const useRefHistory: typeof import('@vueuse/core').useRefHistory
   const useRegisterMutation: typeof import('./composables/useAuthQueries').useRegisterMutation
   const useRemoveStudentEnrollmentMutation: typeof import('./composables/useEnrollmentsQueries').useRemoveStudentEnrollmentMutation
   const useResetForm: typeof import('vee-validate').useResetForm
   const useResizeObserver: typeof import('@vueuse/core').useResizeObserver
+  const useRevokeAllUserSessionsMutation: typeof import('./composables/useAdminQueries').useRevokeAllUserSessionsMutation
+  const useRevokeUserSessionMutation: typeof import('./composables/useAdminQueries').useRevokeUserSessionMutation
   const useRoute: typeof import('vue-router').useRoute
   const useRouter: typeof import('vue-router').useRouter
   const useSSRWidth: typeof import('@vueuse/core').useSSRWidth
@@ -326,6 +342,8 @@ declare global {
   const useScroll: typeof import('@vueuse/core').useScroll
   const useScrollLock: typeof import('@vueuse/core').useScrollLock
   const useSectionDetailQuery: typeof import('./composables/useSectionsQueries').useSectionDetailQuery
+  const useSectionLessonsQuery: typeof import('./composables/useSectionsQueries').useSectionLessonsQuery
+  const useSectionQuizzesQuery: typeof import('./composables/useSectionsQueries').useSectionQuizzesQuery
   const useSessionStorage: typeof import('@vueuse/core').useSessionStorage
   const useShare: typeof import('@vueuse/core').useShare
   const useSlots: typeof import('vue').useSlots
@@ -362,17 +380,18 @@ declare global {
   const useToggle: typeof import('@vueuse/core').useToggle
   const useTransition: typeof import('@vueuse/core').useTransition
   const useUnenrollCourseMutation: typeof import('./composables/useEnrollmentsQueries').useUnenrollCourseMutation
+  const useUpdateAnswerOptionMutation: typeof import('./composables/useQuestionsQueries').useUpdateAnswerOptionMutation
   const useUpdateCourseMutation: typeof import('./composables/useCoursesQueries').useUpdateCourseMutation
+  const useUpdateCurrentUserMutation: typeof import('./composables/useUsersQueries').useUpdateCurrentUserMutation
   const useUpdateLessonMutation: typeof import('./composables/useLessonsQueries').useUpdateLessonMutation
   const useUpdateLessonProgressMutation: typeof import('./composables/useLessonsQueries').useUpdateLessonProgressMutation
   const useUpdateQuestionMutation: typeof import('./composables/useQuestionsQueries').useUpdateQuestionMutation
   const useUpdateQuizMutation: typeof import('./composables/useQuizzesQueries').useUpdateQuizMutation
   const useUpdateSectionMutation: typeof import('./composables/useSectionsQueries').useUpdateSectionMutation
   const useUpdateUserMutation: typeof import('./composables/useUsersQueries').useUpdateUserMutation
+  const useUpdateUserRoleMutation: typeof import('./composables/useAdminQueries').useUpdateUserRoleMutation
   const useUrlSearchParams: typeof import('@vueuse/core').useUrlSearchParams
-  const useUserDetailQuery: typeof import('./composables/useUsersQueries').useUserDetailQuery
   const useUserMedia: typeof import('@vueuse/core').useUserMedia
-  const useUsersQuery: typeof import('./composables/useUsersQueries').useUsersQuery
   const useVModel: typeof import('@vueuse/core').useVModel
   const useVModels: typeof import('@vueuse/core').useVModels
   const useValidateField: typeof import('vee-validate').useValidateField
@@ -423,9 +442,9 @@ declare module 'vue' {
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly FieldContextKey: UnwrapRef<typeof import('vee-validate')['FieldContextKey']>
     readonly FormContextKey: UnwrapRef<typeof import('vee-validate')['FormContextKey']>
-    readonly REFRESH_TOKEN_KEY: UnwrapRef<typeof import('./services/api')['REFRESH_TOKEN_KEY']>
     readonly TOKEN_EXPIRES_KEY: UnwrapRef<typeof import('./services/api')['TOKEN_EXPIRES_KEY']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
+    readonly adminService: UnwrapRef<typeof import('./services/admin.service')['adminService']>
     readonly api: UnwrapRef<typeof import('./services/api')['api']>
     readonly asyncComputed: UnwrapRef<typeof import('@vueuse/core')['asyncComputed']>
     readonly authService: UnwrapRef<typeof import('./services/auth.service')['authService']>
@@ -560,6 +579,9 @@ declare module 'vue' {
     readonly until: UnwrapRef<typeof import('@vueuse/core')['until']>
     readonly useActiveElement: UnwrapRef<typeof import('@vueuse/core')['useActiveElement']>
     readonly useAddLessonAttachmentMutation: UnwrapRef<typeof import('./composables/useLessonsQueries')['useAddLessonAttachmentMutation']>
+    readonly useAdminUserDetailQuery: UnwrapRef<typeof import('./composables/useAdminQueries')['useAdminUserDetailQuery']>
+    readonly useAdminUserSessionsQuery: UnwrapRef<typeof import('./composables/useAdminQueries')['useAdminUserSessionsQuery']>
+    readonly useAdminUsersQuery: UnwrapRef<typeof import('./composables/useAdminQueries')['useAdminUsersQuery']>
     readonly useAnimate: UnwrapRef<typeof import('@vueuse/core')['useAnimate']>
     readonly useArrayDifference: UnwrapRef<typeof import('@vueuse/core')['useArrayDifference']>
     readonly useArrayEvery: UnwrapRef<typeof import('@vueuse/core')['useArrayEvery']>
@@ -593,14 +615,16 @@ declare module 'vue' {
     readonly useCounter: UnwrapRef<typeof import('@vueuse/core')['useCounter']>
     readonly useCourseDetailQuery: UnwrapRef<typeof import('./composables/useCoursesQueries')['useCourseDetailQuery']>
     readonly useCourseEnrollmentsQuery: UnwrapRef<typeof import('./composables/useEnrollmentsQueries')['useCourseEnrollmentsQuery']>
+    readonly useCourseInstructorsQuery: UnwrapRef<typeof import('./composables/useCoursesQueries')['useCourseInstructorsQuery']>
+    readonly useCourseSectionsQuery: UnwrapRef<typeof import('./composables/useCoursesQueries')['useCourseSectionsQuery']>
     readonly useCourseThumbnailsQuery: UnwrapRef<typeof import('./composables/useCoursesQueries')['useCourseThumbnailsQuery']>
     readonly useCoursesQuery: UnwrapRef<typeof import('./composables/useCoursesQueries')['useCoursesQuery']>
+    readonly useCreateAnswerOptionMutation: UnwrapRef<typeof import('./composables/useQuestionsQueries')['useCreateAnswerOptionMutation']>
     readonly useCreateCourseMutation: UnwrapRef<typeof import('./composables/useCoursesQueries')['useCreateCourseMutation']>
     readonly useCreateLessonMutation: UnwrapRef<typeof import('./composables/useLessonsQueries')['useCreateLessonMutation']>
     readonly useCreateQuestionMutation: UnwrapRef<typeof import('./composables/useQuestionsQueries')['useCreateQuestionMutation']>
     readonly useCreateQuizMutation: UnwrapRef<typeof import('./composables/useQuizzesQueries')['useCreateQuizMutation']>
     readonly useCreateSectionMutation: UnwrapRef<typeof import('./composables/useSectionsQueries')['useCreateSectionMutation']>
-    readonly useCreateUserMutation: UnwrapRef<typeof import('./composables/useUsersQueries')['useCreateUserMutation']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
     readonly useCssSupports: UnwrapRef<typeof import('@vueuse/core')['useCssSupports']>
     readonly useCssVar: UnwrapRef<typeof import('@vueuse/core')['useCssVar']>
@@ -612,7 +636,9 @@ declare module 'vue' {
     readonly useDebounce: UnwrapRef<typeof import('@vueuse/core')['useDebounce']>
     readonly useDebounceFn: UnwrapRef<typeof import('@vueuse/core')['useDebounceFn']>
     readonly useDebouncedRefHistory: UnwrapRef<typeof import('@vueuse/core')['useDebouncedRefHistory']>
+    readonly useDeleteAnswerOptionMutation: UnwrapRef<typeof import('./composables/useQuestionsQueries')['useDeleteAnswerOptionMutation']>
     readonly useDeleteCourseMutation: UnwrapRef<typeof import('./composables/useCoursesQueries')['useDeleteCourseMutation']>
+    readonly useDeleteCurrentUserMutation: UnwrapRef<typeof import('./composables/useUsersQueries')['useDeleteCurrentUserMutation']>
     readonly useDeleteLessonAttachmentMutation: UnwrapRef<typeof import('./composables/useLessonsQueries')['useDeleteLessonAttachmentMutation']>
     readonly useDeleteLessonMutation: UnwrapRef<typeof import('./composables/useLessonsQueries')['useDeleteLessonMutation']>
     readonly useDeleteQuestionMutation: UnwrapRef<typeof import('./composables/useQuestionsQueries')['useDeleteQuestionMutation']>
@@ -674,6 +700,7 @@ declare module 'vue' {
     readonly useIsSubmitting: UnwrapRef<typeof import('vee-validate')['useIsSubmitting']>
     readonly useKeyModifier: UnwrapRef<typeof import('@vueuse/core')['useKeyModifier']>
     readonly useLastChanged: UnwrapRef<typeof import('@vueuse/core')['useLastChanged']>
+    readonly useLessonAttachmentsQuery: UnwrapRef<typeof import('./composables/useLessonsQueries')['useLessonAttachmentsQuery']>
     readonly useLessonDetailQuery: UnwrapRef<typeof import('./composables/useLessonsQueries')['useLessonDetailQuery']>
     readonly useLink: UnwrapRef<typeof import('vue-router')['useLink']>
     readonly useLiveAnnouncer: UnwrapRef<typeof import('@vueuse/core')['useLiveAnnouncer']>
@@ -693,6 +720,9 @@ declare module 'vue' {
     readonly useMousePressed: UnwrapRef<typeof import('@vueuse/core')['useMousePressed']>
     readonly useMutation: UnwrapRef<typeof import('@tanstack/vue-query')['useMutation']>
     readonly useMutationObserver: UnwrapRef<typeof import('@vueuse/core')['useMutationObserver']>
+    readonly useMyCoursesQuery: UnwrapRef<typeof import('./composables/useUsersQueries')['useMyCoursesQuery']>
+    readonly useMyProgressQuery: UnwrapRef<typeof import('./composables/useUsersQueries')['useMyProgressQuery']>
+    readonly useMyQuizAttemptsQuery: UnwrapRef<typeof import('./composables/useQuizzesQueries')['useMyQuizAttemptsQuery']>
     readonly useNavigatorLanguage: UnwrapRef<typeof import('@vueuse/core')['useNavigatorLanguage']>
     readonly useNetwork: UnwrapRef<typeof import('@vueuse/core')['useNetwork']>
     readonly useNow: UnwrapRef<typeof import('@vueuse/core')['useNow']>
@@ -718,16 +748,21 @@ declare module 'vue' {
     readonly useQuery: UnwrapRef<typeof import('@tanstack/vue-query')['useQuery']>
     readonly useQueryClient: UnwrapRef<typeof import('@tanstack/vue-query')['useQueryClient']>
     readonly useQuestionDetailQuery: UnwrapRef<typeof import('./composables/useQuestionsQueries')['useQuestionDetailQuery']>
+    readonly useQuestionOptionsEditorQuery: UnwrapRef<typeof import('./composables/useQuestionsQueries')['useQuestionOptionsEditorQuery']>
+    readonly useQuestionOptionsQuery: UnwrapRef<typeof import('./composables/useQuestionsQueries')['useQuestionOptionsQuery']>
     readonly useQuizAttemptDetailQuery: UnwrapRef<typeof import('./composables/useQuizzesQueries')['useQuizAttemptDetailQuery']>
     readonly useQuizAttemptsQuery: UnwrapRef<typeof import('./composables/useQuizzesQueries')['useQuizAttemptsQuery']>
     readonly useQuizDetailQuery: UnwrapRef<typeof import('./composables/useQuizzesQueries')['useQuizDetailQuery']>
     readonly useQuizEditorQuery: UnwrapRef<typeof import('./composables/useQuizzesQueries')['useQuizEditorQuery']>
+    readonly useQuizQuestionsQuery: UnwrapRef<typeof import('./composables/useQuizzesQueries')['useQuizQuestionsQuery']>
     readonly useRafFn: UnwrapRef<typeof import('@vueuse/core')['useRafFn']>
     readonly useRefHistory: UnwrapRef<typeof import('@vueuse/core')['useRefHistory']>
     readonly useRegisterMutation: UnwrapRef<typeof import('./composables/useAuthQueries')['useRegisterMutation']>
     readonly useRemoveStudentEnrollmentMutation: UnwrapRef<typeof import('./composables/useEnrollmentsQueries')['useRemoveStudentEnrollmentMutation']>
     readonly useResetForm: UnwrapRef<typeof import('vee-validate')['useResetForm']>
     readonly useResizeObserver: UnwrapRef<typeof import('@vueuse/core')['useResizeObserver']>
+    readonly useRevokeAllUserSessionsMutation: UnwrapRef<typeof import('./composables/useAdminQueries')['useRevokeAllUserSessionsMutation']>
+    readonly useRevokeUserSessionMutation: UnwrapRef<typeof import('./composables/useAdminQueries')['useRevokeUserSessionMutation']>
     readonly useRoute: UnwrapRef<typeof import('vue-router')['useRoute']>
     readonly useRouter: UnwrapRef<typeof import('vue-router')['useRouter']>
     readonly useSSRWidth: UnwrapRef<typeof import('@vueuse/core')['useSSRWidth']>
@@ -737,6 +772,8 @@ declare module 'vue' {
     readonly useScroll: UnwrapRef<typeof import('@vueuse/core')['useScroll']>
     readonly useScrollLock: UnwrapRef<typeof import('@vueuse/core')['useScrollLock']>
     readonly useSectionDetailQuery: UnwrapRef<typeof import('./composables/useSectionsQueries')['useSectionDetailQuery']>
+    readonly useSectionLessonsQuery: UnwrapRef<typeof import('./composables/useSectionsQueries')['useSectionLessonsQuery']>
+    readonly useSectionQuizzesQuery: UnwrapRef<typeof import('./composables/useSectionsQueries')['useSectionQuizzesQuery']>
     readonly useSessionStorage: UnwrapRef<typeof import('@vueuse/core')['useSessionStorage']>
     readonly useShare: UnwrapRef<typeof import('@vueuse/core')['useShare']>
     readonly useSlots: UnwrapRef<typeof import('vue')['useSlots']>
@@ -773,17 +810,18 @@ declare module 'vue' {
     readonly useToggle: UnwrapRef<typeof import('@vueuse/core')['useToggle']>
     readonly useTransition: UnwrapRef<typeof import('@vueuse/core')['useTransition']>
     readonly useUnenrollCourseMutation: UnwrapRef<typeof import('./composables/useEnrollmentsQueries')['useUnenrollCourseMutation']>
+    readonly useUpdateAnswerOptionMutation: UnwrapRef<typeof import('./composables/useQuestionsQueries')['useUpdateAnswerOptionMutation']>
     readonly useUpdateCourseMutation: UnwrapRef<typeof import('./composables/useCoursesQueries')['useUpdateCourseMutation']>
+    readonly useUpdateCurrentUserMutation: UnwrapRef<typeof import('./composables/useUsersQueries')['useUpdateCurrentUserMutation']>
     readonly useUpdateLessonMutation: UnwrapRef<typeof import('./composables/useLessonsQueries')['useUpdateLessonMutation']>
     readonly useUpdateLessonProgressMutation: UnwrapRef<typeof import('./composables/useLessonsQueries')['useUpdateLessonProgressMutation']>
     readonly useUpdateQuestionMutation: UnwrapRef<typeof import('./composables/useQuestionsQueries')['useUpdateQuestionMutation']>
     readonly useUpdateQuizMutation: UnwrapRef<typeof import('./composables/useQuizzesQueries')['useUpdateQuizMutation']>
     readonly useUpdateSectionMutation: UnwrapRef<typeof import('./composables/useSectionsQueries')['useUpdateSectionMutation']>
     readonly useUpdateUserMutation: UnwrapRef<typeof import('./composables/useUsersQueries')['useUpdateUserMutation']>
+    readonly useUpdateUserRoleMutation: UnwrapRef<typeof import('./composables/useAdminQueries')['useUpdateUserRoleMutation']>
     readonly useUrlSearchParams: UnwrapRef<typeof import('@vueuse/core')['useUrlSearchParams']>
-    readonly useUserDetailQuery: UnwrapRef<typeof import('./composables/useUsersQueries')['useUserDetailQuery']>
     readonly useUserMedia: UnwrapRef<typeof import('@vueuse/core')['useUserMedia']>
-    readonly useUsersQuery: UnwrapRef<typeof import('./composables/useUsersQueries')['useUsersQuery']>
     readonly useVModel: UnwrapRef<typeof import('@vueuse/core')['useVModel']>
     readonly useVModels: UnwrapRef<typeof import('@vueuse/core')['useVModels']>
     readonly useValidateField: UnwrapRef<typeof import('vee-validate')['useValidateField']>

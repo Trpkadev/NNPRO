@@ -1,53 +1,62 @@
 import { api, serializeQueryParams } from './api'
 import type {
-  CreateUserRequestDto,
   QueryParameters,
   UpdateUserRequestDto,
-  UserResponseDto,
-  WrapperOfUint,
-  WrapperOfUserResponseDto,
-  WrapperOfUserResponseDtoList,
+  WrapperOfUserCourseResponseDtoList,
+  WrapperOfUserLessonProgressResponseDtoList,
 } from '@/types/api'
 
 export const usersService = {
   /**
-   * Seznam všech uživatelů se stránkováním a vyhledáváním (GET /api/users)
+   * Seznam zapsaných kurzů aktuálně přihlášeného uživatele (GET /api/users/me/courses)
    */
-  async getAll(params?: QueryParameters): Promise<WrapperOfUserResponseDtoList> {
-    const { data } = await api.get<WrapperOfUserResponseDtoList>('/api/users', {
+  async getMyCourses(params?: QueryParameters): Promise<WrapperOfUserCourseResponseDtoList> {
+    const { data } = await api.get<WrapperOfUserCourseResponseDtoList>('/api/users/me/courses', {
       params: serializeQueryParams(params),
     })
     return data
   },
 
   /**
-   * Detail uživatele podle ID (GET /api/users/{userId})
+   * Studijní postup aktuálně přihlášeného uživatele (GET /api/users/me/progress)
    */
-  async getById(userId: number): Promise<UserResponseDto> {
-    const { data } = await api.get<WrapperOfUserResponseDto>(`/api/users/${userId}`)
-    return data.data
+  async getMyProgress(
+    params?: QueryParameters,
+  ): Promise<WrapperOfUserLessonProgressResponseDtoList> {
+    const { data } = await api.get<WrapperOfUserLessonProgressResponseDtoList>(
+      '/api/users/me/progress',
+      {
+        params: serializeQueryParams(params),
+      },
+    )
+    return data
   },
 
   /**
-   * Vytvoření uživatele správcem (POST /api/users)
+   * Úprava aktuálně přihlášeného uživatele (PUT /api/users)
    */
-  async create(payload: CreateUserRequestDto): Promise<number> {
-    const { data } = await api.post<WrapperOfUint>('/api/users', payload)
-    return Number(data.data)
+  async updateCurrent(payload: UpdateUserRequestDto): Promise<void> {
+    await api.put('/api/users', payload)
   },
 
   /**
-   * Úprava uživatele správcem (PUT /api/users/{userId})
+   * Smazání aktuálně přihlášeného uživatele (DELETE /api/users)
+   */
+  async removeCurrent(): Promise<void> {
+    await api.delete('/api/users')
+  },
+
+  /**
+   * Úprava uživatele podle ID (PUT /api/users/{userId})
    */
   async update(userId: number, payload: UpdateUserRequestDto): Promise<void> {
     await api.put(`/api/users/${userId}`, payload)
   },
 
   /**
-   * Smazání uživatele správcem (DELETE /api/users/{userId})
+   * Smazání uživatele podle ID (DELETE /api/users/{userId})
    */
   async remove(userId: number): Promise<void> {
     await api.delete(`/api/users/${userId}`)
   },
 }
-

@@ -1,6 +1,5 @@
 import {
   ACCESS_TOKEN_KEY,
-  REFRESH_TOKEN_KEY,
   TOKEN_EXPIRES_KEY,
   decodeJwtUser,
   isTokenValid,
@@ -19,7 +18,6 @@ let refreshPromise: Promise<AuthResponseDto | null> | null = null
 
 export const useAuthStore = defineStore('auth', () => {
   const token = useStorage<string | null>(ACCESS_TOKEN_KEY, null)
-  const refreshToken = useStorage<string | null>(REFRESH_TOKEN_KEY, null)
   const expiresAtUtc = useStorage<string | null>(TOKEN_EXPIRES_KEY, null)
 
   const isAuthenticated = computed(() => !!token.value && isTokenValid(token.value))
@@ -51,13 +49,11 @@ export const useAuthStore = defineStore('auth', () => {
 
   function setAuth(authData: AuthResponseDto) {
     token.value = authData.accessToken
-    refreshToken.value = authData.refreshToken
     expiresAtUtc.value = authData.expiresAtUtc
   }
 
   function clearAuth() {
     token.value = null
-    refreshToken.value = null
     expiresAtUtc.value = null
   }
 
@@ -76,17 +72,9 @@ export const useAuthStore = defineStore('auth', () => {
   async function refreshTokens(): Promise<AuthResponseDto | null> {
     if (refreshPromise) return refreshPromise
 
-    if (!token.value || !refreshToken.value) {
-      clearAuth()
-      return null
-    }
-
     refreshPromise = (async () => {
       try {
-        const authData = await authService.refresh({
-          accessToken: token.value!,
-          refreshToken: refreshToken.value!,
-        })
+        const authData = await authService.refresh()
         setAuth(authData)
         return authData
       } catch {
@@ -101,20 +89,15 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout(): Promise<void> {
-    const currentRefreshToken = refreshToken.value
-    clearAuth()
-    if (currentRefreshToken) {
-      try {
-        await authService.logout({ refreshToken: currentRefreshToken })
-      } catch (error) {
-        throw error
-      }
+    try {
+      await authService.logout()
+    } finally {
+      clearAuth()
     }
   }
 
   return {
     token,
-    refreshToken,
     expiresAtUtc,
     user,
     userRole,

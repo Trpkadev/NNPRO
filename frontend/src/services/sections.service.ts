@@ -1,8 +1,11 @@
-import { api } from './api'
+import { api, serializeQueryParams } from './api'
 import type {
   CreateSectionRequestDto,
+  QueryParameters,
   SectionResponseDto,
   UpdateSectionRequestDto,
+  WrapperOfLessonResponseDtoList,
+  WrapperOfQuizResponseDtoList,
   WrapperOfSectionResponseDto,
   WrapperOfUint,
 } from '@/types/api'
@@ -14,6 +17,38 @@ export const sectionsService = {
   async getById(sectionId: number): Promise<SectionResponseDto> {
     const { data } = await api.get<WrapperOfSectionResponseDto>(`/api/sections/${sectionId}`)
     return data.data
+  },
+
+  /**
+   * Seznam lekcí v sekci (GET /api/sections/{sectionId}/lessons)
+   */
+  async getLessons(
+    sectionId: number,
+    params?: QueryParameters,
+  ): Promise<WrapperOfLessonResponseDtoList> {
+    const { data } = await api.get<WrapperOfLessonResponseDtoList>(
+      `/api/sections/${sectionId}/lessons`,
+      {
+        params: serializeQueryParams(params),
+      },
+    )
+    return data
+  },
+
+  /**
+   * Seznam kvízů v sekci (GET /api/sections/{sectionId}/quizzes)
+   */
+  async getQuizzes(
+    sectionId: number,
+    params?: QueryParameters,
+  ): Promise<WrapperOfQuizResponseDtoList> {
+    const { data } = await api.get<WrapperOfQuizResponseDtoList>(
+      `/api/sections/${sectionId}/quizzes`,
+      {
+        params: serializeQueryParams(params),
+      },
+    )
+    return data
   },
 
   /**
@@ -38,4 +73,3 @@ export const sectionsService = {
     await api.delete(`/api/sections/${sectionId}`)
   },
 }
-

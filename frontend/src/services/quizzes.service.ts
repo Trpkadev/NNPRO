@@ -7,6 +7,8 @@ import type {
   QuizResponseDto,
   StartAttemptRequestDto,
   UpdateQuizRequestDto,
+  WrapperOfMyQuizAttemptResponseDtoList,
+  WrapperOfQuestionResponseDtoList,
   WrapperOfQuizAttemptResponseDto,
   WrapperOfQuizAttemptResponseDtoList,
   WrapperOfQuizResponseDto,
@@ -28,6 +30,22 @@ export const quizzesService = {
   async getEditorData(quizId: number): Promise<QuizResponseDto> {
     const { data } = await api.get<WrapperOfQuizResponseDto>(`/api/quizzes/${quizId}/editor`)
     return data.data
+  },
+
+  /**
+   * Seznam otázek kvízu (GET /api/quizzes/{quizId}/questions)
+   */
+  async getQuestions(
+    quizId: number,
+    params?: QueryParameters,
+  ): Promise<WrapperOfQuestionResponseDtoList> {
+    const { data } = await api.get<WrapperOfQuestionResponseDtoList>(
+      `/api/quizzes/${quizId}/questions`,
+      {
+        params: serializeQueryParams(params),
+      },
+    )
+    return data
   },
 
   /**
@@ -69,6 +87,22 @@ export const quizzesService = {
   },
 
   /**
+   * Seznam pokusů přihlášeného uživatele u daného kvízu (GET /api/quizzes/{quizId}/my-attempts)
+   */
+  async getMyAttempts(
+    quizId: number,
+    params?: QueryParameters,
+  ): Promise<WrapperOfMyQuizAttemptResponseDtoList> {
+    const { data } = await api.get<WrapperOfMyQuizAttemptResponseDtoList>(
+      `/api/quizzes/${quizId}/my-attempts`,
+      {
+        params: serializeQueryParams(params),
+      },
+    )
+    return data
+  },
+
+  /**
    * Detail konkrétního pokusu o kvíz (GET /api/quizzes/attempt/{attemptId})
    */
   async getAttemptById(attemptId: number): Promise<QuizAttemptResponseDto> {
@@ -97,4 +131,3 @@ export const quizzesService = {
     return data.data
   },
 }
-

@@ -35,6 +35,30 @@ export function useCourseDetailQuery(
   })
 }
 
+export function useCourseInstructorsQuery(
+  courseId: MaybeRefOrGetter<number>,
+  params?: MaybeRefOrGetter<QueryParameters | undefined>,
+  enabled: MaybeRefOrGetter<boolean> = true,
+) {
+  return useQuery({
+    queryKey: computed(() => queryKeys.courses.instructors(toValue(courseId), toValue(params))),
+    queryFn: () => coursesService.getInstructors(toValue(courseId), toValue(params)),
+    enabled: computed(() => toValue(enabled) && Number(toValue(courseId)) > 0),
+  })
+}
+
+export function useCourseSectionsQuery(
+  courseId: MaybeRefOrGetter<number>,
+  params?: MaybeRefOrGetter<QueryParameters | undefined>,
+  enabled: MaybeRefOrGetter<boolean> = true,
+) {
+  return useQuery({
+    queryKey: computed(() => queryKeys.courses.sections(toValue(courseId), toValue(params))),
+    queryFn: () => coursesService.getSections(toValue(courseId), toValue(params)),
+    enabled: computed(() => toValue(enabled) && Number(toValue(courseId)) > 0),
+  })
+}
+
 export function useCreateCourseMutation() {
   const queryClient = useQueryClient()
 
@@ -71,4 +95,3 @@ export function useDeleteCourseMutation() {
     },
   })
 }
-
