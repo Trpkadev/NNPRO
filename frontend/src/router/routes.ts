@@ -31,7 +31,7 @@ export const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, layout: 'main' },
     children: [
       {
-        path: '',
+        path: 'home',
         name: 'home',
         component: () => import('@/views/HomeView.vue'),
         meta: { requiresAuth: true, layout: 'main' },
@@ -88,6 +88,20 @@ export const routes: RouteRecordRaw[] = [
         path: 'forbidden',
         name: 'forbidden',
         component: () => import('@/views/ForbiddenView.vue'),
+        meta: { requiresAuth: false, layout: 'main' },
+      },
+    ],
+  },
+  // Detail kurzu - dočasně veřejná route pro frontend
+  {
+    path: '/courses/:id',
+    component: () => import('@/views/courses/CourseDetailView.vue'),
+    meta: { requiresAuth: false, layout: 'main' },
+    children: [
+      {
+        path: '',
+        name: 'course-detail',
+        component: () => import('@/views/courses/CourseDetailView.vue'),
         meta: { requiresAuth: false, layout: 'main' },
       },
     ],
