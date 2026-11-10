@@ -1,6 +1,7 @@
 using Backend.Extensions;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers;
@@ -12,7 +13,7 @@ namespace Backend.Controllers;
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
 public class EnrollmentController : ApiControllerBase {
     [HttpGet("{courseId:uint}")]
-    //[Authorize(Roles = "Admin,Instructor")]
+    [Authorize(Roles = "Admin,Instructor")]
     [RequiresPaging]
     [EndpointSummary("Get list of enrolled users in a course")]
     [EndpointDescription("Returns a paginated list of all students enrolled in a specific course.")]
@@ -29,7 +30,7 @@ public class EnrollmentController : ApiControllerBase {
     }
 
     [HttpPost]
-    //[Authorize(Roles = "Student")]
+    [Authorize(Roles = "Student")]
     [EndpointSummary("Enroll currently authenticated student into a course")]
     [EndpointDescription("Enrolls the currently authenticated student into a course, requiring an access key if the course is private.")]
     [ProducesResponseType<Wrapper<uint>>(StatusCodes.Status201Created)]
@@ -41,7 +42,7 @@ public class EnrollmentController : ApiControllerBase {
     }
 
     [HttpPost("forceenroll")]
-    //[Authorize(Roles = "Admin, Instructor")]
+    [Authorize(Roles = "Admin, Instructor")]
     [EndpointSummary("Force enroll student into a course")]
     [ProducesResponseType<Wrapper<uint>>(StatusCodes.Status201Created)]
     public async Task<ActionResult> ForceEnrollIntoCourse([FromBody] ForceEnrollmentRequestDto forceEnrollmentRequest, CancellationToken cancellationToken)
@@ -52,7 +53,7 @@ public class EnrollmentController : ApiControllerBase {
     }
 
     [HttpDelete("{courseId:uint}")]
-    //[Authorize(Roles = "Student")]
+    [Authorize(Roles = "Student")]
     [EndpointSummary("Unenroll currently authenticated student from a course")]
     [EndpointDescription("Removes the currently authenticated student from the specified course.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -63,7 +64,7 @@ public class EnrollmentController : ApiControllerBase {
     }
 
     [HttpDelete("{courseId:uint}/{studentId:uint}")]
-    //[Authorize(Roles = "Admin, Instructor")]
+    [Authorize(Roles = "Admin, Instructor")]
     [EndpointSummary("Remove student from course")]
     [EndpointDescription("Allows an instructor or admin to forcibly remove a specific student from a course.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]

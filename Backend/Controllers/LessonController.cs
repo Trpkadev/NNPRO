@@ -1,6 +1,7 @@
 ﻿using Backend.Extensions;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers;
@@ -11,7 +12,7 @@ namespace Backend.Controllers;
 [Tags("Lessons")]
 public class LessonController : ApiControllerBase {
     [HttpGet("{id:uint}")]
-    //[Authorize]
+    [Authorize]
     [EndpointSummary("Get lesson detail")]
     [EndpointDescription("Returns complete information about a specific lesson, including text content, video URLs, and attachments.")]
     [ProducesResponseType<Wrapper<LessonResponseDto>>(StatusCodes.Status200OK)]
@@ -23,7 +24,7 @@ public class LessonController : ApiControllerBase {
     }
 
     [HttpGet("{lessonId:uint}/attachments")]
-    //[Authorize]
+    [Authorize]
     [RequiresPaging]
     [EndpointSummary("Get lesson attachments")]
     [ProducesResponseType<Wrapper<AttachmentResponseDto[]>>(StatusCodes.Status200OK)]
@@ -37,20 +38,8 @@ public class LessonController : ApiControllerBase {
         return OkPaged(attachments, requestQuery);
     }
 
-    [HttpGet("{lessonId:uint}/attachments")]
-    //[Authorize]
-    [EndpointSummary("Get lesson attachments")]
-    [EndpointDescription("Returns the attachments belonging to a lesson.")]
-    [ProducesResponseType<Wrapper<AttachmentResponseDto[]>>(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<AttachmentResponseDto[]>> GetAttachments([FromRoute] uint lessonId, CancellationToken cancellationToken)
-    {
-        await Task.CompletedTask;
-        return Ok(new[] { new AttachmentResponseDto(1, "dummy-file.pdf", "https://example.com/dummy-file.pdf", "application/pdf", 1024, lessonId) });
-    }
-
     [HttpPost]
-    //[Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin")]
     [EndpointSummary("Create a lesson")]
     [ProducesResponseType<Wrapper<uint>>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -62,7 +51,7 @@ public class LessonController : ApiControllerBase {
     }
 
     [HttpPut("{lessonId:uint}")]
-    //[Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin")]
     [EndpointSummary("Update a lesson")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -74,7 +63,7 @@ public class LessonController : ApiControllerBase {
     }
 
     [HttpDelete("{lessonId:uint}")]
-    //[Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin")]
     [EndpointSummary("Delete a lesson")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -85,7 +74,7 @@ public class LessonController : ApiControllerBase {
     }
 
     [HttpPut("{lessonId:uint}/progress")]
-    //[Authorize(Roles = "Student")]
+    [Authorize(Roles = "Student")]
     [EndpointSummary("Update lesson progress")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -97,7 +86,7 @@ public class LessonController : ApiControllerBase {
     }
 
     [HttpPost("attachments")]
-    //[Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin")]
     [EndpointSummary("Add attachment to a lesson")]
     [ProducesResponseType<Wrapper<uint>>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -108,7 +97,7 @@ public class LessonController : ApiControllerBase {
     }
 
     [HttpDelete("{lessonId:uint}/attachments/{attachmentId:uint}")]
-    //[Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin")]
     [EndpointSummary("Delete lesson attachment")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]

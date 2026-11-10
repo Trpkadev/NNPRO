@@ -4,6 +4,40 @@ using Microsoft.EntityFrameworkCore;
 namespace Backend.Data;
 
 public static class DbInitializer {
+    public async static Task SeedUsersAsync(IDbContextFactory<AppDbContext> dbContextFactory, CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        (string Username, string Email, string Password, UserRole Role)[] defaultUsers = [
+            ("admin", "admin@example.com", "admin", UserRole.Admin),
+            ("student", "student@example.com", "student", UserRole.Student),
+            ("instructor", "instructor@example.com", "instructor", UserRole.Instructor)
+        ];
+
+        foreach ((string username, string email, string password, var role) in defaultUsers)
+        {
+            bool usernameExists = await dbContext.Users.AnyAsync(user => user.Username == username, cancellationToken);
+            if (usernameExists)
+                continue;
+
+            bool emailExists = await dbContext.Users.AnyAsync(user => user.Email == email, cancellationToken);
+            if (emailExists)
+            {
+                Console.WriteLine($"[Seed] Skipping default user '{username}': email '{email}' is already in use.");
+                continue;
+            }
+
+            dbContext.Users.Add(new User {
+                Username = username,
+                Email = email,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(password),
+                Role = role
+            });
+        }
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
     public async static Task SeedCoursesAsync(IDbContextFactory<AppDbContext> dbContextFactory, CancellationToken cancellationToken = default)
     {
         await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
