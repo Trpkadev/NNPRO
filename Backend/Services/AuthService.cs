@@ -102,13 +102,33 @@ public class AuthService(AppDbContext dbContext, IJwtTokenGenerator jwtTokenGene
             return null;
 
         (string accessToken, string newJwtId, var expiresAtUtc) = jwtTokenGenerator.GenerateAccessToken(user);
-        dbContext.RefreshTokens.Add(CreateRefreshToken(user.Id, newJwtId, newRefreshTokenHash, currentToken.TokenFamilyId, clientIp, currentToken.UserAgent, currentToken.DeviceName));
+        var refreshTokenExpiresAtUtc = DateTime.UtcNow.AddDays(jwtOptions.Value.RefreshTokenExpirationDays);
+        dbContext.RefreshTokens.Add(new RefreshToken {
+            UserId = user.Id,
+            JwtId = newJwtId,
+            TokenHash = newRefreshTokenHash,
+            TokenFamilyId = currentToken.TokenFamilyId,
+            ExpiresAtUtc = refreshTokenExpiresAtUtc,
+            AccessTokenExpiresAtUtc = expiresAtUtc,
+            CreatedByIp = clientIp,
+            UserAgent = currentToken.UserAgent,
+            DeviceName = currentToken.DeviceName
+        });
         await dbContext.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
 
         await BlacklistAccessTokensAsync([currentToken], ct);
 
         return new AuthResponseDto(accessToken, newRefreshTokenValue, expiresAtUtc);
+    }
+
+    public async Task<bool> RevokeSessionByRefreshTokenAsync(string refreshToken, string? clientIp, CancellationToken ct)
+    {
+        string tokenHash = HashRefreshToken(refreshToken);
+        var storedToken = await dbContext.RefreshTokens.AsNoTracking()
+            .FirstOrDefaultAsync(token => token.TokenHash == tokenHash, ct);
+
+        return storedToken is not null && await RevokeSessionFamilyAsync(storedToken.UserId, storedToken.TokenFamilyId, clientIp, "Session revoked", ct);
     }
 
     public async Task<bool> RevokeCurrentSessionAsync(uint userId, string jwtId, string? clientIp, CancellationToken ct)
@@ -177,19 +197,20 @@ public class AuthService(AppDbContext dbContext, IJwtTokenGenerator jwtTokenGene
         string tokenHash = HashRefreshToken(refreshTokenValue);
         (string accessToken, string jwtId, var expiresAtUtc) = jwtTokenGenerator.GenerateAccessToken(user);
 
-        return (new AuthResponseDto(accessToken, refreshTokenValue, expiresAtUtc), CreateRefreshToken(user.Id, jwtId, tokenHash, tokenFamilyId, clientIp, userAgent, deviceName));
+        var refreshTokenExpiresAtUtc = DateTime.UtcNow.AddDays(jwtOptions.Value.RefreshTokenExpirationDays);
+        var refreshToken = new RefreshToken {
+            UserId = user.Id,
+            JwtId = jwtId,
+            TokenHash = tokenHash,
+            TokenFamilyId = tokenFamilyId,
+            ExpiresAtUtc = refreshTokenExpiresAtUtc,
+            AccessTokenExpiresAtUtc = expiresAtUtc,
+            CreatedByIp = clientIp,
+            UserAgent = userAgent,
+            DeviceName = deviceName
+        };
+        return (new AuthResponseDto(accessToken, refreshTokenValue, expiresAtUtc), refreshToken);
     }
-
-    private RefreshToken CreateRefreshToken(uint userId, string jwtId, string tokenHash, Guid tokenFamilyId, string? clientIp, string? userAgent, string? deviceName) => new() {
-        UserId = userId,
-        JwtId = jwtId,
-        TokenHash = tokenHash,
-        TokenFamilyId = tokenFamilyId,
-        ExpiresAtUtc = DateTime.UtcNow.AddDays(jwtOptions.Value.RefreshTokenExpirationDays),
-        CreatedByIp = clientIp,
-        UserAgent = userAgent,
-        DeviceName = deviceName
-    };
 
     private async Task BlacklistAccessTokensAsync(IEnumerable<RefreshToken> refreshTokens, CancellationToken ct)
     {
@@ -197,7 +218,7 @@ public class AuthService(AppDbContext dbContext, IJwtTokenGenerator jwtTokenGene
             await tokenBlacklistService.BlacklistTokenAsync(refreshToken.JwtId, GetAccessTokenRemainingLifetime(refreshToken), ct);
     }
 
-    private TimeSpan GetAccessTokenRemainingLifetime(RefreshToken refreshToken) => refreshToken.CreatedAtUtc.AddMinutes(jwtOptions.Value.AccessTokenExpirationMinutes) - DateTime.UtcNow;
+    private TimeSpan GetAccessTokenRemainingLifetime(RefreshToken refreshToken) => (refreshToken.AccessTokenExpiresAtUtc ?? refreshToken.CreatedAtUtc.AddMinutes(jwtOptions.Value.AccessTokenExpirationMinutes)) - DateTime.UtcNow;
 
     private static string HashRefreshToken(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
 }

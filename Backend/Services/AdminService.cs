@@ -95,11 +95,14 @@ public class AdminService(AppDbContext dbContext, IAuthService authService, ITok
     {
         var accessTokenCutoffUtc = nowUtc.AddMinutes(-jwtOptions.Value.AccessTokenExpirationMinutes);
         var accessTokens = await dbContext.RefreshTokens.AsNoTracking()
-            .Where(token => token.UserId == userId && token.CreatedAtUtc > accessTokenCutoffUtc)
-            .Select(token => new { token.JwtId, token.CreatedAtUtc })
+            .Where(token => token.UserId == userId && (token.AccessTokenExpiresAtUtc > nowUtc || token.AccessTokenExpiresAtUtc == null && token.CreatedAtUtc > accessTokenCutoffUtc))
+            .Select(token => new { token.JwtId, token.CreatedAtUtc, token.AccessTokenExpiresAtUtc })
             .ToListAsync(ct);
 
         foreach (var token in accessTokens.DistinctBy(token => token.JwtId))
-            await tokenBlacklistService.BlacklistTokenAsync(token.JwtId, token.CreatedAtUtc.AddMinutes(jwtOptions.Value.AccessTokenExpirationMinutes) - nowUtc, ct);
+        {
+            var expiresAtUtc = token.AccessTokenExpiresAtUtc ?? token.CreatedAtUtc.AddMinutes(jwtOptions.Value.AccessTokenExpirationMinutes);
+            await tokenBlacklistService.BlacklistTokenAsync(token.JwtId, expiresAtUtc - nowUtc, ct);
+        }
     }
 }

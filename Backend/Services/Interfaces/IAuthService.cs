@@ -10,6 +10,8 @@ public interface IAuthService {
 
     Task<AuthResponseDto?> RefreshTokenAsync(RefreshTokenRequestDto request, string? clientIp, CancellationToken ct);
 
+    Task<bool> RevokeSessionByRefreshTokenAsync(string refreshToken, string? clientIp, CancellationToken ct);
+
     Task<bool> RevokeCurrentSessionAsync(uint userId, string jwtId, string? clientIp, CancellationToken ct);
 
     Task<bool> RevokeSessionFamilyAsync(uint userId, Guid tokenFamilyId, string? clientIp, string reason, CancellationToken ct);

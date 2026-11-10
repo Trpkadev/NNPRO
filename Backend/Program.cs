@@ -45,6 +45,11 @@ builder.Services.Configure<ForwardedHeadersOptions>(options => options.Forwarded
 builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
 
+var corsSettings = builder.Configuration.GetSection(CorsSettings.SectionName).Get<CorsSettings>() ?? new CorsSettings();
+if (corsSettings.AllowedOrigins.Length == 0 && builder.Environment.IsDevelopment())
+    corsSettings.AllowedOrigins = ["http://localhost:5173", "https://localhost:5173"];
+builder.Services.Configure<CorsSettings>(options => options.AllowedOrigins = corsSettings.AllowedOrigins);
+
 var serverVersion = await ServerVersion.AutoDetectAsync(connectionString);
 builder.Services.AddDbContextFactory<AppDbContext>(options => options.UseMySql(connectionString, serverVersion));
 builder.Services.AddStackExchangeRedisCache(options => {
@@ -69,18 +74,11 @@ builder.Services.AddControllers(options => { options.Filters.Add<ApiResponseWrap
 
 builder.Services.AddResponseCaching();
 
-string[] allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-
 builder.Services.AddCors(options =>
     options.AddPolicy("Frontend",
         policy => {
-            if (allowedOrigins.Length > 0)
-                policy.WithOrigins(allowedOrigins)
-                    .AllowAnyHeader()
-                    .AllowAnyMethod()
-                    .AllowCredentials();
-            else if (builder.Environment.IsDevelopment())
-                policy.WithOrigins("http://localhost:5173", "https://localhost:5173")
+            if (corsSettings.AllowedOrigins.Length > 0)
+                policy.WithOrigins(corsSettings.AllowedOrigins)
                     .AllowAnyHeader()
                     .AllowAnyMethod()
                     .AllowCredentials();
@@ -141,6 +139,8 @@ builder.Services.AddExceptionHandler<InvalidFilterExceptionHandler>();
 builder.Services.AddExceptionHandler<InvalidSortExceptionHandler>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
+const string bearerSecuritySchemeName = "Bearer";
+
 builder.Services.AddOpenApi(options => {
     options.AddDocumentTransformer((document, _, _) => {
         document.Info.Title = Resources.OpenApiTitle;
@@ -149,7 +149,7 @@ builder.Services.AddOpenApi(options => {
 
         document.Components ??= new OpenApiComponents();
         document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
-        document.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme {
+        document.Components.SecuritySchemes[bearerSecuritySchemeName] = new OpenApiSecurityScheme {
             Type = SecuritySchemeType.Http,
             Scheme = "bearer",
             BearerFormat = "JWT",
@@ -210,7 +210,23 @@ builder.Services.AddOpenApi(options => {
 
                 case "login":
                     operation.Security.Add(new OpenApiSecurityRequirement());
-                    operation.Security.Add(new OpenApiSecurityRequirement { [new OpenApiSecuritySchemeReference("Bearer", context.Document)] = [] });
+                    operation.Security.Add(new OpenApiSecurityRequirement { [new OpenApiSecuritySchemeReference(bearerSecuritySchemeName, context.Document)] = [] });
+                    return Task.CompletedTask;
+
+                case "logout":
+                    operation.Security.Add(new OpenApiSecurityRequirement());
+                    operation.Security.Add(new OpenApiSecurityRequirement { [new OpenApiSecuritySchemeReference(bearerSecuritySchemeName, context.Document)] = [] });
+                    operation.Security.Add(new OpenApiSecurityRequirement { [new OpenApiSecuritySchemeReference("RefreshCookie", context.Document)] = [] });
+                    operation.Parameters ??= [];
+                    if (!operation.Parameters.OfType<OpenApiParameter>().Any(parameter =>
+                            parameter.In == ParameterLocation.Header && parameter.Name?.Equals("Origin", StringComparison.OrdinalIgnoreCase) == true))
+                        operation.Parameters.Add(new OpenApiParameter {
+                            Name = "Origin",
+                            In = ParameterLocation.Header,
+                            Required = false,
+                            Description = "Must match an allowed origin when the refreshToken cookie is sent.",
+                            Schema = new OpenApiSchema { Type = JsonSchemaType.String }
+                        });
                     return Task.CompletedTask;
             }
 
@@ -222,7 +238,7 @@ builder.Services.AddOpenApi(options => {
 
         if (hasAuthorize && !hasAllowAnonymous)
             operation.Security.Add(new OpenApiSecurityRequirement {
-                [new OpenApiSecuritySchemeReference("Bearer", context.Document)] = []
+                [new OpenApiSecuritySchemeReference(bearerSecuritySchemeName, context.Document)] = []
             });
 
         return Task.CompletedTask;

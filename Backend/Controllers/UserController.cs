@@ -43,14 +43,36 @@ public class UserController : ApiControllerBase {
         return OkPaged(progress, requestQuery);
     }
 
-    [HttpPut("{userId:uint}")]
+    [HttpPut]
     [Authorize]
+    [EndpointSummary("Update a currently logged in user")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> UpdateUser([FromBody] UpdateUserRequestDto requestDto, CancellationToken cancellationToken)
+    {
+        await Task.CompletedTask;
+        return NoContent();
+    }
+
+    [HttpPut("{userId:uint}")]
+    [Authorize(Roles = "Admin")]
     [EndpointSummary("Update a user")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> UpdateUser(uint userId, [FromBody] CreateUserRequestDto requestDto, CancellationToken cancellationToken)
+    public async Task<IActionResult> UpdateUser(uint userId, [FromBody] UpdateUserRequestDto requestDto, CancellationToken cancellationToken)
+    {
+        await Task.CompletedTask;
+        return NoContent();
+    }
+
+    [HttpDelete]
+    [Authorize]
+    [EndpointSummary("Delete a currently logged in user")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> DeleteUser(CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
         return NoContent();

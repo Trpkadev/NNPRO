@@ -11,7 +11,7 @@ namespace Backend.Controllers;
 [Route("api/auth")]
 [Tags("Authentication")]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
-public class AuthController(IAuthService authService, IOptions<JwtOptions> jwtOptions, IConfiguration configuration, IWebHostEnvironment environment) : ApiControllerBase {
+public class AuthController(IAuthService authService, IOptions<JwtOptions> jwtOptions, IOptions<CorsSettings> corsSettings) : ApiControllerBase {
     private const string RefreshCookieName = "refreshToken";
     private const string RefreshCookiePath = "/api/auth";
 
@@ -91,24 +91,27 @@ public class AuthController(IAuthService authService, IOptions<JwtOptions> jwtOp
     }
 
     [HttpPost("logout")]
-    [Authorize]
+    [AllowAnonymous]
     [EndpointSummary("Logout user and revoke refresh token")]
-    [EndpointDescription("Requires a Bearer access token. Revokes the current session and expires the refreshToken cookie. If an Origin header is sent, it must be allowed.")]
+    [EndpointDescription("Revokes the session using the refreshToken cookie, or the bearer token if the cookie is unavailable, then expires the cookie. A valid access token is not required.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult> Logout(CancellationToken cancellationToken)
     {
-        if (!IsAllowedOrigin())
+        bool hasRefreshCookie = Request.Cookies.TryGetValue(RefreshCookieName, out string? refreshToken);
+        if (!IsAllowedOrigin(requireOrigin: hasRefreshCookie))
             return Forbid();
 
-        string? subject = User.FindFirst("sub")?.Value;
-        string? jwtId = User.FindFirst("jti")?.Value;
-        if (!uint.TryParse(subject, out uint userId) || string.IsNullOrEmpty(jwtId))
-            return Unauthorized();
+        bool revoked = false;
+        if (hasRefreshCookie && !string.IsNullOrWhiteSpace(refreshToken) && refreshToken.Length <= 128)
+            revoked = await authService.RevokeSessionByRefreshTokenAsync(refreshToken, GetClientIp(), cancellationToken);
 
-        bool revoked = await authService.RevokeCurrentSessionAsync(userId, jwtId, GetClientIp(), cancellationToken);
         if (!revoked)
-            return Unauthorized();
+        {
+            string? subject = User.FindFirst("sub")?.Value;
+            string? jwtId = User.FindFirst("jti")?.Value;
+            if (uint.TryParse(subject, out uint userId) && !string.IsNullOrEmpty(jwtId))
+                await authService.RevokeCurrentSessionAsync(userId, jwtId, GetClientIp(), cancellationToken);
+        }
 
         DeleteRefreshTokenCookie();
         return NoContent();
@@ -139,14 +142,8 @@ public class AuthController(IAuthService authService, IOptions<JwtOptions> jwtOp
             return !requireOrigin;
 
         string requestOrigin = $"{Request.Scheme}://{Request.Host}";
-        if (string.Equals(origin, requestOrigin, StringComparison.OrdinalIgnoreCase))
-            return true;
+        return string.Equals(origin, requestOrigin, StringComparison.OrdinalIgnoreCase) || corsSettings.Value.AllowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase);
 
-        string[] allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-        if (allowedOrigins.Length == 0 && environment.IsDevelopment())
-            allowedOrigins = ["http://localhost:5173", "https://localhost:5173"];
-
-        return allowedOrigins.Contains(origin, StringComparer.OrdinalIgnoreCase);
     }
 
     private string? GetClientIp() => HttpContext.Connection.RemoteIpAddress?.ToString();

@@ -19,6 +19,7 @@ public class RefreshToken {
     public User User { get; set; } = null!;
 
     public required DateTime ExpiresAtUtc { get; set; }
+    public DateTime? AccessTokenExpiresAtUtc { get; set; }
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
     [MaxLength(45)]
