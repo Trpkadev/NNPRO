@@ -51,6 +51,7 @@
       - Jwt__Audience=ELearningClient
     volumes:
       - dp_keys:/home/app/dp_keys
+      - ./Backend/aspnetapp.pfx:/https/aspnetapp.pfx:ro
     depends_on:
       db:
         condition: service_healthy

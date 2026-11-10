@@ -21,3 +21,4 @@
 /Backend/.idea
 /Backend/bin
 /Backend/Backend.sln.DotSettings.user
+*.pfx
