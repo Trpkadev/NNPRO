@@ -2,6 +2,7 @@ using Backend.Extensions;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
 using Backend.Models.Entities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers;
@@ -12,7 +13,7 @@ namespace Backend.Controllers;
 [Tags("Questions")]
 public class QuestionController : ApiControllerBase {
     [HttpGet("{questionId:uint}")]
-    //[Authorize]
+    [Authorize]
     [EndpointSummary("Get question detail")]
     [ProducesResponseType<Wrapper<QuestionResponseDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -23,7 +24,7 @@ public class QuestionController : ApiControllerBase {
     }
 
     [HttpGet("{questionId:uint}/options")]
-    //[Authorize]
+    [Authorize]
     [RequiresPaging]
     [EndpointSummary("Get answer options")]
     [EndpointDescription("Returns question options without correctness information.")]
@@ -39,7 +40,7 @@ public class QuestionController : ApiControllerBase {
     }
 
     [HttpGet("{questionId:uint}/options/editor")]
-    //[Authorize(Roles = "Admin,Instructor")]
+    [Authorize(Roles = "Admin,Instructor")]
     [RequiresPaging]
     [EndpointSummary("Get answer options for editing")]
     [ProducesResponseType<Wrapper<AnswerOptionEditorResponseDto[]>>(StatusCodes.Status200OK)]
@@ -56,7 +57,7 @@ public class QuestionController : ApiControllerBase {
     }
 
     [HttpPost("{questionId:uint}/options")]
-    //[Authorize(Roles = "Admin,Instructor")]
+    [Authorize(Roles = "Admin,Instructor")]
     [EndpointSummary("Create an answer option")]
     [ProducesResponseType<Wrapper<uint>>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -70,7 +71,7 @@ public class QuestionController : ApiControllerBase {
     }
 
     [HttpPut("{questionId:uint}/options/{optionId:uint}")]
-    //[Authorize(Roles = "Admin,Instructor")]
+    [Authorize(Roles = "Admin,Instructor")]
     [EndpointSummary("Update an answer option")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -84,7 +85,7 @@ public class QuestionController : ApiControllerBase {
     }
 
     [HttpDelete("{questionId:uint}/options/{optionId:uint}")]
-    //[Authorize(Roles = "Admin,Instructor")]
+    [Authorize(Roles = "Admin,Instructor")]
     [EndpointSummary("Delete an answer option")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
@@ -97,7 +98,7 @@ public class QuestionController : ApiControllerBase {
     }
 
     [HttpPost]
-    //[Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin")]
     [EndpointSummary("Create a question")]
     [ProducesResponseType<Wrapper<uint>>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -109,7 +110,7 @@ public class QuestionController : ApiControllerBase {
     }
 
     [HttpPut("{questionId:uint}")]
-    //[Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin")]
     [EndpointSummary("Update a question")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -121,7 +122,7 @@ public class QuestionController : ApiControllerBase {
     }
 
     [HttpDelete("{questionId:uint}")]
-    //[Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin")]
     [EndpointSummary("Delete a question")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
