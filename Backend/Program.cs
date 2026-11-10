@@ -68,12 +68,24 @@ builder.Services.AddControllers(options => { options.Filters.Add<ApiResponseWrap
 builder.Services.AddResponseCaching();
 
 string[] allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-builder.Services.AddCors(options => {
-    options.AddPolicy("Frontend",
-        policy => {
-            if (allowedOrigins.Length > 0)
-                policy.WithOrigins(allowedOrigins).AllowAnyHeader().AllowAnyMethod();
-        });
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+    {
+        if (allowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(allowedOrigins)
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        }
+        else if (builder.Environment.IsDevelopment())
+        {
+            policy.WithOrigins("http://localhost:5173", "https://localhost:5173")
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        }
+    });
 });
 
 builder.Services.AddRateLimiter(options => {

@@ -19,22 +19,10 @@ RUN dotnet publish "Backend.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:U
 FROM base AS final
 WORKDIR /app
 
-# Generování certifikátu pro Kestrel a příprava složek pod uživatelem root
+# Příprava složek pod uživatelem root
 USER root
-RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
-RUN mkdir -p /https && \
-    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-      -keyout /https/aspnetapp.key \
-      -out /https/aspnetapp.crt \
-      -subj "/CN=localhost" && \
-    openssl pkcs12 -export -out /https/aspnetapp.pfx \
-      -inkey /https/aspnetapp.key \
-      -in /https/aspnetapp.crt \
-      -passout pass:nnpro && \
-    chown -R $APP_UID:$APP_UID /https
-
-RUN mkdir -p /home/app/dp_keys && \
-    chown -R $APP_UID:$APP_UID /home/app
+RUN mkdir -p /https /home/app/dp_keys && \
+    chown -R $APP_UID:$APP_UID /https /home/app
 
 COPY --from=publish /app/publish .
 
