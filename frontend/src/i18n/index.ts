@@ -87,6 +87,13 @@ const messages = {
       lessonPlaceholder: 'Zde se bude zobrazovat obsah vybrané lekce.',
       courseNotFound: 'Kurz nebyl nalezen.',
 
+      // Průběh studia
+      sectionProgress: 'Průběh studia v sekci',
+      completedCount: 'Dokončeno {count} z {total} lekcí',
+      markCompleted: 'Dokončit',
+      completed: 'Dokončeno',
+      progressError: 'Nepodařilo se aktualizovat dokončení lekce.',
+
       mock: {
         csharp: {
           title: 'Základy programování v C#',
@@ -273,6 +280,13 @@ const messages = {
       sampleLesson: 'Sample Lesson',
       lessonPlaceholder: 'The content of the selected lesson will be displayed here.',
       courseNotFound: 'Course not found.',
+
+      // Study progress
+      sectionProgress: 'Section progress',
+      completedCount: '{count} of {total} lessons completed',
+      markCompleted: 'Complete',
+      completed: 'Completed',
+      progressError: 'Failed to update lesson progress.',
 
       mock: {
         csharp: {

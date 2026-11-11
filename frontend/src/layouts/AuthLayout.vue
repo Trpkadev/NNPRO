@@ -1,7 +1,9 @@
+
 <script setup lang="ts">
+import { useAppTheme } from '@/composables/useAppTheme'
+
 const { t, locale } = useI18n()
-const isDark = useDark()
-const toggleDark = useToggle(isDark)
+const { isDark, toggleDark } = useAppTheme()
 
 function toggleLanguage() {
   locale.value = locale.value === 'cs' ? 'en' : 'cs'
@@ -61,4 +63,3 @@ function toggleLanguage() {
     </main>
   </div>
 </template>
-

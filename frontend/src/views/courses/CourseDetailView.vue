@@ -1,38 +1,52 @@
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { mockCourses } from '@/mocks/courses'
+import { getApiErrorMessage } from '@/services/api'
+import { useCourseDetailQuery } from '@/composables/useCoursesQueries'
+import { useCourseContent } from '@/composables/useCourseContent'
+import { useLessonProgress } from '@/composables/useLessonProgress'
+import CourseHeader from '@/components/courses/CourseHeader.vue'
+import CourseSections from '@/components/courses/CourseSections.vue'
+import CourseProgress from '@/components/courses/CourseProgress.vue'
+import LessonList from '@/components/courses/LessonList.vue'
+import LessonDetail from '@/components/courses/LessonDetail.vue'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
+const courseId = computed(() => Number(route.params.id))
 
-// Vyhledání kurzu podle ID z URL
-const course = computed(() =>
-  mockCourses.find((item) => item.id === Number(route.params.id)),
-)
+const {
+  data: course,
+  isLoading: courseLoading,
+  isError: courseIsError,
+  error: courseError,
+} = useCourseDetailQuery(courseId)
 
-// Aktuálně vybraná lekce
-const selectedLesson = ref<number | null>(null)
+const {
+  sections, lessons, selectedLesson,
+  selectedSectionId, selectedLessonId,
+  sectionsLoading, sectionsIsError,
+  lessonsLoading, lessonsIsError,
+  lessonLoading, lessonIsError,
+  selectSection, openLesson, startLearning,
+} = useCourseContent(courseId)
 
-// Při změně kurzu resetujeme vybranou lekci
-watch(
-  () => route.params.id,
-  () => {
-    selectedLesson.value = null
-  },
-)
+const lessonIds = computed(() => lessons.value.map(l => l.id))
 
-// Otevření vybrané lekce
-function openLesson(index: number) {
-  selectedLesson.value = index
-}
+const {
+  completedLessons,
+  completedCount,
+  progressPercent,
+  pendingLessonId,
+  progressError,
+  toggleLesson,
+} = useLessonProgress(lessonIds, courseId)
 </script>
 
 <template>
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-    <!-- Navigace zpět na katalog -->
     <Button
       :label="t('courses.backToCatalog')"
       icon="pi pi-arrow-left"
@@ -41,96 +55,87 @@ function openLesson(index: number) {
       @click="router.push('/home')"
     />
 
-    <template v-if="course">
-      <!-- Hlavička kurzu -->
-      <div
-        class="p-6 rounded-2xl bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 space-y-4"
-      >
-        <div class="flex items-center gap-3">
-          <Tag
-            :value="t('courses.course')"
-            severity="success"
+    <Skeleton v-if="courseLoading" height="12rem" />
+
+    <Message
+      v-else-if="courseIsError"
+      severity="error"
+      :closable="false"
+    >
+      {{ getApiErrorMessage(courseError, t('courses.loadError')) }}
+    </Message>
+
+    <template v-else-if="course">
+      <CourseHeader
+        :title="course.title"
+        :description="course.description"
+        :can-start="lessons.length > 0"
+        @start="startLearning"
+      />
+
+      <section class="space-y-4">
+        <Skeleton
+          v-if="sectionsLoading || lessonsLoading"
+          height="8rem"
+        />
+
+        <Message
+          v-else-if="sectionsIsError || lessonsIsError"
+          severity="error"
+          :closable="false"
+        >
+          {{ t('courses.loadError') }}
+        </Message>
+
+        <template v-else>
+          <CourseSections
+            :sections="sections"
+            :selected-section-id="selectedSectionId"
+            @select="selectSection"
           />
 
-          <span class="text-sm text-surface-500">
-            {{ t('courses.onlineCourse') }}
-          </span>
-        </div>
+          <CourseProgress
+            v-if="lessons.length > 0"
+            :completed="completedCount"
+            :total="lessons.length"
+            :percentage="progressPercent"
+          />
 
-        <h1 class="text-3xl font-bold">
-          {{ t(course.titleKey) }}
-        </h1>
-
-        <p class="text-surface-600 dark:text-surface-400 max-w-3xl">
-          {{ t(course.descriptionKey) }}
-        </p>
-
-        <div class="flex items-center gap-4 text-sm text-surface-500">
-          <span class="flex items-center gap-2">
-            <i class="pi pi-book" />
-            {{ course.lessonKeys.length }} {{ t('courses.lessons') }}
-          </span>
-        </div>
-
-        <Button
-          :label="t('courses.startLearning')"
-          icon="pi pi-play"
-          :disabled="course.lessonKeys.length === 0"
-          @click="openLesson(0)"
-        />
-      </div>
-
-      <!-- Obsah kurzu -->
-      <section class="space-y-4">
-        <h2 class="text-xl font-semibold">
-          {{ t('courses.courseContent') }}
-        </h2>
-
-        <div class="space-y-3">
-          <button
-            v-for="(lessonKey, index) in course.lessonKeys"
-            :key="lessonKey"
-            type="button"
-            class="w-full p-4 rounded-xl border border-surface-200 dark:border-surface-800 bg-surface-0 dark:bg-surface-900 hover:border-emerald-500 transition-colors flex items-center justify-between text-left cursor-pointer"
-            :class="{
-              '!border-emerald-500': selectedLesson === index,
-            }"
-            @click="openLesson(index)"
+          <Message
+            v-if="progressError"
+            severity="error"
+            :closable="false"
           >
-            <div class="flex items-center gap-4">
-              <span class="text-emerald-500 font-semibold">
-                {{ index + 1 }}.
-              </span>
+            {{ t('courses.progressError') }}
+          </Message>
 
-              <span>{{ t(lessonKey) }}</span>
-            </div>
+          <LessonList
+            :lessons="lessons"
+            :selected-lesson-id="selectedLessonId"
+            :completed-lessons="completedLessons"
+            :pending-lesson-id="pendingLessonId"
+            @select="openLesson"
+            @toggle="toggleLesson"
+          />
 
-            <i class="pi pi-chevron-right text-surface-400" />
-          </button>
-        </div>
+          <Message
+            v-if="sections.length === 0"
+            severity="info"
+            :closable="false"
+          >
+            {{ t('courses.empty') }}
+          </Message>
+        </template>
       </section>
 
-      <!-- Zobrazení vybrané lekce -->
-      <div
-        v-if="selectedLesson !== null"
-        class="p-6 rounded-2xl bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 space-y-3"
-      >
-        <Tag
-          :value="t('courses.sampleLesson')"
-          severity="info"
-        />
-
-        <h2 class="text-xl font-semibold">
-          {{ t(course.lessonKeys[selectedLesson]!) }}
-        </h2>
-
-        <p class="text-surface-600 dark:text-surface-400">
-          {{ t('courses.lessonPlaceholder') }}
-        </p>
-      </div>
+      <LessonDetail
+        v-if="selectedLessonId !== null"
+        :lesson="selectedLesson"
+        :loading="lessonLoading"
+        :error="lessonIsError"
+      />
     </template>
 
-    <!-- Kurz nebyl nalezen -->
     <Message v-else severity="warn" :closable="false">
       {{ t('courses.courseNotFound') }}
     </Message>

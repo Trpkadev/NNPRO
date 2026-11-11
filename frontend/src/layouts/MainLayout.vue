@@ -2,6 +2,7 @@
 import { useToast } from 'openvue/usetoast'
 import { UserRoles } from '@/types/api'
 import { getApiErrorMessage } from '@/services/api'
+import { useAppTheme } from '@/composables/useAppTheme'
 
 const { t, locale } = useI18n()
 const router = useRouter()
@@ -12,8 +13,7 @@ const authStore = useAuthStore()
 const { canManageCourses, canManageUsers } = usePermissions()
 const logoutMutation = useLogoutMutation()
 
-const isDark = useDark()
-const toggleDark = useToggle(isDark)
+const { isDark, toggleDark } = useAppTheme()
 const mobileMenuVisible = ref(false)
 
 function toggleLanguage() {
