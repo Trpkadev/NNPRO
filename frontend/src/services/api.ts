@@ -101,6 +101,18 @@ export function serializeQueryParams<T extends QueryParameters>(
   return result
 }
 
+const GENERIC_PROBLEM_TITLES = new Set([
+  'bad request',
+  'unauthorized',
+  'forbidden',
+  'not found',
+  'conflict',
+  'internal server error',
+  'service unavailable',
+  'one or more validation errors occurred.',
+  'an error occurred while processing your request.',
+])
+
 /**
  * Získá čitelnou chybovou zprávu z API odpovědi (ProblemDetails)
  */
@@ -117,12 +129,20 @@ export function getApiErrorMessage(
           return firstErrorList[0]
         }
       }
-      if (data.detail) return data.detail
-      if (data.title) return data.title
+      if (data.detail && data.detail.trim()) {
+        return data.detail
+      }
+      if (
+        data.title &&
+        data.title.trim() &&
+        !GENERIC_PROBLEM_TITLES.has(data.title.trim().toLowerCase())
+      ) {
+        return data.title
+      }
     }
-    if (error.message) return error.message
+    return fallbackMessage
   }
-  if (error instanceof Error) {
+  if (error instanceof Error && error.message) {
     return error.message
   }
   return fallbackMessage

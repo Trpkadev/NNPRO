@@ -8,7 +8,10 @@ const route = useRoute()
 const toast = useToast()
 
 const loginMutation = useLoginMutation()
-const serverError = ref<string | null>(null)
+const submitError = ref<unknown>(null)
+const serverError = computed(() =>
+  submitError.value ? getApiErrorMessage(submitError.value, t('auth.loginError')) : null,
+)
 
 const { handleSubmit, errors, defineField, validateField } = useForm({
   validationSchema: {
@@ -33,7 +36,7 @@ watch(locale, () => {
 })
 
 const onSubmit = handleSubmit(async (values) => {
-  serverError.value = null
+  submitError.value = null
   const trimmedIdentifier = values.identifier.trim()
   const isEmail = trimmedIdentifier.includes('@')
 
@@ -57,7 +60,7 @@ const onSubmit = handleSubmit(async (values) => {
         : '/'
     await router.replace(redirectPath)
   } catch (err) {
-    serverError.value = getApiErrorMessage(err, t('auth.loginError'))
+    submitError.value = err
   }
 })
 </script>

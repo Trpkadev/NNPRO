@@ -67,6 +67,7 @@ const messages = {
       loggedInAs: 'Přihlášen jako',
       loginError: 'Neplatné přihlašovací údaje',
       registerError: 'Registrace se nezdařila',
+      registerConflictError: 'Uživatel s tímto jménem nebo e-mailem již existuje',
     },
     notFound: {
       title: 'Stránka nenalezena',
@@ -152,6 +153,7 @@ const messages = {
       loggedInAs: 'Signed in as',
       loginError: 'Invalid credentials',
       registerError: 'Registration failed',
+      registerConflictError: 'A user with this username or email already exists',
     },
     notFound: {
       title: 'Page not found',

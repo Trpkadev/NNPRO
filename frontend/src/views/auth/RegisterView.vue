@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import axios from 'axios'
 import { useToast } from 'openvue/usetoast'
 import { getApiErrorMessage } from '@/services/api'
 
@@ -7,7 +8,14 @@ const router = useRouter()
 const toast = useToast()
 
 const registerMutation = useRegisterMutation()
-const serverError = ref<string | null>(null)
+const submitError = ref<unknown>(null)
+const serverError = computed(() => {
+  if (!submitError.value) return null
+  const isConflict =
+    axios.isAxiosError(submitError.value) && submitError.value.response?.status === 409
+  const fallback = isConflict ? t('auth.registerConflictError') : t('auth.registerError')
+  return getApiErrorMessage(submitError.value, fallback)
+})
 
 const { handleSubmit, values, errors, defineField, validateField } = useForm({
   validationSchema: {
@@ -49,7 +57,7 @@ watch(locale, () => {
 })
 
 const onSubmit = handleSubmit(async (formValues) => {
-  serverError.value = null
+  submitError.value = null
 
   try {
     await registerMutation.mutateAsync({
@@ -66,7 +74,7 @@ const onSubmit = handleSubmit(async (formValues) => {
 
     await router.replace({ name: 'home' })
   } catch (err) {
-    serverError.value = getApiErrorMessage(err, t('auth.registerError'))
+    submitError.value = err
   }
 })
 </script>
