@@ -12,8 +12,6 @@ public record RequestQuery : IValidatableObject {
     [Range(1, 100)]
     public int? PageSize { get; init; }
 
-    public string? Search { get; init; }
-
     public string? SortBy { get; init; } = "Id";
     public bool? Descending { get; init; }
 

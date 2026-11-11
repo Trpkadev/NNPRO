@@ -22,9 +22,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     {
         base.OnModelCreating(modelBuilder);
 
-        // ==========================================
-        // USER & AUTH
-        // ==========================================
         modelBuilder.Entity<User>(entity => {
             entity.HasIndex(u => u.Username).IsUnique();
             entity.HasIndex(u => u.Email).IsUnique();
@@ -33,15 +30,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<RefreshToken>(entity => {
             entity.HasIndex(r => r.TokenHash).IsUnique();
             entity.HasIndex(r => r.JwtId);
+            entity.HasIndex(r => r.TokenFamilyId);
+            entity.HasIndex(r => r.UserId);
             entity.HasOne(r => r.User)
                 .WithMany(u => u.RefreshTokens)
                 .HasForeignKey(r => r.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        // ==========================================
-        // COURSE, SECTION & LESSON
-        // ==========================================
         modelBuilder.Entity<Course>()
             .HasMany(c => c.Instructors)
             .WithMany(u => u.TeachingCourses)
@@ -69,9 +65,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasForeignKey(a => a.LessonId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // ==========================================
-        // QUIZ, QUESTION & ANSWER OPTION
-        // ==========================================
         modelBuilder.Entity<Quiz>(entity => {
             entity.Property(q => q.PassingThresholdPercent).HasPrecision(5, 2);
             entity.HasOne(q => q.Section)
@@ -93,9 +86,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasForeignKey(a => a.QuestionId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // ==========================================
-        // STUDENT RELATIONS (Enrollments, Progress, Attempts)
-        // ==========================================
         modelBuilder.Entity<Enrollment>(entity => {
             entity.HasIndex(e => new { e.StudentId, e.CourseId }).IsUnique();
             entity.HasOne(e => e.Student)
@@ -140,7 +130,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .HasForeignKey(a => a.QuizAttemptId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Ponecháno na Restrict pro prevenci "multiple cascade paths" problému v SQL Server/MariaDB
+            // Restrict avoids multiple cascade paths in SQL Server and MariaDB.
             entity.HasOne(a => a.Question)
                 .WithMany()
                 .HasForeignKey(a => a.QuestionId)

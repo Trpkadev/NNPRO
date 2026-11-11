@@ -17,10 +17,8 @@ public class StudentLessonProgress : IValidatableObject {
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (IsCompleted != CompletedAtUtc.HasValue)
-        {
             yield return new ValidationResult(
-                "Dokončená lekce musí mít čas dokončení a nedokončená lekce ho mít nesmí.",
+                Resources.ValidationStudentLessonProgressCompletionTimestamp,
                 [nameof(IsCompleted), nameof(CompletedAtUtc)]);
-        }
     }
 }

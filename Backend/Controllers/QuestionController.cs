@@ -13,7 +13,7 @@ namespace Backend.Controllers;
 [Tags("Questions")]
 public class QuestionController : ApiControllerBase {
     [HttpGet("{questionId:uint}")]
-    //[Authorize]
+    [Authorize]
     [EndpointSummary("Get question detail")]
     [ProducesResponseType<Wrapper<QuestionResponseDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -24,7 +24,7 @@ public class QuestionController : ApiControllerBase {
     }
 
     [HttpGet("{questionId:uint}/options")]
-    //[Authorize]
+    [Authorize]
     [RequiresPaging]
     [EndpointSummary("Get answer options")]
     [EndpointDescription("Returns question options without correctness information.")]
@@ -98,7 +98,7 @@ public class QuestionController : ApiControllerBase {
     }
 
     [HttpPost]
-    //[Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin")]
     [EndpointSummary("Create a question")]
     [ProducesResponseType<Wrapper<uint>>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -110,7 +110,7 @@ public class QuestionController : ApiControllerBase {
     }
 
     [HttpPut("{questionId:uint}")]
-    //[Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin")]
     [EndpointSummary("Update a question")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -122,7 +122,7 @@ public class QuestionController : ApiControllerBase {
     }
 
     [HttpDelete("{questionId:uint}")]
-    //[Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin")]
     [EndpointSummary("Delete a question")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]

@@ -2,6 +2,7 @@ using Backend.Extensions;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
 using Backend.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Controllers;
@@ -12,7 +13,7 @@ namespace Backend.Controllers;
 [Tags("Courses")]
 public class CourseController(ICourseService courseService) : ApiControllerBase {
     [HttpGet("{id:uint}")]
-    //[Authorize]
+    [Authorize]
     [EndpointSummary("Get course detail")]
     [EndpointDescription("Returns the full details of a course including its title and description.")]
     [ProducesResponseType<Wrapper<CourseResponseDto>>(StatusCodes.Status200OK)]
@@ -30,7 +31,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [HttpGet]
     [RequiresPaging]
     [ResponseCache(Duration = 60, VaryByQueryKeys = ["*"])]
-    //[Authorize]
+    [Authorize]
     [EndpointSummary("Get all courses")]
     [EndpointDescription("Returns a list of courses including their details and assigned instructors.")]
     [ProducesResponseType<Wrapper<CourseResponseDto[]>>(StatusCodes.Status200OK)]
@@ -42,23 +43,8 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
         return Ok(courses, metadata);
     }
 
-    [HttpGet("{courseId:uint}/sections")]
-    //[Authorize]
-    [RequiresPaging]
-    [EndpointSummary("Get course sections")]
-    [ProducesResponseType<Wrapper<SectionResponseDto[]>>(StatusCodes.Status200OK)]
-    public async Task<ActionResult<SectionResponseDto[]>> GetCourseSections(uint courseId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
-    {
-        await Task.CompletedTask;
-        var sections = new[] {
-            new SectionResponseDto(1, "Introduction", 1, courseId),
-            new SectionResponseDto(2, "Advanced topics", 2, courseId)
-        };
-        return OkPaged(sections, requestQuery);
-    }
-
     [HttpGet("{courseId:uint}/instructors")]
-    //[Authorize]
+    [Authorize]
     [RequiresPaging]
     [EndpointSummary("Get course instructors")]
     [ProducesResponseType<Wrapper<CourseInstructorResponseDto[]>>(StatusCodes.Status200OK)]
@@ -73,20 +59,23 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     }
 
     [HttpGet("{courseId:uint}/sections")]
-    //[Authorize]
+    [Authorize]
+    [RequiresPaging]
     [EndpointSummary("Get course sections")]
-    [EndpointDescription("Returns the sections belonging to a course.")]
     [ProducesResponseType<Wrapper<SectionResponseDto[]>>(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<SectionResponseDto[]>> GetCourseSections(uint courseId, CancellationToken cancellationToken)
+    public async Task<ActionResult<SectionResponseDto[]>> GetCourseSections(uint courseId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
-        return Ok(new[] { new SectionResponseDto(1, "Dummy Section", 1, courseId) });
+        var sections = new[] {
+            new SectionResponseDto(1, "Introduction", 1, courseId),
+            new SectionResponseDto(2, "Advanced topics", 2, courseId)
+        };
+        return OkPaged(sections, requestQuery);
     }
 
     [HttpPost]
     [EndpointSummary("Create a course")]
-    //[Authorize(Roles = "Admin, Instructor")]
+    [Authorize(Roles = "Admin, Instructor")]
     [EndpointDescription("Creates a new course and returns the created course id.")]
     [ProducesResponseType<Wrapper<uint>>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -98,7 +87,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
 
     [HttpDelete("{id:uint}")]
     [EndpointSummary("Delete a course")]
-    //[Authorize(Roles = "Admin, Instructor")]
+    [Authorize(Roles = "Admin, Instructor")]
     [EndpointDescription("Removes a course from the system by its ID.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -113,7 +102,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     }
 
     [HttpPut("{id:uint}")]
-    //[Authorize(Roles = "Admin, Instructor")]
+    [Authorize(Roles = "Admin, Instructor")]
     [EndpointSummary("Update a course")]
     [EndpointDescription("Fully updates an existing course with new details.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -132,7 +121,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [HttpGet("thumbnails")]
     [RequiresPaging]
     [ResponseCache(Duration = 60, VaryByQueryKeys = ["*"])]
-    //[Authorize]
+    [Authorize]
     [EndpointSummary("Get course thumbnails")]
     [EndpointDescription("Returns a lightweight collection of courses for catalog or card display. Supports pagination, text search, description trimming, and sorting.")]
     [ProducesResponseType<Wrapper<CourseThumbnailResponseDto[]>>(StatusCodes.Status200OK)]

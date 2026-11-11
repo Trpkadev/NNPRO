@@ -13,7 +13,7 @@ namespace Backend.Controllers;
 [Tags("Quizzes")]
 public class QuizController : ApiControllerBase {
     [HttpGet("{quizId:uint}")]
-    //[Authorize]
+    [Authorize]
     [EndpointSummary("Get quiz detail")]
     [ProducesResponseType<Wrapper<QuizResponseDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -24,7 +24,7 @@ public class QuizController : ApiControllerBase {
     }
 
     [HttpGet("{quizId:uint}/questions")]
-    //[Authorize]
+    [Authorize]
     [RequiresPaging]
     [EndpointSummary("Get quiz questions")]
     [EndpointDescription("Returns the questions belonging to a quiz without answer keys.")]
@@ -41,7 +41,7 @@ public class QuizController : ApiControllerBase {
     }
 
     [HttpPost]
-    //[Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin")]
     [EndpointSummary("Create a quiz")]
     [ProducesResponseType<Wrapper<uint>>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -53,7 +53,7 @@ public class QuizController : ApiControllerBase {
     }
 
     [HttpPut("{quizId:uint}")]
-    //[Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin")]
     [EndpointSummary("Update a quiz")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -65,7 +65,7 @@ public class QuizController : ApiControllerBase {
     }
 
     [HttpDelete("{quizId:uint}")]
-    //[Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin")]
     [EndpointSummary("Delete a quiz")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -76,7 +76,7 @@ public class QuizController : ApiControllerBase {
     }
 
     [HttpGet("{quizId:uint}/editor")]
-    //[Authorize(Roles = "Instructor,Admin")]
+    [Authorize(Roles = "Instructor,Admin")]
     [EndpointSummary("Get quiz data for editor")]
     [ProducesResponseType<Wrapper<QuizResponseDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -119,7 +119,7 @@ public class QuizController : ApiControllerBase {
     }
 
     [HttpGet("attempt/{attemptId:uint}")]
-    //[Authorize]
+    [Authorize]
     [EndpointSummary("Get specific quiz attempt")]
     [ProducesResponseType<Wrapper<QuizAttemptResponseDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
@@ -130,7 +130,7 @@ public class QuizController : ApiControllerBase {
     }
 
     [HttpPost("attempt/start")]
-    //[Authorize(Roles = "Student")]
+    [Authorize(Roles = "Student")]
     [EndpointSummary("Start a quiz attempt")]
     [ProducesResponseType<Wrapper<uint>>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -142,7 +142,7 @@ public class QuizController : ApiControllerBase {
     }
 
     [HttpPost("attempt/end")]
-    //[Authorize(Roles = "Student")]
+    [Authorize(Roles = "Student")]
     [EndpointSummary("Submit and end a quiz attempt")]
     [ProducesResponseType<Wrapper<QuizAttemptResponseDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]

@@ -23,6 +23,5 @@ public class Lesson {
     public uint SectionId { get; set; }
     public Section Section { get; set; } = null!;
 
-    // Navigační kolekce
     public ICollection<LessonAttachment> Attachments { get; set; } = [];
 }

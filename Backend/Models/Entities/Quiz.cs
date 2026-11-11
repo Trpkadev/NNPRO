@@ -24,6 +24,5 @@ public class Quiz {
     public bool RandomizeQuestions { get; set; }
     public bool RandomizeAnswers { get; set; }
 
-    // Navigační kolekce
     public ICollection<Question> Questions { get; set; } = [];
 }

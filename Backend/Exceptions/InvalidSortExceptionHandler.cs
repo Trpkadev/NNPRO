@@ -9,7 +9,7 @@ public class InvalidSortExceptionHandler : IExceptionHandler {
         if (exception is not InvalidSortException typedException)
             return false;
 
-        string title = string.Format(Resources.ExceptionTitleInvalidSort, typedException.SortBy);
+        string title = string.Format(Resources.ErrorInvalidSort, typedException.SortBy);
         var problemDetails = new ProblemDetails {
             Status = StatusCodes.Status400BadRequest,
             Title = title,

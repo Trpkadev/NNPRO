@@ -22,7 +22,6 @@ public class CourseService(AppDbContext dbContext, IOptions<DatabaseLimitsOption
     public async Task<(CourseResponseDto[] Courses, Metadata Metadata)> GetAsync(RequestQuery requestDto, CancellationToken ct)
     {
         var (courses, paginationMetadata) = await dbContext.Courses.AsNoTracking()
-            .ApplyCourseSearch(requestDto.Search)
             .Filter(requestDto.Filters)
             .OrderByProperty(requestDto.Sorting)
             .Select(x => new CourseResponseDto(x.Id, x.Title, x.Description))
@@ -34,7 +33,6 @@ public class CourseService(AppDbContext dbContext, IOptions<DatabaseLimitsOption
     public async Task<(CourseThumbnailResponseDto[] Courses, Metadata Metadata)> GetCourseThumbnailsAsync(CourseThumbnailRequestDto requestDto, CancellationToken ct)
     {
         var (rawCourses, paginationMetadata) = await dbContext.Courses.AsNoTracking()
-            .ApplyCourseSearch(requestDto.Search)
             .Filter(requestDto.Filters)
             .OrderByProperty(requestDto.Sorting)
             .Select(x => new { x.Id, x.Title, x.Description })
