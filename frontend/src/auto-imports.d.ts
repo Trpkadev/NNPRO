@@ -11,6 +11,7 @@ declare global {
   const EffectScope: typeof import('vue').EffectScope
   const FieldContextKey: typeof import('vee-validate').FieldContextKey
   const FormContextKey: typeof import('vee-validate').FormContextKey
+  const HAS_SESSION_KEY: typeof import('./stores/auth').HAS_SESSION_KEY
   const acceptHMRUpdate: typeof import('pinia').acceptHMRUpdate
   const adminService: typeof import('./services/admin.service').adminService
   const api: typeof import('./services/api').api
@@ -440,6 +441,7 @@ declare module 'vue' {
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly FieldContextKey: UnwrapRef<typeof import('vee-validate')['FieldContextKey']>
     readonly FormContextKey: UnwrapRef<typeof import('vee-validate')['FormContextKey']>
+    readonly HAS_SESSION_KEY: UnwrapRef<typeof import('./stores/auth')['HAS_SESSION_KEY']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
     readonly adminService: UnwrapRef<typeof import('./services/admin.service')['adminService']>
     readonly api: UnwrapRef<typeof import('./services/api')['api']>

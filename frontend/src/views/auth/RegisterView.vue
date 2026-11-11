@@ -46,6 +46,12 @@ const [email, emailAttrs] = defineField('email')
 const [password, passwordAttrs] = defineField('password')
 const [confirmPassword, confirmPasswordAttrs] = defineField('confirmPassword')
 
+watch(password, () => {
+  if (confirmPassword.value || errors.value.confirmPassword) {
+    validateField('confirmPassword')
+  }
+})
+
 watch(locale, () => {
   for (const field of Object.keys(errors.value) as Array<
     'username' | 'email' | 'password' | 'confirmPassword'

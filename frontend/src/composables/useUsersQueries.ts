@@ -1,5 +1,6 @@
 import type { MaybeRefOrGetter } from 'vue'
 import { usersService } from '@/services/users.service'
+import { useAuthStore } from '@/stores/auth'
 import { queryKeys } from './queryKeys'
 import type { QueryParameters, UpdateUserRequestDto } from '@/types/api'
 
@@ -26,11 +27,13 @@ export function useMyProgressQuery(
 }
 
 export function useUpdateCurrentUserMutation() {
+  const authStore = useAuthStore()
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: (payload: UpdateUserRequestDto) => usersService.updateCurrent(payload),
-    onSuccess: () => {
+    onSuccess: async () => {
+      await authStore.refreshTokens()
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all })
       queryClient.invalidateQueries({ queryKey: queryKeys.admin.users() })
     },
@@ -38,11 +41,13 @@ export function useUpdateCurrentUserMutation() {
 }
 
 export function useDeleteCurrentUserMutation() {
+  const authStore = useAuthStore()
   const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: () => usersService.removeCurrent(),
     onSuccess: () => {
+      authStore.clearAuth()
       queryClient.clear()
     },
   })

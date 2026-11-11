@@ -13,6 +13,8 @@ import {
 } from '@/types/api'
 import type { AuthenticatedUser } from '@/types/auth'
 
+export const HAS_SESSION_KEY = 'has_session'
+
 let refreshPromise: Promise<AuthResponseDto | null> | null = null
 
 export const useAuthStore = defineStore('auth', () => {
@@ -53,11 +55,13 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = authData.accessToken
     expiresAtUtc.value = authData.expiresAtUtc
     isInitialized.value = true
+    localStorage.setItem(HAS_SESSION_KEY, '1')
   }
 
   function clearAuth() {
     token.value = null
     expiresAtUtc.value = null
+    localStorage.removeItem(HAS_SESSION_KEY)
   }
 
   async function login(payload: LoginRequestDto): Promise<AuthResponseDto> {
@@ -95,11 +99,13 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
-   * Po obnovení stránky (F5) se jednou pokusí obnovit access token pomocí HttpOnly refreshToken cookie
+   * Po obnovení stránky (F5) se jednou pokusí obnovit access token pomocí HttpOnly refreshToken cookie,
+   * pokud má uživatel příznak aktivní relace v localStorage.
    */
   async function initializeAuth(): Promise<void> {
     if (isInitialized.value) return
-    if (!isAuthenticated.value) {
+    const hasSessionFlag = localStorage.getItem(HAS_SESSION_KEY) === '1'
+    if (!isAuthenticated.value && hasSessionFlag) {
       await refreshTokens()
     } else {
       isInitialized.value = true

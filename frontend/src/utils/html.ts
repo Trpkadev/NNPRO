@@ -7,7 +7,10 @@ function ensureTargetBlankHook() {
   if (hookRegistered) return
   DOMPurify.addHook('afterSanitizeAttributes', (node) => {
     if (node instanceof Element && node.getAttribute('target') === '_blank') {
-      node.setAttribute('rel', 'noopener noreferrer')
+      const rel = new Set((node.getAttribute('rel') ?? '').split(/\s+/).filter(Boolean))
+      rel.add('noopener')
+      rel.add('noreferrer')
+      node.setAttribute('rel', Array.from(rel).join(' '))
     }
   })
   hookRegistered = true
