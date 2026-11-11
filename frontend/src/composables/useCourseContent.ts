@@ -4,24 +4,51 @@ import { useQuery } from '@tanstack/vue-query'
 import { api } from '@/services/api'
 import type { ApiWrapper, SectionResponseDto, LessonResponseDto } from '@/types/api'
 
+// Načte postupně všechny stránky z API.
+async function fetchAllPages<T extends { id: number }>(url: string): Promise<T[]> {
+  const pageSize = 50
+  const allItems: T[] = []
+  const seenIds = new Set<number>()
+  let page = 1
+
+  while (true) {
+    const { data } = await api.get<ApiWrapper<T[]>>(url, {
+      params: { Page: page, PageSize: pageSize },
+    })
+
+    const items = data.data ?? []
+
+    for (const item of items) {
+      if (seenIds.has(item.id)) {
+        throw new Error('API returned duplicate items during pagination')
+      }
+      seenIds.add(item.id)
+    }
+
+    allItems.push(...items)
+
+    if (items.length < pageSize) {
+      break
+    }
+
+    page++
+  }
+
+  return allItems
+}
+
 export function useCourseContent(courseId: Ref<number>) {
   const selectedSectionId = ref<number | null>(null)
   const selectedLessonId = ref<number | null>(null)
 
   const sectionsQuery = useQuery({
     queryKey: computed(() => ['course-sections', courseId.value]),
-    queryFn: async () => {
-      const { data } = await api.get<ApiWrapper<SectionResponseDto[]>>(
-        `/api/courses/${courseId.value}/sections`,
-        { params: { Page: 1, PageSize: 50 } },
-      )
-      return data
-    },
+    queryFn: () => fetchAllPages<SectionResponseDto>(`/api/courses/${courseId.value}/sections`),
     enabled: computed(() => courseId.value > 0),
   })
 
   const sections = computed(() =>
-    [...(sectionsQuery.data.value?.data ?? [])].sort((a, b) => a.order - b.order),
+    [...(sectionsQuery.data.value ?? [])].sort((a, b) => a.order - b.order),
   )
 
   watch(
@@ -37,18 +64,13 @@ export function useCourseContent(courseId: Ref<number>) {
 
   const lessonsQuery = useQuery({
     queryKey: computed(() => ['section-lessons', selectedSectionId.value]),
-    queryFn: async () => {
-      const { data } = await api.get<ApiWrapper<LessonResponseDto[]>>(
-        `/api/sections/${selectedSectionId.value}/lessons`,
-        { params: { Page: 1, PageSize: 50 } },
-      )
-      return data
-    },
+    queryFn: () =>
+      fetchAllPages<LessonResponseDto>(`/api/sections/${selectedSectionId.value}/lessons`),
     enabled: computed(() => selectedSectionId.value !== null),
   })
 
   const lessons = computed(() =>
-    [...(lessonsQuery.data.value?.data ?? [])].sort((a, b) => a.order - b.order),
+    [...(lessonsQuery.data.value ?? [])].sort((a, b) => a.order - b.order),
   )
 
   const lessonQuery = useQuery({

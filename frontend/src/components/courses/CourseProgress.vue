@@ -5,7 +5,7 @@ defineProps<{
   percentage: number
 }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 </script>
 
 <template>
@@ -27,6 +27,14 @@ const { t } = useI18n()
         t('courses.completedCount', {
           count: completed,
           total,
+          lessonForm:
+            total === 1
+              ? locale === 'cs'
+                ? 'lekce'
+                : 'lesson'
+              : locale === 'cs'
+                ? 'lekcí'
+                : 'lessons',
         })
       }}
     </p>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { UserRoles } from '@/types/api'
 import { getApiErrorMessage } from '@/services/api'
 import CourseSearch from '@/components/courses/CourseSearch.vue'
@@ -8,7 +9,7 @@ const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 
-// Načítání kurzů přímo z backendu
+// Načítání kurzů z backendu
 const {
   data: thumbnailsResponse,
   isLoading,
@@ -25,7 +26,6 @@ const { search, filter, filteredCourses } = useCourseFilters(courses)
 
 const coursesError = computed(() => getApiErrorMessage(error.value, t('courses.loadError')))
 
-// Otevření detailu kurzu
 function openCourse(id: number) {
   router.push({ name: 'course-detail', params: { id } })
 }
@@ -44,9 +44,8 @@ function openCourse(id: number) {
 
         <p v-if="authStore.user" class="text-sm text-surface-600 dark:text-surface-400">
           {{ t('auth.loggedInAs') }}
-
           <span class="font-semibold text-surface-900 dark:text-surface-0">
-            {{ authStore.user?.username }}
+            {{ authStore.user.username || authStore.user.email }}
           </span>
         </p>
       </div>
@@ -80,8 +79,10 @@ function openCourse(id: number) {
     <section class="space-y-4">
       <h2 class="text-lg font-semibold">
         {{ t('nav.courses') }}
-        <CourseSearch v-model="search" v-model:filter="filter" />
       </h2>
+
+      <!-- Vyhledávání je mimo nadpis -->
+      <CourseSearch v-model="search" v-model:filter="filter" />
 
       <!-- Načítání -->
       <div v-if="isLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -93,7 +94,7 @@ function openCourse(id: number) {
         {{ coursesError }}
       </Message>
 
-      <!-- Prázdný katalog -->
+      <!-- Prázdný katalog nebo žádné výsledky -->
       <div
         v-else-if="filteredCourses.length === 0"
         class="p-8 rounded-2xl bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 text-center text-surface-500 text-sm"

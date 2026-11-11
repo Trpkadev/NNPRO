@@ -1,4 +1,5 @@
 import { createI18n } from 'vue-i18n'
+import { watch } from 'vue'
 
 export const LOCALE_STORAGE_KEY = 'app_locale'
 export type SupportedLocale = 'cs' | 'en'
@@ -104,7 +105,7 @@ const messages = {
 
       // Průběh studia
       sectionProgress: 'Průběh studia v sekci',
-      completedCount: 'Dokončeno {count} z {total} lekcí',
+      completedCount: 'Dokončeno {count} z {total} {lessonForm}',
       markCompleted: 'Dokončit',
       completed: 'Dokončeno',
       progressError: 'Nepodařilo se aktualizovat dokončení lekce.',
@@ -326,7 +327,7 @@ const messages = {
 
       // Study progress
       sectionProgress: 'Section progress',
-      completedCount: '{count} of {total} lessons completed',
+      completedCount: '{count} of {total} {lessonForm} completed',
       markCompleted: 'Complete',
       completed: 'Completed',
       progressError: 'Failed to update lesson progress.',
@@ -439,3 +440,11 @@ export const i18n = createI18n({
   fallbackLocale: 'en',
   messages,
 })
+
+watch(
+  i18n.global.locale,
+  (lang) => {
+    document.documentElement.lang = lang
+  },
+  { immediate: true },
+)
