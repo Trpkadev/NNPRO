@@ -16,7 +16,7 @@ dotnet dev-certs https --trust -ep ./Backend/aspnetapp.pfx -p nnpro
 
 ```
 
-_(Potvrď systémové okno pro důvěru certifikátu)._
+*(Potvrď systémové okno pro důvěru certifikátu).*
 
 ---
 
@@ -39,6 +39,7 @@ Aktivní build target se nastavuje v `docker-compose.yaml` u služby `backend`:
 # Pro Development:
 target: development
 # target: production
+
 ```
 
 Pro produkční sestavení prohoď komentáře:
@@ -46,6 +47,7 @@ Pro produkční sestavení prohoď komentáře:
 ```yaml
 # target: development
 target: production
+
 ```
 
 Po každé změně targetu image znovu sestav:
@@ -61,11 +63,11 @@ docker compose up -d --build
 
 Docker Compose spouští databázi **MariaDB** (`3306`), **Redis** (`6379`) a **backend** na portech:
 
-- **HTTP:** `http://localhost:8080`
-- **HTTPS:** `https://localhost:8081`
-- **OpenAPI JSON:** `https://localhost:8081/openapi/v1.json` _(pouze Development)_
-- **Scalar dokumentace:** `https://localhost:8081/scalar` _(pouze Development)_
-- **Health check:** `https://localhost:8081/health`
+* **HTTP:** `http://localhost:8080`
+* **HTTPS:** `https://localhost:8081`
+* **OpenAPI JSON:** `https://localhost:8081/openapi/v1.json` *(pouze Development)*
+* **Scalar dokumentace:** `https://localhost:8081/scalar` *(pouze Development)*
+* **Health check:** `https://localhost:8081/health`
 
 ---
 
@@ -78,7 +80,7 @@ lze upravit v `appsettings.json`. Podpisový klíč a identita tokenu se konfigu
 ### Auth API Endpointy
 
 | Metoda | Endpoint             | Účel                                                                                                                                                         |
-| ------ | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+|--------|----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `POST` | `/api/auth/register` | Registrace nového účtu (heslo min. 8 znaků).                                                                                                                 |
 | `POST` | `/api/auth/login`    | Přihlášení přes uživatelské jméno nebo e-mail a heslo. Pokud při loginu pošleš dosavadní access token jako Bearer, jeho relace se po úspěšném loginu ukončí. |
 | `POST` | `/api/auth/refresh`  | Obnova access tokenu a rotace refresh cookie; tělo požadavku se neposílá.                                                                                    |
@@ -89,9 +91,7 @@ lze upravit v `appsettings.json`. Podpisový klíč a identita tokenu se konfigu
 Access token backend vrací v JSON pod `data.accessToken`. FE ho má držet pouze v paměti a posílat jako Bearer token:
 
 ```js
-headers: {
-  Authorization: `Bearer ${accessToken}`;
-}
+headers: { Authorization: `Bearer ${accessToken}` }
 ```
 
 Refresh token backend nastavuje jako `HttpOnly; Secure; SameSite=Lax` cookie s cestou `/api/auth`; v databázi uchovává
@@ -113,10 +113,10 @@ třeba nastavit `SameSite=None; Secure` a povolit jeho přesný origin v CORS; p
 
 Administrátoři mohou spravovat relace uživatelů:
 
-- `GET /api/admin/users/{userId}/sessions` – Výpis všech aktivních relací uživatele.
-- `DELETE /api/admin/users/{userId}/sessions/{sessionId}` – Ukončení jedné konkrétní relace (`sessionId` odpovídá ID
+* `GET /api/admin/users/{userId}/sessions` – Výpis všech aktivních relací uživatele.
+* `DELETE /api/admin/users/{userId}/sessions/{sessionId}` – Ukončení jedné konkrétní relace (`sessionId` odpovídá ID
   rodiny tokenů z výpisu).
-- `DELETE /api/admin/users/{userId}/sessions` – Okamžité odhlášení uživatele ze všech zařízení.
+* `DELETE /api/admin/users/{userId}/sessions` – Okamžité odhlášení uživatele ze všech zařízení.
 
 ### Vývojové prostředí (Seeding)
 
@@ -127,10 +127,10 @@ Tento seed se v produkčním prostředí nespouští.
 
 ## 5. Důležité poznámky pro vývojáře
 
-- **Automatické EF Core migrace:** Databázové schématu se aplikuje automaticky při startu backendového kontejneru
+* **Automatické EF Core migrace:** Databázové schématu se aplikuje automaticky při startu backendového kontejneru
   (`dbContext.Database.MigrateAsync()`).
-- **MariaDB verze:** Databáze používá příznak `MARIADB_AUTO_UPGRADE=1` pro bezproblémové aktualizace systémových tabulek
+* **MariaDB verze:** Databáze používá příznak `MARIADB_AUTO_UPGRADE=1` pro bezproblémové aktualizace systémových tabulek
   databáze.
-- **Rychlé řešení neprověřeného SSL v prohlížeči:** Pokud prohlížeč u API volání z frontendu hlásí chybu certifikátu,
+* **Rychlé řešení neprověřeného SSL v prohlížeči:** Pokud prohlížeč u API volání z frontendu hlásí chybu certifikátu,
   otevři v Chrome/Edge adresu `chrome://flags/#allow-insecure-localhost`, přepni na **Enabled** a restartuj prohlížeč.
-- **Git:** Ujisti se, že soubory `*.pfx` a lokální `.env` soubory nepushuješ do Git repozitáře.
+* **Git:** Ujisti se, že soubory `*.pfx` a lokální `.env` soubory nepushuješ do Git repozitáře.
