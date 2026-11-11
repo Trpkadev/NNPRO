@@ -2,8 +2,7 @@
 import { LOCALE_STORAGE_KEY } from '@/i18n'
 
 const { t, locale } = useI18n()
-const isDark = useDark()
-const toggleDark = useToggle(isDark)
+const { isDark, toggleDark } = useAppTheme()
 
 function toggleLanguage() {
   const nextLocale = locale.value === 'cs' ? 'en' : 'cs'

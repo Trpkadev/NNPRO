@@ -48,4 +48,3 @@ function goBack() {
     </div>
   </main>
 </template>
-

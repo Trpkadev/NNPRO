@@ -11,6 +11,14 @@ import router from './router'
 import { i18n } from './i18n'
 import { ConfirmationService, ToastService } from 'openvue'
 
+// Obnovení uloženého vzhledu při spuštění aplikace
+const savedTheme = localStorage.getItem('nnpro-theme')
+
+document.documentElement.classList.toggle(
+  'dark',
+  savedTheme === 'dark' || (savedTheme === null && true),
+)
+
 const app = createApp(App)
 
 // Konfigurace TanStack Vue Query

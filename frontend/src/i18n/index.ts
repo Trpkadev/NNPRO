@@ -1,4 +1,5 @@
 import { createI18n } from 'vue-i18n'
+import { watch } from 'vue'
 
 export const LOCALE_STORAGE_KEY = 'app_locale'
 export type SupportedLocale = 'cs' | 'en'
@@ -91,6 +92,129 @@ const messages = {
     courses: {
       empty: 'Žádné kurzy k zobrazení.',
       loadError: 'Kurzy se nepodařilo načíst.',
+      backToCatalog: 'Zpět na katalog',
+      startLearning: 'Začít studovat',
+      courseContent: 'Obsah kurzu',
+      lessons: 'lekcí',
+      onlineCourse: 'Online kurz',
+      course: 'Kurz',
+      lesson: 'Lekce',
+      sampleLesson: 'Ukázková lekce',
+      lessonPlaceholder: 'Zde se bude zobrazovat obsah vybrané lekce.',
+      courseNotFound: 'Kurz nebyl nalezen.',
+
+      // Průběh studia
+      sectionProgress: 'Průběh studia v sekci',
+      completedCount: 'Dokončeno {count} z {total} {lessonForm}',
+      markCompleted: 'Dokončit',
+      completed: 'Dokončeno',
+      progressError: 'Nepodařilo se aktualizovat dokončení lekce.',
+
+      previousLesson: 'Předchozí lekce',
+      nextLesson: 'Další lekce',
+      lessonPosition: 'Lekce {current} z {total}',
+      searchPlaceholder: 'Hledat kurz...',
+      clearSearch: 'Vymazat hledání',
+      noSearchResults: 'Žádné kurzy neodpovídají hledání.',
+      filterBy: 'Filtrovat podle:',
+      filter: {
+        all: 'Vše',
+        title: 'Název',
+        description: 'Popis',
+      },
+      retryProgress: 'Zkusit znovu',
+
+      mock: {
+        csharp: {
+          title: 'Základy programování v C#',
+          description:
+            'Praktický úvod do proměnných, podmínek, cyklů, metod a objektově orientovaného programování v jazyce C#.',
+          lessons: {
+            intro: 'Úvod do C#',
+            variables: 'Proměnné a datové typy',
+            conditions: 'Podmínky a cykly',
+            methods: 'Metody a funkce',
+            objects: 'Třídy a objekty',
+          },
+        },
+        aspnet: {
+          title: 'Vývoj webových API v ASP.NET Core',
+          description:
+            'Naučíte se navrhovat REST API, pracovat s controllery, DTO objekty, validací a databází pomocí Entity Framework Core.',
+          lessons: {
+            intro: 'Úvod do REST API',
+            controllers: 'Controllery',
+            dto: 'DTO objekty a validace',
+            database: 'Entity Framework Core',
+          },
+        },
+        sql: {
+          title: 'Databáze a SQL pro vývojáře',
+          description:
+            'Kurz pokrývá návrh relačních databází, SQL dotazy, vazby mezi tabulkami, indexy a základní optimalizaci.',
+          lessons: {
+            intro: 'Relační databáze',
+            queries: 'SQL dotazy',
+            joins: 'Spojování tabulek',
+            indexes: 'Indexy a optimalizace',
+          },
+        },
+        react: {
+          title: 'Frontend s Reactem a TypeScriptem',
+          description:
+            'Vytvořte moderní webovou aplikaci s Reactem, komponentami, stavem, routováním a typovou kontrolou v TypeScriptu.',
+          lessons: {
+            intro: 'Úvod do Reactu',
+            components: 'Komponenty a Props',
+            state: 'Správa stavu',
+            routing: 'Routování a TypeScript',
+          },
+        },
+        git: {
+          title: 'Git a týmová spolupráce',
+          description:
+            'Od základních příkazů Gitu až po práci s větvemi, pull requesty, řešením konfliktů a code review.',
+          lessons: {
+            intro: 'Základy Gitu',
+            branches: 'Práce s větvemi',
+            conflicts: 'Řešení merge konfliktů',
+            pullRequests: 'Pull requesty a code review',
+          },
+        },
+        security: {
+          title: 'Úvod do kybernetické bezpečnosti',
+          description:
+            'Seznamte se s nejčastějšími hrozbami, bezpečným ukládáním hesel, autentizací a ochranou webových aplikací.',
+          lessons: {
+            threats: 'Bezpečnostní hrozby',
+            passwords: 'Bezpečná hesla',
+            authentication: 'Autentizace',
+            web: 'Bezpečnost webových aplikací',
+          },
+        },
+        algorithms: {
+          title: 'Algoritmy a datové struktury',
+          description:
+            'Pochopte principy třídění, vyhledávání, rekurze, stromů a grafů s důrazem na časovou a paměťovou složitost.',
+          lessons: {
+            complexity: 'Časová a paměťová složitost',
+            sorting: 'Třídění a vyhledávání',
+            recursion: 'Rekurze',
+            graphs: 'Stromy a grafy',
+          },
+        },
+        testing: {
+          title: 'Automatizované testování v .NET',
+          description:
+            'Praktický kurz unit testů, integračních testů, mockování závislostí a testování webových endpointů.',
+          lessons: {
+            intro: 'Úvod do testování',
+            unit: 'Unit testy',
+            mocking: 'Mockování závislostí',
+            integration: 'Integrační testy',
+          },
+        },
+      },
     },
     admin: {
       id: 'ID',
@@ -100,6 +224,7 @@ const messages = {
       usersLoadError: 'Uživatele se nepodařilo načíst.',
     },
   },
+
   en: {
     app: {
       name: 'E-Learning',
@@ -177,6 +302,129 @@ const messages = {
     courses: {
       empty: 'No courses to display.',
       loadError: 'Courses could not be loaded.',
+      backToCatalog: 'Back to Catalog',
+      startLearning: 'Start Learning',
+      courseContent: 'Course Content',
+      lessons: 'lessons',
+      onlineCourse: 'Online Course',
+      course: 'Course',
+      lesson: 'Lesson',
+      sampleLesson: 'Sample Lesson',
+      lessonPlaceholder: 'The content of the selected lesson will be displayed here.',
+      courseNotFound: 'Course not found.',
+
+      previousLesson: 'Previous Lesson',
+      nextLesson: 'Next Lesson',
+      lessonPosition: 'Lesson {current} of {total}',
+      searchPlaceholder: 'Search courses...',
+      clearSearch: 'Clear search',
+      noSearchResults: 'No courses match your search.',
+      filterBy: 'Filter by:',
+      filter: {
+        all: 'All',
+        title: 'Title',
+        description: 'Description',
+      },
+      retryProgress: 'Try again',
+
+      // Study progress
+      sectionProgress: 'Section progress',
+      completedCount: '{count} of {total} {lessonForm} completed',
+      markCompleted: 'Complete',
+      completed: 'Completed',
+      progressError: 'Failed to update lesson progress.',
+
+      mock: {
+        csharp: {
+          title: 'C# Programming Fundamentals',
+          description:
+            'A practical introduction to variables, conditions, loops, methods and object-oriented programming in C#.',
+          lessons: {
+            intro: 'Introduction to C#',
+            variables: 'Variables and Data Types',
+            conditions: 'Conditions and Loops',
+            methods: 'Methods and Functions',
+            objects: 'Classes and Objects',
+          },
+        },
+        aspnet: {
+          title: 'Building Web APIs with ASP.NET Core',
+          description:
+            'Learn to design REST APIs and work with controllers, DTOs, validation and databases using Entity Framework Core.',
+          lessons: {
+            intro: 'Introduction to REST APIs',
+            controllers: 'Controllers',
+            dto: 'DTOs and Validation',
+            database: 'Entity Framework Core',
+          },
+        },
+        sql: {
+          title: 'Databases and SQL for Developers',
+          description:
+            'Explore relational database design, SQL queries, table relationships, indexes and basic optimization.',
+          lessons: {
+            intro: 'Relational Databases',
+            queries: 'SQL Queries',
+            joins: 'Table Joins',
+            indexes: 'Indexes and Optimization',
+          },
+        },
+        react: {
+          title: 'Frontend with React and TypeScript',
+          description:
+            'Build a modern web application with React, components, state management, routing and TypeScript.',
+          lessons: {
+            intro: 'Introduction to React',
+            components: 'Components and Props',
+            state: 'State Management',
+            routing: 'Routing and TypeScript',
+          },
+        },
+        git: {
+          title: 'Git and Team Collaboration',
+          description:
+            'Learn Git commands, branching, pull requests, merge conflict resolution and code reviews.',
+          lessons: {
+            intro: 'Git Basics',
+            branches: 'Working with Branches',
+            conflicts: 'Resolving Merge Conflicts',
+            pullRequests: 'Pull Requests and Code Review',
+          },
+        },
+        security: {
+          title: 'Introduction to Cybersecurity',
+          description:
+            'Discover common security threats, secure password storage, authentication and web application protection.',
+          lessons: {
+            threats: 'Security Threats',
+            passwords: 'Secure Passwords',
+            authentication: 'Authentication',
+            web: 'Web Application Security',
+          },
+        },
+        algorithms: {
+          title: 'Algorithms and Data Structures',
+          description:
+            'Understand sorting, searching, recursion, trees and graphs with a focus on time and space complexity.',
+          lessons: {
+            complexity: 'Time and Space Complexity',
+            sorting: 'Sorting and Searching',
+            recursion: 'Recursion',
+            graphs: 'Trees and Graphs',
+          },
+        },
+        testing: {
+          title: 'Automated Testing in .NET',
+          description:
+            'A practical course on unit tests, integration tests, dependency mocking and testing web endpoints.',
+          lessons: {
+            intro: 'Introduction to Testing',
+            unit: 'Unit Tests',
+            mocking: 'Dependency Mocking',
+            integration: 'Integration Tests',
+          },
+        },
+      },
     },
     admin: {
       id: 'ID',
@@ -194,3 +442,11 @@ export const i18n = createI18n({
   fallbackLocale: 'en',
   messages,
 })
+
+watch(
+  i18n.global.locale,
+  (lang) => {
+    document.documentElement.lang = lang
+  },
+  { immediate: true },
+)

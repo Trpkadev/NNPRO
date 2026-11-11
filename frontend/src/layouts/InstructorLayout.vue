@@ -26,4 +26,3 @@ const { t } = useI18n()
     <RouterView />
   </div>
 </template>
-
