@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getApiErrorMessage } from '@/services/api'
 import { useCourseDetailQuery } from '@/composables/useCoursesQueries'
@@ -15,7 +15,14 @@ import LessonNavigation from '@/components/courses/LessonNavigation.vue'
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
-const courseId = computed(() => Number(route.params.id))
+
+const courseId = computed(() => {
+  const value = route.params.id
+  if (typeof value !== 'string' || !/^[1-9]\d*$/.test(value)) return 0
+
+  const id = Number(value)
+  return Number.isSafeInteger(id) ? id : 0
+})
 
 const {
   data: course,
@@ -41,7 +48,7 @@ const {
   startLearning,
 } = useCourseContent(courseId)
 
-const lessonIds = computed(() => lessons.value.map((l) => l.id))
+const lessonIds = computed(() => lessons.value.map((lesson) => lesson.id))
 
 const {
   completedLessons,
@@ -49,6 +56,9 @@ const {
   progressPercent,
   pendingLessonId,
   progressError,
+  progressLoading,
+  progressLoadError,
+  retryProgress,
   toggleLesson,
 } = useLessonProgress(lessonIds, courseId)
 </script>
@@ -63,7 +73,11 @@ const {
       @click="router.push('/home')"
     />
 
-    <Skeleton v-if="courseLoading" height="12rem" />
+    <Message v-if="courseId === 0" severity="warn" :closable="false">
+      {{ t('courses.courseNotFound') }}
+    </Message>
+
+    <Skeleton v-else-if="courseLoading" height="12rem" />
 
     <Message v-else-if="courseIsError" severity="error" :closable="false">
       {{ getApiErrorMessage(courseError, t('courses.loadError')) }}
@@ -92,13 +106,23 @@ const {
           />
 
           <CourseProgress
-            v-if="lessons.length > 0"
+            v-if="lessons.length > 0 && !progressLoading && !progressLoadError"
             :completed="completedCount"
             :total="lessons.length"
             :percentage="progressPercent"
           />
 
-          <Message v-if="progressError" severity="error" :closable="false">
+          <Message v-if="progressLoadError" severity="error" :closable="false">
+            {{ t('courses.progressError') }}
+            <Button
+              :label="t('courses.retryProgress')"
+              size="small"
+              text
+              @click="retryProgress()"
+            />
+          </Message>
+
+          <Message v-else-if="progressError" severity="error" :closable="false">
             {{ t('courses.progressError') }}
           </Message>
 
@@ -107,6 +131,7 @@ const {
             :selected-lesson-id="selectedLessonId"
             :completed-lessons="completedLessons"
             :pending-lesson-id="pendingLessonId"
+            :progress-unavailable="progressLoading || progressLoadError"
             @select="openLesson"
             @toggle="toggleLesson"
           />
@@ -117,7 +142,6 @@ const {
         </template>
       </section>
 
-      <!-- Obsah vybrané lekce a navigace -->
       <div v-if="selectedLessonId !== null" class="space-y-4">
         <LessonDetail :lesson="selectedLesson" :loading="lessonLoading" :error="lessonIsError" />
 

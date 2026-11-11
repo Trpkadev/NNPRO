@@ -6,6 +6,7 @@ defineProps<{
   selectedLessonId: number | null
   completedLessons: Record<number, boolean>
   pendingLessonId: number | null
+  progressUnavailable: boolean
 }>()
 
 const emit = defineEmits<{
@@ -33,8 +34,7 @@ const { t } = useI18n()
         class="flex-1 flex items-center gap-3 text-left cursor-pointer"
         @click="emit('select', lesson.id)"
       >
-        <span class="text-emerald-500 font-semibold"> {{ index + 1 }}. </span>
-
+        <span class="text-emerald-500 font-semibold">{{ index + 1 }}.</span>
         <span>{{ lesson.title }}</span>
       </button>
 
@@ -45,7 +45,7 @@ const { t } = useI18n()
         :outlined="!completedLessons[lesson.id]"
         size="small"
         :loading="pendingLessonId === lesson.id"
-        :disabled="pendingLessonId !== null"
+        :disabled="pendingLessonId !== null || progressUnavailable"
         @click="emit('toggle', lesson.id)"
       />
     </div>

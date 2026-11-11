@@ -64,13 +64,14 @@ export function useLessonProgress(
   })
 
   async function toggleLesson(lessonId: number) {
-    console.log('Kliknutí na Dokončit:', lessonId)
-    console.log('Stav:', {
-      pendingLessonId: pendingLessonId.value,
-      progressPending: progressQuery.isPending.value,
-    })
+    if (
+      pendingLessonId.value !== null ||
+      progressQuery.isPending.value ||
+      progressQuery.isError.value
+    ) {
+      return
+    }
 
-    if (pendingLessonId.value !== null || progressQuery.isPending.value) return
     const isCompleted = !completedLessons.value[lessonId]
     pendingLessonId.value = lessonId
     progressError.value = false
@@ -83,15 +84,12 @@ export function useLessonProgress(
 
       const result = await progressQuery.refetch()
 
-      console.log('Odeslaný stav:', { lessonId, isCompleted })
-      console.log('Načtený progress:', result.data)
-
-      if (result.isError) progressError.value = true
-    } catch (error) {
-  console.error('Chyba při ukládání progressu:', error)
-  progressError.value = true
-}
-    finally {
+      if (result.isError) {
+        progressError.value = true
+      }
+    } catch {
+      progressError.value = true
+    } finally {
       pendingLessonId.value = null
     }
   }
@@ -103,6 +101,8 @@ export function useLessonProgress(
     pendingLessonId,
     progressError,
     progressLoading: progressQuery.isPending,
+    progressLoadError: progressQuery.isError,
+    retryProgress: progressQuery.refetch,
     toggleLesson,
   }
 }

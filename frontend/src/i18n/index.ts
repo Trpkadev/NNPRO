@@ -122,6 +122,7 @@ const messages = {
         title: 'Název',
         description: 'Popis',
       },
+      retryProgress: 'Zkusit znovu',
 
       mock: {
         csharp: {
@@ -324,6 +325,7 @@ const messages = {
         title: 'Title',
         description: 'Description',
       },
+      retryProgress: 'Try again',
 
       // Study progress
       sectionProgress: 'Section progress',
