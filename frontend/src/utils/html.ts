@@ -1,11 +1,27 @@
 // src/utils/html.ts
 import DOMPurify from 'dompurify'
 
+let hookRegistered = false
+
+function ensureTargetBlankHook() {
+  if (hookRegistered) return
+  DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+    if (node instanceof Element && node.getAttribute('target') === '_blank') {
+      const rel = new Set((node.getAttribute('rel') ?? '').split(/\s+/).filter(Boolean))
+      rel.add('noopener')
+      rel.add('noreferrer')
+      node.setAttribute('rel', Array.from(rel).join(' '))
+    }
+  })
+  hookRegistered = true
+}
+
 /**
  * Bezpečně vyčistí HTML výstup z OpenVue Editoru před vykreslením přes v-html
  */
 export function sanitizeHtml(dirtyHtml: string | undefined | null): string {
   if (!dirtyHtml) return ''
+  ensureTargetBlankHook()
   return DOMPurify.sanitize(dirtyHtml, {
     USE_PROFILES: { html: true },
     ADD_ATTR: ['target', 'rel'],

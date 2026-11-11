@@ -1,37 +1,31 @@
 import type { UserRole } from './api'
 
 /**
- * Struktura JWT payloadu (podporuje jak standardní JWT claims, tak ASP.NET Core claims)
+ * Struktura JWT payloadu generovaného backendem (ELearningApi)
  */
 export interface JwtPayload {
-  exp?: number
-  iat?: number
-  nbf?: number
-  sub?: string
-  nameid?: string
-  unique_name?: string
-  name?: string
-  email?: string
-  role?: UserRole | UserRole[] | string | string[]
-  roles?: UserRole[] | string[]
-  // ASP.NET Core ClaimTypes
-  'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'?: string
-  'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'?: string
-  'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'?: string
-  'http://schemas.microsoft.com/ws/2008/06/identity/claims/role'?:
-    | UserRole
-    | UserRole[]
-    | string
-    | string[]
-  [key: string]: unknown
+  /** ID uživatele (userId) jako řetězec */
+  sub: string
+  /** Unikátní identifikátor tokenu (jwtId) */
+  jti: string
+  /** Čas vydání tokenu (IssuedAt - Unix timestamp v sekundách) */
+  iat: number
+  /** Uživatelské jméno (user.username) */
+  name: string
+  /** Role uživatele (user.role) */
+  role: UserRole
+  /** Čas vypršení platnosti tokenu (expiresAt - Unix timestamp v sekundách) */
+  exp: number
+  /** Vydavatel tokenu (ELearningApi) */
+  iss: string
+  /** Cílová skupina tokenu (ELearningClient) */
+  aud: string
 }
 
 export interface AuthenticatedUser {
-  id: number | null
+  id: number
   username: string
-  email: string
-  role: UserRole | null
-  roles: UserRole[]
+  role: UserRole
 }
 
 export type LayoutType = 'main' | 'auth' | 'admin' | 'instructor' | 'empty'
@@ -45,4 +39,3 @@ declare module 'vue-router' {
     titleKey?: string
   }
 }
-

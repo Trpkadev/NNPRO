@@ -3,8 +3,8 @@ import type {
   EnrollmentRequestDto,
   ForceEnrollmentRequestDto,
   QueryParameters,
-  WrapperOfEnrollmentResponseDto,
   WrapperOfUint,
+  WrapperOfUserResponseDtoList,
 } from '@/types/api'
 
 export const enrollmentsService = {
@@ -14,13 +14,10 @@ export const enrollmentsService = {
   async getByCourse(
     courseId: number,
     params?: QueryParameters,
-  ): Promise<WrapperOfEnrollmentResponseDto> {
-    const { data } = await api.get<WrapperOfEnrollmentResponseDto>(
-      `/api/enrollments/${courseId}`,
-      {
-        params: serializeQueryParams(params),
-      },
-    )
+  ): Promise<WrapperOfUserResponseDtoList> {
+    const { data } = await api.get<WrapperOfUserResponseDtoList>(`/api/enrollments/${courseId}`, {
+      params: serializeQueryParams(params),
+    })
     return data
   },
 
@@ -54,4 +51,3 @@ export const enrollmentsService = {
     await api.delete(`/api/enrollments/${courseId}/${studentId}`)
   },
 }
-

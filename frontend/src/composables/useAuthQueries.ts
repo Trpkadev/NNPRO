@@ -31,9 +31,8 @@ export function useLogoutMutation() {
 
   return useMutation({
     mutationFn: () => authStore.logout(),
-    onSuccess: () => {
+    onSettled: () => {
       queryClient.clear()
     },
   })
 }
-

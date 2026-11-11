@@ -1,8 +1,6 @@
 import {
-  ACCESS_TOKEN_KEY,
-  REFRESH_TOKEN_KEY,
-  TOKEN_EXPIRES_KEY,
   decodeJwtUser,
+  isAuthInvalidError,
   isTokenValid,
 } from '@/services/api'
 import { authService } from '@/services/auth.service'
@@ -15,34 +13,38 @@ import {
 } from '@/types/api'
 import type { AuthenticatedUser } from '@/types/auth'
 
+export const HAS_SESSION_KEY = 'has_session'
+
 let refreshPromise: Promise<AuthResponseDto | null> | null = null
 
 export const useAuthStore = defineStore('auth', () => {
-  const token = useStorage<string | null>(ACCESS_TOKEN_KEY, null)
-  const refreshToken = useStorage<string | null>(REFRESH_TOKEN_KEY, null)
-  const expiresAtUtc = useStorage<string | null>(TOKEN_EXPIRES_KEY, null)
-
-  const isAuthenticated = computed(() => !!token.value && isTokenValid(token.value))
+  // Access token držíme výhradně v paměti (ne v localStorage)
+  const token = ref<string | null>(null)
+  const expiresAtUtc = ref<string | null>(null)
+  const isInitialized = ref(false)
 
   const user = computed<AuthenticatedUser | null>(() => {
     if (!token.value) return null
     return decodeJwtUser(token.value)
   })
 
-  const userRole = computed<UserRole | null>(() => user.value?.role ?? null)
-  const userRoles = computed<UserRole[]>(() => user.value?.roles ?? [])
+  const isAuthenticated = computed(
+    () => !!token.value && isTokenValid(token.value) && user.value !== null,
+  )
 
-  const isAdmin = computed(() => userRoles.value.includes(UserRoles.Admin))
-  const isInstructor = computed(() => userRoles.value.includes(UserRoles.Instructor))
-  const isStudent = computed(() => userRoles.value.includes(UserRoles.Student))
+  const userRole = computed<UserRole | null>(() => user.value?.role ?? null)
+
+  const isAdmin = computed(() => userRole.value === UserRoles.Admin)
+  const isInstructor = computed(() => userRole.value === UserRoles.Instructor)
+  const isStudent = computed(() => userRole.value === UserRoles.Student)
 
   function hasRole(role: UserRole): boolean {
-    return userRoles.value.includes(role)
+    return userRole.value === role
   }
 
   function hasAnyRole(roles: readonly UserRole[]): boolean {
     if (roles.length === 0) return true
-    return roles.some((role) => userRoles.value.includes(role))
+    return userRole.value !== null && roles.includes(userRole.value)
   }
 
   function setToken(newToken: string | null) {
@@ -51,14 +53,15 @@ export const useAuthStore = defineStore('auth', () => {
 
   function setAuth(authData: AuthResponseDto) {
     token.value = authData.accessToken
-    refreshToken.value = authData.refreshToken
     expiresAtUtc.value = authData.expiresAtUtc
+    isInitialized.value = true
+    localStorage.setItem(HAS_SESSION_KEY, '1')
   }
 
   function clearAuth() {
     token.value = null
-    refreshToken.value = null
     expiresAtUtc.value = null
+    localStorage.removeItem(HAS_SESSION_KEY)
   }
 
   async function login(payload: LoginRequestDto): Promise<AuthResponseDto> {
@@ -76,23 +79,18 @@ export const useAuthStore = defineStore('auth', () => {
   async function refreshTokens(): Promise<AuthResponseDto | null> {
     if (refreshPromise) return refreshPromise
 
-    if (!token.value || !refreshToken.value) {
-      clearAuth()
-      return null
-    }
-
     refreshPromise = (async () => {
       try {
-        const authData = await authService.refresh({
-          accessToken: token.value!,
-          refreshToken: refreshToken.value!,
-        })
+        const authData = await authService.refresh()
         setAuth(authData)
         return authData
-      } catch {
-        clearAuth()
+      } catch (error) {
+        if (isAuthInvalidError(error)) {
+          clearAuth()
+        }
         return null
       } finally {
+        isInitialized.value = true
         refreshPromise = null
       }
     })()
@@ -100,25 +98,34 @@ export const useAuthStore = defineStore('auth', () => {
     return refreshPromise
   }
 
+  /**
+   * Po obnovení stránky (F5) se jednou pokusí obnovit access token pomocí HttpOnly refreshToken cookie,
+   * pokud má uživatel příznak aktivní relace v localStorage.
+   */
+  async function initializeAuth(): Promise<void> {
+    if (isInitialized.value) return
+    const hasSessionFlag = localStorage.getItem(HAS_SESSION_KEY) === '1'
+    if (!isAuthenticated.value && hasSessionFlag) {
+      await refreshTokens()
+    } else {
+      isInitialized.value = true
+    }
+  }
+
   async function logout(): Promise<void> {
-    const currentRefreshToken = refreshToken.value
-    clearAuth()
-    if (currentRefreshToken) {
-      try {
-        await authService.logout({ refreshToken: currentRefreshToken })
-      } catch (error) {
-        throw error
-      }
+    try {
+      await authService.logout()
+    } finally {
+      clearAuth()
     }
   }
 
   return {
     token,
-    refreshToken,
     expiresAtUtc,
+    isInitialized,
     user,
     userRole,
-    userRoles,
     isAuthenticated,
     isAdmin,
     isInstructor,
@@ -131,6 +138,7 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     register,
     refreshTokens,
+    initializeAuth,
     logout,
   }
 })

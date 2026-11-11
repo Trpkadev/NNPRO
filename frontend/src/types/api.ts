@@ -54,7 +54,6 @@ export interface ProblemDetails {
 export interface QueryParameters {
   Page?: number
   PageSize?: number
-  Search?: string
   SortBy?: string
   Descending?: boolean
   Filters?: string | Record<string, unknown>
@@ -72,32 +71,24 @@ export interface LoginRequestDto {
   username?: string | null
   email?: string | null
   password: string
+  deviceName?: string | null
 }
 
 export interface RegisterRequestDto {
   username: string
   email: string
   password: string
-}
-
-export interface RefreshTokenRequestDto {
-  accessToken: string
-  refreshToken: string
-}
-
-export interface LogoutRequestDto {
-  refreshToken: string
+  deviceName?: string | null
 }
 
 export interface AuthResponseDto {
   accessToken: string
-  refreshToken: string
   expiresAtUtc: string
   tokenType?: string
 }
 
 // ============================================================================
-// Uživatelé a role (Users & RBAC)
+// Uživatelé, role a administrace (Users, RBAC & Administration)
 // ============================================================================
 
 export const UserRoles = {
@@ -115,14 +106,50 @@ export interface UserResponseDto {
   role: UserRole | string
 }
 
-export interface CreateUserRequestDto {
+export interface UpdateUserRequestDto {
   username: string
   email: string
   password: string
-  role: UserRole | string
 }
 
-export type UpdateUserRequestDto = CreateUserRequestDto
+export interface UpdateUserRoleRequestDto {
+  role: UserRole
+}
+
+export interface AdminUserDetailsDto {
+  id: number
+  username: string
+  email: string
+  role: UserRole | string
+  enrollmentCount: number
+  lessonProgressCount: number
+  quizAttemptCount: number
+  activeSessionCount: number
+}
+
+export interface AdminSessionResponseDto {
+  sessionId: string
+  deviceName: string | null
+  userAgent: string | null
+  createdByIp: string | null
+  createdAtUtc: string
+  expiresAtUtc: string
+}
+
+export interface UserCourseResponseDto {
+  id: number
+  title: string
+  shortDescription: string
+}
+
+export interface UserLessonProgressResponseDto {
+  lessonId: number
+  lessonTitle: string
+  sectionId: number
+  courseId: number
+  isCompleted: boolean
+  completedAtUtc: string | null
+}
 
 // ============================================================================
 // Kurzy (Courses)
@@ -144,13 +171,17 @@ export interface CourseResponseDto {
   id: number
   title: string
   description: string
-  accessKey: string | null
 }
 
 export interface CourseThumbnailResponseDto {
   id: number
   title: string
   shortDescription: string
+}
+
+export interface CourseInstructorResponseDto {
+  id: number
+  username: string
 }
 
 // ============================================================================
@@ -165,10 +196,6 @@ export interface EnrollmentRequestDto {
 export interface ForceEnrollmentRequestDto {
   studentId: number
   courseId: number
-}
-
-export interface EnrollmentResponseDto {
-  enrolledStudents: UserResponseDto[]
 }
 
 // ============================================================================
@@ -225,6 +252,15 @@ export interface AttachmentRequestDto {
   sizeBytes: number | null
 }
 
+export interface AttachmentResponseDto {
+  id: number
+  fileName: string
+  url: string
+  contentType: string | null
+  sizeBytes: number | null
+  lessonId: number
+}
+
 // ============================================================================
 // Kvízy a pokusy (Quizzes & Quiz Attempts)
 // ============================================================================
@@ -269,8 +305,16 @@ export interface QuizAttemptResponseDto {
   isPassed: boolean
 }
 
+export interface MyQuizAttemptResponseDto {
+  id: number
+  startedAtUtc: string
+  submittedAtUtc: string | null
+  scorePercent: number
+  isPassed: boolean
+}
+
 // ============================================================================
-// Otázky (Questions)
+// Otázky a možnosti odpovědí (Questions & Answer Options)
 // ============================================================================
 
 export const QuestionTypes = {
@@ -284,7 +328,7 @@ export type QuestionType = (typeof QuestionTypes)[keyof typeof QuestionTypes]
 export interface CreateQuestionRequestDto {
   text: string
   imageUrl: string | null
-  type: QuestionType
+  type: QuestionType | string
   points: number
   quizId: number
 }
@@ -300,22 +344,60 @@ export interface QuestionResponseDto {
   quizId: number
 }
 
+export interface CreateAnswerOptionRequestDto {
+  text: string
+  imageUrl: string | null
+  isCorrect: boolean
+}
+
+export interface UpdateAnswerOptionRequestDto {
+  text: string
+  imageUrl: string | null
+  isCorrect: boolean
+}
+
+export interface AnswerOptionResponseDto {
+  id: number
+  text: string
+  imageUrl: string | null
+  questionId: number
+}
+
+export interface AnswerOptionEditorResponseDto {
+  id: number
+  text: string
+  imageUrl: string | null
+  isCorrect: boolean
+  questionId: number
+}
+
 // ============================================================================
 // Typové aliasy pro OpenAPI Wrapper schémata
 // ============================================================================
 
 export type WrapperOfUint = ApiWrapper<number>
+export type WrapperOfAdminSessionResponseDtoList = ApiWrapper<AdminSessionResponseDto[]>
+export type WrapperOfAdminUserDetailsDto = ApiWrapper<AdminUserDetailsDto>
+export type WrapperOfAnswerOptionEditorResponseDtoList = ApiWrapper<AnswerOptionEditorResponseDto[]>
+export type WrapperOfAnswerOptionResponseDtoList = ApiWrapper<AnswerOptionResponseDto[]>
+export type WrapperOfAttachmentResponseDtoList = ApiWrapper<AttachmentResponseDto[]>
 export type WrapperOfAuthResponseDto = ApiWrapper<AuthResponseDto>
+export type WrapperOfCourseInstructorResponseDtoList = ApiWrapper<CourseInstructorResponseDto[]>
 export type WrapperOfCourseResponseDto = ApiWrapper<CourseResponseDto>
 export type WrapperOfCourseResponseDtoList = ApiWrapper<CourseResponseDto[]>
 export type WrapperOfCourseThumbnailResponseDtoList = ApiWrapper<CourseThumbnailResponseDto[]>
-export type WrapperOfEnrollmentResponseDto = ApiWrapper<EnrollmentResponseDto>
 export type WrapperOfLessonResponseDto = ApiWrapper<LessonResponseDto>
+export type WrapperOfLessonResponseDtoList = ApiWrapper<LessonResponseDto[]>
+export type WrapperOfMyQuizAttemptResponseDtoList = ApiWrapper<MyQuizAttemptResponseDto[]>
 export type WrapperOfQuestionResponseDto = ApiWrapper<QuestionResponseDto>
+export type WrapperOfQuestionResponseDtoList = ApiWrapper<QuestionResponseDto[]>
 export type WrapperOfQuizAttemptResponseDto = ApiWrapper<QuizAttemptResponseDto>
 export type WrapperOfQuizAttemptResponseDtoList = ApiWrapper<QuizAttemptResponseDto[]>
 export type WrapperOfQuizResponseDto = ApiWrapper<QuizResponseDto>
+export type WrapperOfQuizResponseDtoList = ApiWrapper<QuizResponseDto[]>
 export type WrapperOfSectionResponseDto = ApiWrapper<SectionResponseDto>
+export type WrapperOfSectionResponseDtoList = ApiWrapper<SectionResponseDto[]>
+export type WrapperOfUserCourseResponseDtoList = ApiWrapper<UserCourseResponseDto[]>
+export type WrapperOfUserLessonProgressResponseDtoList = ApiWrapper<UserLessonProgressResponseDto[]>
 export type WrapperOfUserResponseDto = ApiWrapper<UserResponseDto>
 export type WrapperOfUserResponseDtoList = ApiWrapper<UserResponseDto[]>
-

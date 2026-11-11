@@ -1,7 +1,13 @@
 import type { MaybeRefOrGetter } from 'vue'
 import { questionsService } from '@/services/questions.service'
 import { queryKeys } from './queryKeys'
-import type { CreateQuestionRequestDto, UpdateQuestionRequestDto } from '@/types/api'
+import type {
+  CreateAnswerOptionRequestDto,
+  CreateQuestionRequestDto,
+  QueryParameters,
+  UpdateAnswerOptionRequestDto,
+  UpdateQuestionRequestDto,
+} from '@/types/api'
 
 export function useQuestionDetailQuery(
   questionId: MaybeRefOrGetter<number>,
@@ -10,6 +16,32 @@ export function useQuestionDetailQuery(
   return useQuery({
     queryKey: computed(() => queryKeys.questions.detail(toValue(questionId))),
     queryFn: () => questionsService.getById(toValue(questionId)),
+    enabled: computed(() => toValue(enabled) && Number(toValue(questionId)) > 0),
+  })
+}
+
+export function useQuestionOptionsQuery(
+  questionId: MaybeRefOrGetter<number>,
+  params?: MaybeRefOrGetter<QueryParameters | undefined>,
+  enabled: MaybeRefOrGetter<boolean> = true,
+) {
+  return useQuery({
+    queryKey: computed(() => queryKeys.questions.options(toValue(questionId), toValue(params))),
+    queryFn: () => questionsService.getOptions(toValue(questionId), toValue(params)),
+    enabled: computed(() => toValue(enabled) && Number(toValue(questionId)) > 0),
+  })
+}
+
+export function useQuestionOptionsEditorQuery(
+  questionId: MaybeRefOrGetter<number>,
+  params?: MaybeRefOrGetter<QueryParameters | undefined>,
+  enabled: MaybeRefOrGetter<boolean> = true,
+) {
+  return useQuery({
+    queryKey: computed(() =>
+      queryKeys.questions.optionsEditor(toValue(questionId), toValue(params)),
+    ),
+    queryFn: () => questionsService.getOptionsForEditor(toValue(questionId), toValue(params)),
     enabled: computed(() => toValue(enabled) && Number(toValue(questionId)) > 0),
   })
 }
@@ -65,3 +97,56 @@ export function useDeleteQuestionMutation() {
   })
 }
 
+export function useCreateAnswerOptionMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      questionId,
+      payload,
+    }: {
+      questionId: number
+      payload: CreateAnswerOptionRequestDto
+    }) => questionsService.createOption(questionId, payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.questions.detail(variables.questionId),
+      })
+    },
+  })
+}
+
+export function useUpdateAnswerOptionMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      questionId,
+      optionId,
+      payload,
+    }: {
+      questionId: number
+      optionId: number
+      payload: UpdateAnswerOptionRequestDto
+    }) => questionsService.updateOption(questionId, optionId, payload),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.questions.detail(variables.questionId),
+      })
+    },
+  })
+}
+
+export function useDeleteAnswerOptionMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ questionId, optionId }: { questionId: number; optionId: number }) =>
+      questionsService.removeOption(questionId, optionId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.questions.detail(variables.questionId),
+      })
+    },
+  })
+}

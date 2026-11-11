@@ -29,7 +29,7 @@ const coursesError = computed(() =>
         <p class="text-sm text-surface-600 dark:text-surface-400">
           {{ t('auth.loggedInAs') }}
           <span class="font-semibold text-surface-900 dark:text-surface-0">
-            {{ authStore.user?.username || authStore.user?.email }}
+            {{ authStore.user?.username }}
           </span>
         </p>
       </div>
