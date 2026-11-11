@@ -8,8 +8,8 @@
 - **Build nástroj & Cesty:** [Vite](https://vite.dev/), `@/` aliasy
 - **Routování:** [Vue Router](https://router.vuejs.org/) (lazy-loaded routes, typovaná `meta`)
 - **Stav aplikace:**
-  - **Server State:** [TanStack Vue Query](https://tanstack.com/query/latest) (cachování, synchronizace API dat)
-  - **Client State:** [Pinia](https://pinia.vuejs.org/) (Setup stores, správa UI stavu a auth)
+    - **Server State:** [TanStack Vue Query](https://tanstack.com/query/latest) (cachování, synchronizace API dat)
+    - **Client State:** [Pinia](https://pinia.vuejs.org/) (Setup stores, správa UI stavu a auth)
 - **UI & Stylování:** [OpenVue](https://openvue.org/) (komunitní MIT fork PrimeVue 4), [Tailwind CSS v4](https://tailwindcss.com/) (`tailwindcss-primeui`), [@openvue/openicons](https://openvue.org/) (`oi oi-*` ikony)
 - **Formuláře & Validace:** [VeeValidate](https://vee-validate.logaretm.com/)
 - **HTTP & Auth:** [Axios](https://axios-http.com/) (interceptory pro JWT a 401), `jwt-decode`
@@ -45,15 +45,14 @@ src/
 - **NPM**
 - **VS Code nebo WebStorm** (doporučeno)
 - **Pro vývoj mobilních aplikací:**
-  - **Android:** Android Studio + JDK
-  - **iOS (pouze macOS):** Xcode + CocoaPods
+    - **Android:** Android Studio + JDK
+    - **iOS (pouze macOS):** Xcode + CocoaPods
 
 ---
 
 ## Instalace a spuštění projektu
 
 1. **Klonování repozitáře a instalace závislostí:**
-
    ```bash
    git clone <url-repozitari>
    cd <nazev-projektu>
@@ -62,7 +61,6 @@ src/
 
 2. **Konfigurace prostředí:**
    Zkopírujte vzorový soubor s proměnnými prostředí (pokud existuje) nebo vytvořte `.env`:
-
    ```bash
    cp .env.example .env
    ```
@@ -81,26 +79,24 @@ Pro propojení webové aplikace s nativními platformami iOS a Android slouží 
 
 1. **Build webové aplikace:**
    Před každou synchronizací s mobilem je nutné zbuildovat aktuální kód:
-
    ```bash
    npm run build
    ```
 
 2. **Synchronizace změn do nativních projektů:**
-
    ```bash
    npx cap sync
    ```
 
 3. **Otevření v IDE pro danou platformu:**
-   - **Android (otevře Android Studio):**
-     ```bash
-     npx cap open android
-     ```
-   - **iOS (otevře Xcode - pouze na macOS):**
-     ```bash
-     npx cap open ios
-     ```
+    - **Android (otevře Android Studio):**
+      ```bash
+      npx cap open android
+      ```
+    - **iOS (otevře Xcode - pouze na macOS):**
+      ```bash
+      npx cap open ios
+      ```
 
 ---
 

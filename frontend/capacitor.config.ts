@@ -1,12 +1,12 @@
-import type { CapacitorConfig } from '@capacitor/cli'
+import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'cz.upce.nnpro.elearning',
   appName: 'E-learning',
   webDir: 'dist',
   server: {
-    androidScheme: 'https',
-  },
-}
+    androidScheme: 'https'
+  }
+};
 
-export default config
+export default config;
