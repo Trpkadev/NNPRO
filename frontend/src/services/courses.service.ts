@@ -5,15 +5,17 @@ import type {
   CourseThumbnailQueryParameters,
   CourseUpdateRequestDto,
   QueryParameters,
+  WrapperOfCourseInstructorResponseDtoList,
   WrapperOfCourseResponseDto,
   WrapperOfCourseResponseDtoList,
   WrapperOfCourseThumbnailResponseDtoList,
+  WrapperOfSectionResponseDtoList,
   WrapperOfUint,
 } from '@/types/api'
 
 export const coursesService = {
   /**
-   * Seznam všech kurzů s podporou stránkování, vyhledávání, řazení a filtrování (GET /api/courses)
+   * Seznam všech kurzů s podporou stránkování, řazení a filtrování (GET /api/courses)
    */
   async getAll(params?: QueryParameters): Promise<WrapperOfCourseResponseDtoList> {
     const { data } = await api.get<WrapperOfCourseResponseDtoList>('/api/courses', {
@@ -43,6 +45,38 @@ export const coursesService = {
   async getById(id: number): Promise<CourseResponseDto> {
     const { data } = await api.get<WrapperOfCourseResponseDto>(`/api/courses/${id}`)
     return data.data
+  },
+
+  /**
+   * Seznam lektorů přiřazených ke kurzu (GET /api/courses/{courseId}/instructors)
+   */
+  async getInstructors(
+    courseId: number,
+    params?: QueryParameters,
+  ): Promise<WrapperOfCourseInstructorResponseDtoList> {
+    const { data } = await api.get<WrapperOfCourseInstructorResponseDtoList>(
+      `/api/courses/${courseId}/instructors`,
+      {
+        params: serializeQueryParams(params),
+      },
+    )
+    return data
+  },
+
+  /**
+   * Seznam sekcí kurzu (GET /api/courses/{courseId}/sections)
+   */
+  async getSections(
+    courseId: number,
+    params?: QueryParameters,
+  ): Promise<WrapperOfSectionResponseDtoList> {
+    const { data } = await api.get<WrapperOfSectionResponseDtoList>(
+      `/api/courses/${courseId}/sections`,
+      {
+        params: serializeQueryParams(params),
+      },
+    )
+    return data
   },
 
   /**

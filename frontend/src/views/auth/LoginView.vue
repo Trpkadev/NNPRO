@@ -2,15 +2,18 @@
 import { useToast } from 'openvue/usetoast'
 import { getApiErrorMessage } from '@/services/api'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 const route = useRoute()
 const toast = useToast()
 
 const loginMutation = useLoginMutation()
-const serverError = ref<string | null>(null)
+const submitError = ref<unknown>(null)
+const serverError = computed(() =>
+  submitError.value ? getApiErrorMessage(submitError.value, t('auth.loginError')) : null,
+)
 
-const { handleSubmit, errors, defineField } = useForm({
+const { handleSubmit, errors, defineField, validateField } = useForm({
   validationSchema: {
     identifier: (value: string) => value.trim().length > 0 || t('validation.required'),
     password: (value: string) => value.length > 0 || t('validation.required'),
@@ -24,8 +27,16 @@ const { handleSubmit, errors, defineField } = useForm({
 const [identifier, identifierAttrs] = defineField('identifier')
 const [password, passwordAttrs] = defineField('password')
 
+watch(locale, () => {
+  for (const field of Object.keys(errors.value) as Array<'identifier' | 'password'>) {
+    if (errors.value[field]) {
+      validateField(field)
+    }
+  }
+})
+
 const onSubmit = handleSubmit(async (values) => {
-  serverError.value = null
+  submitError.value = null
   const trimmedIdentifier = values.identifier.trim()
   const isEmail = trimmedIdentifier.includes('@')
 
@@ -42,10 +53,14 @@ const onSubmit = handleSubmit(async (values) => {
       life: 3000,
     })
 
-    const redirectPath = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
+    const rawRedirect = route.query.redirect
+    const redirectPath =
+      typeof rawRedirect === 'string' && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//')
+        ? rawRedirect
+        : '/'
     await router.replace(redirectPath)
   } catch (err) {
-    serverError.value = getApiErrorMessage(err, t('auth.loginError'))
+    submitError.value = err
   }
 })
 </script>

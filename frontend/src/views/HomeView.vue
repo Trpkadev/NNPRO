@@ -46,7 +46,7 @@ function openCourse(id: number) {
           {{ t('auth.loggedInAs') }}
 
           <span class="font-semibold text-surface-900 dark:text-surface-0">
-            {{ authStore.user.username || authStore.user.email }}
+            {{ authStore.user?.username }}
           </span>
         </p>
       </div>

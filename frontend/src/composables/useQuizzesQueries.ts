@@ -31,6 +31,18 @@ export function useQuizEditorQuery(
   })
 }
 
+export function useQuizQuestionsQuery(
+  quizId: MaybeRefOrGetter<number>,
+  params?: MaybeRefOrGetter<QueryParameters | undefined>,
+  enabled: MaybeRefOrGetter<boolean> = true,
+) {
+  return useQuery({
+    queryKey: computed(() => queryKeys.quizzes.questions(toValue(quizId), toValue(params))),
+    queryFn: () => quizzesService.getQuestions(toValue(quizId), toValue(params)),
+    enabled: computed(() => toValue(enabled) && Number(toValue(quizId)) > 0),
+  })
+}
+
 export function useCreateQuizMutation() {
   const queryClient = useQueryClient()
 
@@ -84,6 +96,18 @@ export function useQuizAttemptsQuery(
   })
 }
 
+export function useMyQuizAttemptsQuery(
+  quizId: MaybeRefOrGetter<number>,
+  params?: MaybeRefOrGetter<QueryParameters | undefined>,
+  enabled: MaybeRefOrGetter<boolean> = true,
+) {
+  return useQuery({
+    queryKey: computed(() => queryKeys.quizzes.myAttempts(toValue(quizId), toValue(params))),
+    queryFn: () => quizzesService.getMyAttempts(toValue(quizId), toValue(params)),
+    enabled: computed(() => toValue(enabled) && Number(toValue(quizId)) > 0),
+  })
+}
+
 export function useQuizAttemptDetailQuery(
   attemptId: MaybeRefOrGetter<number>,
   enabled: MaybeRefOrGetter<boolean> = true,
@@ -104,6 +128,9 @@ export function useStartQuizAttemptMutation() {
       queryClient.invalidateQueries({
         queryKey: [...queryKeys.quizzes.all, variables.quizId, 'attempts'],
       })
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.quizzes.all, variables.quizId, 'my-attempts'],
+      })
     },
   })
 }
@@ -117,6 +144,9 @@ export function useEndQuizAttemptMutation() {
       queryClient.setQueryData(queryKeys.quizzes.attemptDetail(result.id), result)
       queryClient.invalidateQueries({
         queryKey: [...queryKeys.quizzes.all, result.quizId, 'attempts'],
+      })
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.quizzes.all, result.quizId, 'my-attempts'],
       })
     },
   })

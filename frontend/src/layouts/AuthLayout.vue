@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { useAppTheme } from '@/composables/useAppTheme'
+import { LOCALE_STORAGE_KEY } from '@/i18n'
 
 const { t, locale } = useI18n()
 const { isDark, toggleDark } = useAppTheme()
 
 function toggleLanguage() {
-  locale.value = locale.value === 'cs' ? 'en' : 'cs'
+  const nextLocale = locale.value === 'cs' ? 'en' : 'cs'
+  locale.value = nextLocale
+  localStorage.setItem(LOCALE_STORAGE_KEY, nextLocale)
 }
 </script>
 

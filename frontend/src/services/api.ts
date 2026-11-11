@@ -5,13 +5,10 @@ import { useAuthStore } from '@/stores/auth'
 import { UserRoles, type ProblemDetails, type QueryParameters, type UserRole } from '@/types/api'
 import type { AuthenticatedUser, JwtPayload } from '@/types/auth'
 
-export const ACCESS_TOKEN_KEY = 'access_token'
-export const REFRESH_TOKEN_KEY = 'refresh_token'
-export const TOKEN_EXPIRES_KEY = 'token_expires_at'
-
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'https://localhost:8081',
   timeout: 15000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
@@ -38,74 +35,56 @@ export function isTokenValid(token: string | null | undefined, bufferSeconds = 1
  */
 export function normalizeUserRole(rawRole: string | undefined | null): UserRole | null {
   if (!rawRole) return null
-  const normalized = rawRole.trim().toLowerCase()
-  if (normalized === 'admin' || normalized === 'administrator' || normalized === 'spravce') {
-    return UserRoles.Admin
-  }
   if (
-    normalized === 'instructor' ||
-    normalized === 'lector' ||
-    normalized === 'lecturer' ||
-    normalized === 'teacher' ||
-    normalized === 'lektor'
+    rawRole === UserRoles.Admin ||
+    rawRole === UserRoles.Instructor ||
+    rawRole === UserRoles.Student
   ) {
-    return UserRoles.Instructor
+    return rawRole
   }
-  if (normalized === 'student' || normalized === 'user') {
-    return UserRoles.Student
-  }
+  const normalized = rawRole.trim().toLowerCase()
+  if (normalized === 'admin') return UserRoles.Admin
+  if (normalized === 'instructor') return UserRoles.Instructor
+  if (normalized === 'student') return UserRoles.Student
   return null
 }
 
 /**
- * Dekóduje informace o uživateli a jeho rolích z JWT tokenu
+ * Dekóduje informace o uživateli z JWT tokenu podle struktury ELearningApi
  */
 export function decodeJwtUser(token: string | null | undefined): AuthenticatedUser | null {
   if (!token) return null
   try {
     const payload = jwtDecode<JwtPayload>(token)
 
-    const rawId =
-      payload.sub ??
-      payload.nameid ??
-      payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier']
-    const parsedId = rawId !== undefined ? Number(rawId) : NaN
+    const parsedId = payload.sub !== undefined ? Number(payload.sub) : NaN
     const id = Number.isFinite(parsedId) ? parsedId : null
+    const username = typeof payload.name === 'string' ? payload.name.trim() : ''
+    const role = normalizeUserRole(payload.role)
 
-    const username =
-      payload.unique_name ??
-      payload.name ??
-      payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'] ??
-      ''
-
-    const email =
-      payload.email ??
-      payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'] ??
-      ''
-
-    const rawRoleClaim =
-      payload.role ??
-      payload.roles ??
-      payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
-
-    const rawRoles = Array.isArray(rawRoleClaim) ? rawRoleClaim : rawRoleClaim ? [rawRoleClaim] : []
-
-    const roles = rawRoles
-      .map((r) => normalizeUserRole(String(r)))
-      .filter((r): r is UserRole => r !== null)
-
-    const primaryRole: UserRole | null = roles[0] ?? null
+    if (id === null || !username || !role) {
+      return null
+    }
 
     return {
       id,
       username,
-      email,
-      role: primaryRole,
-      roles,
+      role,
     }
   } catch {
     return null
   }
+}
+
+/**
+ * Rozhodne, zda chyba při obnově tokenu znamená neplatnou autentizaci (400/401/403)
+ */
+export function isAuthInvalidError(error: unknown): boolean {
+  if (axios.isAxiosError(error)) {
+    const status = error.response?.status
+    return status === 400 || status === 401 || status === 403
+  }
+  return false
 }
 
 /**
@@ -121,6 +100,18 @@ export function serializeQueryParams<T extends QueryParameters>(
   }
   return result
 }
+
+const GENERIC_PROBLEM_TITLES = new Set([
+  'bad request',
+  'unauthorized',
+  'forbidden',
+  'not found',
+  'conflict',
+  'internal server error',
+  'service unavailable',
+  'one or more validation errors occurred.',
+  'an error occurred while processing your request.',
+])
 
 /**
  * Získá čitelnou chybovou zprávu z API odpovědi (ProblemDetails)
@@ -138,19 +129,27 @@ export function getApiErrorMessage(
           return firstErrorList[0]
         }
       }
-      if (data.detail) return data.detail
-      if (data.title) return data.title
+      if (data.detail && data.detail.trim()) {
+        return data.detail
+      }
+      if (
+        data.title &&
+        data.title.trim() &&
+        !GENERIC_PROBLEM_TITLES.has(data.title.trim().toLowerCase())
+      ) {
+        return data.title
+      }
     }
-    if (error.message) return error.message
+    return fallbackMessage
   }
-  if (error instanceof Error) {
+  if (error instanceof Error && error.message) {
     return error.message
   }
   return fallbackMessage
 }
 
 // ============================================================================
-// Axios Interceptory (JWT + Refresh Token Queue)
+// Axios Interceptory (JWT v paměti + Refresh Token Queue)
 // ============================================================================
 
 interface RetryableRequestConfig extends InternalAxiosRequestConfig {
@@ -167,9 +166,9 @@ let failedQueue: FailedQueueItem[] = []
 
 function processQueue(error: unknown, token: string | null = null) {
   failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error)
-    } else if (token) {
+    if (error || !token) {
+      prom.reject(error ?? new Error('Refresh failed'))
+    } else {
       prom.resolve(token)
     }
   })
@@ -177,9 +176,9 @@ function processQueue(error: unknown, token: string | null = null) {
 }
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem(ACCESS_TOKEN_KEY)
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+  const authStore = useAuthStore()
+  if (authStore.token) {
+    config.headers.Authorization = `Bearer ${authStore.token}`
   }
   return config
 })
@@ -200,22 +199,6 @@ api.interceptors.response.use(
       requestUrl.includes('/api/auth/logout')
 
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
-      const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY)
-      const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY)
-
-      if (!accessToken || !refreshToken) {
-        const authStore = useAuthStore()
-        authStore.clearAuth()
-        const currentRoute = router.currentRoute.value
-        if (currentRoute.name !== 'login') {
-          await router.push({
-            name: 'login',
-            query: currentRoute.fullPath !== '/' ? { redirect: currentRoute.fullPath } : undefined,
-          })
-        }
-        return Promise.reject(error)
-      }
-
       if (isRefreshing) {
         return new Promise<string>((resolve, reject) => {
           failedQueue.push({ resolve, reject })
@@ -241,13 +224,15 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null)
         const authStore = useAuthStore()
-        authStore.clearAuth()
-        const currentRoute = router.currentRoute.value
-        if (currentRoute.name !== 'login') {
-          await router.push({
-            name: 'login',
-            query: currentRoute.fullPath !== '/' ? { redirect: currentRoute.fullPath } : undefined,
-          })
+        if (!authStore.token || isAuthInvalidError(refreshError)) {
+          authStore.clearAuth()
+          const currentRoute = router.currentRoute.value
+          if (currentRoute.name !== 'login') {
+            await router.push({
+              name: 'login',
+              query: currentRoute.fullPath !== '/' ? { redirect: currentRoute.fullPath } : undefined,
+            })
+          }
         }
         return Promise.reject(refreshError)
       } finally {

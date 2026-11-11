@@ -4,6 +4,7 @@ import { queryKeys } from './queryKeys'
 import type {
   AttachmentRequestDto,
   CreateLessonRequestDto,
+  QueryParameters,
   UpdateLessonRequestDto,
   UpdateProgressDto,
 } from '@/types/api'
@@ -15,6 +16,18 @@ export function useLessonDetailQuery(
   return useQuery({
     queryKey: computed(() => queryKeys.lessons.detail(toValue(lessonId))),
     queryFn: () => lessonsService.getById(toValue(lessonId)),
+    enabled: computed(() => toValue(enabled) && Number(toValue(lessonId)) > 0),
+  })
+}
+
+export function useLessonAttachmentsQuery(
+  lessonId: MaybeRefOrGetter<number>,
+  params?: MaybeRefOrGetter<QueryParameters | undefined>,
+  enabled: MaybeRefOrGetter<boolean> = true,
+) {
+  return useQuery({
+    queryKey: computed(() => queryKeys.lessons.attachments(toValue(lessonId), toValue(params))),
+    queryFn: () => lessonsService.getAttachments(toValue(lessonId), toValue(params)),
     enabled: computed(() => toValue(enabled) && Number(toValue(lessonId)) > 0),
   })
 }
@@ -68,6 +81,7 @@ export function useUpdateLessonProgressMutation() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.lessons.detail(variables.lessonId) })
       queryClient.invalidateQueries({ queryKey: queryKeys.courses.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all })
     },
   })
 }

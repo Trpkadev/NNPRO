@@ -1,37 +1,54 @@
 import type { MaybeRefOrGetter } from 'vue'
 import { usersService } from '@/services/users.service'
+import { useAuthStore } from '@/stores/auth'
 import { queryKeys } from './queryKeys'
-import type { CreateUserRequestDto, QueryParameters, UpdateUserRequestDto } from '@/types/api'
+import type { QueryParameters, UpdateUserRequestDto } from '@/types/api'
 
-export function useUsersQuery(
+export function useMyCoursesQuery(
   params?: MaybeRefOrGetter<QueryParameters | undefined>,
   enabled: MaybeRefOrGetter<boolean> = true,
 ) {
   return useQuery({
-    queryKey: computed(() => queryKeys.users.list(toValue(params))),
-    queryFn: () => usersService.getAll(toValue(params)),
+    queryKey: computed(() => queryKeys.users.myCourses(toValue(params))),
+    queryFn: () => usersService.getMyCourses(toValue(params)),
     enabled: computed(() => toValue(enabled)),
   })
 }
 
-export function useUserDetailQuery(
-  userId: MaybeRefOrGetter<number>,
+export function useMyProgressQuery(
+  params?: MaybeRefOrGetter<QueryParameters | undefined>,
   enabled: MaybeRefOrGetter<boolean> = true,
 ) {
   return useQuery({
-    queryKey: computed(() => queryKeys.users.detail(toValue(userId))),
-    queryFn: () => usersService.getById(toValue(userId)),
-    enabled: computed(() => toValue(enabled) && Number(toValue(userId)) > 0),
+    queryKey: computed(() => queryKeys.users.myProgress(toValue(params))),
+    queryFn: () => usersService.getMyProgress(toValue(params)),
+    enabled: computed(() => toValue(enabled)),
   })
 }
 
-export function useCreateUserMutation() {
+export function useUpdateCurrentUserMutation() {
+  const authStore = useAuthStore()
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (payload: CreateUserRequestDto) => usersService.create(payload),
-    onSuccess: () => {
+    mutationFn: (payload: UpdateUserRequestDto) => usersService.updateCurrent(payload),
+    onSuccess: async () => {
+      await authStore.refreshTokens()
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.users() })
+    },
+  })
+}
+
+export function useDeleteCurrentUserMutation() {
+  const authStore = useAuthStore()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () => usersService.removeCurrent(),
+    onSuccess: () => {
+      authStore.clearAuth()
+      queryClient.clear()
     },
   })
 }
@@ -43,8 +60,8 @@ export function useUpdateUserMutation() {
     mutationFn: ({ userId, payload }: { userId: number; payload: UpdateUserRequestDto }) =>
       usersService.update(userId, payload),
     onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(variables.userId) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.userDetail(variables.userId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.users() })
     },
   })
 }
@@ -55,8 +72,8 @@ export function useDeleteUserMutation() {
   return useMutation({
     mutationFn: (userId: number) => usersService.remove(userId),
     onSuccess: (_data, userId) => {
-      queryClient.removeQueries({ queryKey: queryKeys.users.detail(userId) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.all })
+      queryClient.removeQueries({ queryKey: queryKeys.admin.userDetail(userId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.users() })
     },
   })
 }

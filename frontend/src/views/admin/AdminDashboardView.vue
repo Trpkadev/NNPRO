@@ -2,7 +2,10 @@
 import { getApiErrorMessage } from '@/services/api'
 
 const { t } = useI18n()
-const { data: usersResponse, isLoading, isError, error } = useUsersQuery({ Page: 1, PageSize: 20 })
+const { data: usersResponse, isLoading, isError, error } = useAdminUsersQuery({
+  Page: 1,
+  PageSize: 20,
+})
 const users = computed(() => usersResponse.value?.data ?? [])
 const usersError = computed(() => getApiErrorMessage(error.value, t('admin.usersLoadError')))
 </script>

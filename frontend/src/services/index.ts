@@ -1,3 +1,4 @@
+export * from './admin.service'
 export * from './api'
 export * from './auth.service'
 export * from './courses.service'

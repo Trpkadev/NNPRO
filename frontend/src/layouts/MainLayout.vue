@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useToast } from 'openvue/usetoast'
+import { LOCALE_STORAGE_KEY } from '@/i18n'
 import { UserRoles } from '@/types/api'
 import { getApiErrorMessage } from '@/services/api'
 import { useAppTheme } from '@/composables/useAppTheme'
@@ -17,7 +18,9 @@ const { isDark, toggleDark } = useAppTheme()
 const mobileMenuVisible = ref(false)
 
 function toggleLanguage() {
-  locale.value = locale.value === 'cs' ? 'en' : 'cs'
+  const nextLocale = locale.value === 'cs' ? 'en' : 'cs'
+  locale.value = nextLocale
+  localStorage.setItem(LOCALE_STORAGE_KEY, nextLocale)
 }
 
 const navItems = computed(() => {
@@ -26,7 +29,6 @@ const navItems = computed(() => {
       label: t('nav.home'),
       icon: 'oi oi-home',
       to: { name: 'home' },
-      visible: true,
     },
   ]
 
@@ -35,7 +37,6 @@ const navItems = computed(() => {
       label: t('nav.instructorZone'),
       icon: 'oi oi-briefcase',
       to: { name: 'instructor-dashboard' },
-      visible: true,
     })
   }
 
@@ -44,11 +45,10 @@ const navItems = computed(() => {
       label: t('nav.adminZone'),
       icon: 'oi oi-shield',
       to: { name: 'admin-dashboard' },
-      visible: true,
     })
   }
 
-  return items.filter((i) => i.visible)
+  return items
 })
 
 const roleSeverity = computed(() => {
@@ -142,6 +142,7 @@ async function handleLogout() {
             severity="secondary"
             text
             size="small"
+            :aria-label="t('nav.language')"
             @click="toggleLanguage"
           />
           <Button
@@ -157,12 +158,10 @@ async function handleLogout() {
             <div
               class="hidden sm:flex items-center gap-2 pl-2 border-l border-surface-200 dark:border-surface-800"
             >
-              <div class="text-right">
-                <p class="text-sm font-semibold leading-tight">
-                  {{ authStore.user?.username || authStore.user?.email }}
-                </p>
-                <Tag :value="roleLabel" :severity="roleSeverity" class="text-xs mt-0.5" />
-              </div>
+              <p class="text-sm font-semibold leading-tight">
+                {{ authStore.user?.username }}
+              </p>
+              <Tag :value="roleLabel" :severity="roleSeverity" class="text-xs mt-0.5" />
               <Button
                 icon="oi oi-sign-out"
                 severity="secondary"
@@ -223,9 +222,8 @@ async function handleLogout() {
             <div class="flex items-center justify-between px-2">
               <div>
                 <p class="text-sm font-semibold">
-                  {{ authStore.user?.username || authStore.user?.email }}
+                  {{ authStore.user?.username }}
                 </p>
-                <p class="text-xs text-surface-500">{{ authStore.user?.email }}</p>
               </div>
               <Tag :value="roleLabel" :severity="roleSeverity" />
             </div>

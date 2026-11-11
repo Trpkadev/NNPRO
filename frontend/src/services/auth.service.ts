@@ -2,8 +2,6 @@ import { api } from './api'
 import type {
   AuthResponseDto,
   LoginRequestDto,
-  LogoutRequestDto,
-  RefreshTokenRequestDto,
   RegisterRequestDto,
   WrapperOfAuthResponseDto,
 } from '@/types/api'
@@ -11,12 +9,14 @@ import type {
 export const authService = {
   /**
    * Přihlášení uživatele (POST /api/auth/login)
+   * Nastaví HttpOnly refreshToken cookie a vrátí access token.
    */
   async login(payload: LoginRequestDto): Promise<AuthResponseDto> {
     const body: LoginRequestDto = {
       username: payload.username ?? null,
       email: payload.email ?? null,
       password: payload.password,
+      ...(payload.deviceName !== undefined ? { deviceName: payload.deviceName } : {}),
     }
     const { data } = await api.post<WrapperOfAuthResponseDto>('/api/auth/login', body)
     return data.data
@@ -24,6 +24,7 @@ export const authService = {
 
   /**
    * Registrace nového uživatele (POST /api/auth/register)
+   * Nastaví HttpOnly refreshToken cookie a vrátí access token.
    */
   async register(payload: RegisterRequestDto): Promise<AuthResponseDto> {
     const { data } = await api.post<WrapperOfAuthResponseDto>('/api/auth/register', payload)
@@ -31,17 +32,17 @@ export const authService = {
   },
 
   /**
-   * Obnovení access tokenu pomocí refresh tokenu (POST /api/auth/refresh)
+   * Obnovení access tokenu pomocí HttpOnly refreshToken cookie (POST /api/auth/refresh)
    */
-  async refresh(payload: RefreshTokenRequestDto): Promise<AuthResponseDto> {
-    const { data } = await api.post<WrapperOfAuthResponseDto>('/api/auth/refresh', payload)
+  async refresh(): Promise<AuthResponseDto> {
+    const { data } = await api.post<WrapperOfAuthResponseDto>('/api/auth/refresh')
     return data.data
   },
 
   /**
-   * Odhlášení uživatele a revokace refresh tokenu (POST /api/auth/logout)
+   * Odhlášení uživatele a revokace refreshToken cookie / relace (POST /api/auth/logout)
    */
-  async logout(payload: LogoutRequestDto): Promise<void> {
-    await api.post('/api/auth/logout', payload)
+  async logout(): Promise<void> {
+    await api.post('/api/auth/logout')
   },
 }
