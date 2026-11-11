@@ -30,13 +30,8 @@ export function useUpdateSectionMutation() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({
-      sectionId,
-      payload,
-    }: {
-      sectionId: number
-      payload: UpdateSectionRequestDto
-    }) => sectionsService.update(sectionId, payload),
+    mutationFn: ({ sectionId, payload }: { sectionId: number; payload: UpdateSectionRequestDto }) =>
+      sectionsService.update(sectionId, payload),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.sections.detail(variables.sectionId) })
       queryClient.invalidateQueries({
@@ -58,4 +53,3 @@ export function useDeleteSectionMutation() {
     },
   })
 }
-

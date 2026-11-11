@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import type { SectionResponseDto } from '@/types/api'
 

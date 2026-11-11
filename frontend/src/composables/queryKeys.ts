@@ -33,8 +33,7 @@ export const queryKeys = {
     editor: (quizId: number) => [...queryKeys.quizzes.all, 'editor', quizId] as const,
     attempts: (quizId: number, params?: QueryParameters) =>
       [...queryKeys.quizzes.all, quizId, 'attempts', params ?? {}] as const,
-    attemptDetail: (attemptId: number) =>
-      [...queryKeys.quizzes.all, 'attempt', attemptId] as const,
+    attemptDetail: (attemptId: number) => [...queryKeys.quizzes.all, 'attempt', attemptId] as const,
   },
   questions: {
     all: ['questions'] as const,
@@ -49,4 +48,3 @@ export const queryKeys = {
     detail: (userId: number) => [...queryKeys.users.details(), userId] as const,
   },
 }
-

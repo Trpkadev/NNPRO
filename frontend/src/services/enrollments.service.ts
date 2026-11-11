@@ -15,12 +15,9 @@ export const enrollmentsService = {
     courseId: number,
     params?: QueryParameters,
   ): Promise<WrapperOfEnrollmentResponseDto> {
-    const { data } = await api.get<WrapperOfEnrollmentResponseDto>(
-      `/api/enrollments/${courseId}`,
-      {
-        params: serializeQueryParams(params),
-      },
-    )
+    const { data } = await api.get<WrapperOfEnrollmentResponseDto>(`/api/enrollments/${courseId}`, {
+      params: serializeQueryParams(params),
+    })
     return data
   },
 
@@ -54,4 +51,3 @@ export const enrollmentsService = {
     await api.delete(`/api/enrollments/${courseId}/${studentId}`)
   },
 }
-

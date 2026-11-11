@@ -18,7 +18,11 @@ const courses = computed(() => coursesResponse.value?.data ?? [])
     </div>
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <Card v-for="course in courses" :key="course.id" class="border border-surface-200 dark:border-surface-800">
+      <Card
+        v-for="course in courses"
+        :key="course.id"
+        class="border border-surface-200 dark:border-surface-800"
+      >
         <template #title>{{ course.title }}</template>
         <template #content>
           <p class="text-sm text-surface-600 dark:text-surface-400 line-clamp-3">
@@ -29,4 +33,3 @@ const courses = computed(() => coursesResponse.value?.data ?? [])
     </div>
   </div>
 </template>
-

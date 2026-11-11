@@ -29,4 +29,3 @@ const isAllowed = computed(() => {
   <slot v-if="isAllowed" />
   <slot v-else name="fallback" />
 </template>
-

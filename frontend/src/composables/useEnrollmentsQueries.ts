@@ -1,11 +1,7 @@
 import type { MaybeRefOrGetter } from 'vue'
 import { enrollmentsService } from '@/services/enrollments.service'
 import { queryKeys } from './queryKeys'
-import type {
-  EnrollmentRequestDto,
-  ForceEnrollmentRequestDto,
-  QueryParameters,
-} from '@/types/api'
+import type { EnrollmentRequestDto, ForceEnrollmentRequestDto, QueryParameters } from '@/types/api'
 
 export function useCourseEnrollmentsQuery(
   courseId: MaybeRefOrGetter<number>,
@@ -66,4 +62,3 @@ export function useRemoveStudentEnrollmentMutation() {
     },
   })
 }
-

@@ -38,4 +38,3 @@ export const sectionsService = {
     await api.delete(`/api/sections/${sectionId}`)
   },
 }
-

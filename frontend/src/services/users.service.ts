@@ -50,4 +50,3 @@ export const usersService = {
     await api.delete(`/api/users/${userId}`)
   },
 }
-

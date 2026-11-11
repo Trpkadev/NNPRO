@@ -318,4 +318,3 @@ export type WrapperOfQuizResponseDto = ApiWrapper<QuizResponseDto>
 export type WrapperOfSectionResponseDto = ApiWrapper<SectionResponseDto>
 export type WrapperOfUserResponseDto = ApiWrapper<UserResponseDto>
 export type WrapperOfUserResponseDtoList = ApiWrapper<UserResponseDto[]>
-

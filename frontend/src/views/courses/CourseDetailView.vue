@@ -1,6 +1,5 @@
-
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getApiErrorMessage } from '@/services/api'
 import { useCourseDetailQuery } from '@/composables/useCoursesQueries'
@@ -11,6 +10,7 @@ import CourseSections from '@/components/courses/CourseSections.vue'
 import CourseProgress from '@/components/courses/CourseProgress.vue'
 import LessonList from '@/components/courses/LessonList.vue'
 import LessonDetail from '@/components/courses/LessonDetail.vue'
+import LessonNavigation from '@/components/courses/LessonNavigation.vue'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -25,15 +25,23 @@ const {
 } = useCourseDetailQuery(courseId)
 
 const {
-  sections, lessons, selectedLesson,
-  selectedSectionId, selectedLessonId,
-  sectionsLoading, sectionsIsError,
-  lessonsLoading, lessonsIsError,
-  lessonLoading, lessonIsError,
-  selectSection, openLesson, startLearning,
+  sections,
+  lessons,
+  selectedLesson,
+  selectedSectionId,
+  selectedLessonId,
+  sectionsLoading,
+  sectionsIsError,
+  lessonsLoading,
+  lessonsIsError,
+  lessonLoading,
+  lessonIsError,
+  selectSection,
+  openLesson,
+  startLearning,
 } = useCourseContent(courseId)
 
-const lessonIds = computed(() => lessons.value.map(l => l.id))
+const lessonIds = computed(() => lessons.value.map((l) => l.id))
 
 const {
   completedLessons,
@@ -57,11 +65,7 @@ const {
 
     <Skeleton v-if="courseLoading" height="12rem" />
 
-    <Message
-      v-else-if="courseIsError"
-      severity="error"
-      :closable="false"
-    >
+    <Message v-else-if="courseIsError" severity="error" :closable="false">
       {{ getApiErrorMessage(courseError, t('courses.loadError')) }}
     </Message>
 
@@ -74,16 +78,9 @@ const {
       />
 
       <section class="space-y-4">
-        <Skeleton
-          v-if="sectionsLoading || lessonsLoading"
-          height="8rem"
-        />
+        <Skeleton v-if="sectionsLoading || lessonsLoading" height="8rem" />
 
-        <Message
-          v-else-if="sectionsIsError || lessonsIsError"
-          severity="error"
-          :closable="false"
-        >
+        <Message v-else-if="sectionsIsError || lessonsIsError" severity="error" :closable="false">
           {{ t('courses.loadError') }}
         </Message>
 
@@ -101,11 +98,7 @@ const {
             :percentage="progressPercent"
           />
 
-          <Message
-            v-if="progressError"
-            severity="error"
-            :closable="false"
-          >
+          <Message v-if="progressError" severity="error" :closable="false">
             {{ t('courses.progressError') }}
           </Message>
 
@@ -118,22 +111,22 @@ const {
             @toggle="toggleLesson"
           />
 
-          <Message
-            v-if="sections.length === 0"
-            severity="info"
-            :closable="false"
-          >
+          <Message v-if="sections.length === 0" severity="info" :closable="false">
             {{ t('courses.empty') }}
           </Message>
         </template>
       </section>
 
-      <LessonDetail
-        v-if="selectedLessonId !== null"
-        :lesson="selectedLesson"
-        :loading="lessonLoading"
-        :error="lessonIsError"
-      />
+      <!-- Obsah vybrané lekce a navigace -->
+      <div v-if="selectedLessonId !== null" class="space-y-4">
+        <LessonDetail :lesson="selectedLesson" :loading="lessonLoading" :error="lessonIsError" />
+
+        <LessonNavigation
+          :lessons="lessons"
+          :selected-lesson-id="selectedLessonId"
+          @select="openLesson"
+        />
+      </div>
     </template>
 
     <Message v-else severity="warn" :closable="false">

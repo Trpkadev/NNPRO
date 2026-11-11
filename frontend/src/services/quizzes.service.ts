@@ -97,4 +97,3 @@ export const quizzesService = {
     return data.data
   },
 }
-

@@ -3,7 +3,7 @@ import { UserRoles } from '@/types/api'
 import '@/types/auth'
 
 export const routes: RouteRecordRaw[] = [
-  // Autentizační routy (AuthLayout)
+  // Přihlášení a registrace
   {
     path: '/auth',
     component: () => import('@/layouts/AuthLayout.vue'),
@@ -24,20 +24,32 @@ export const routes: RouteRecordRaw[] = [
     ],
   },
 
-  // Hlavní aplikační routy (MainLayout)
+  // Hlavní aplikace
   {
     path: '/',
     component: () => import('@/layouts/MainLayout.vue'),
     meta: { requiresAuth: true, layout: 'main' },
     children: [
+      // Přesměrování na homepage
+      {
+        path: '',
+        redirect: { name: 'home' },
+      },
       {
         path: 'home',
         name: 'home',
         component: () => import('@/views/HomeView.vue'),
         meta: { requiresAuth: true, layout: 'main' },
       },
+      // Detail kurzu
+      {
+        path: 'courses/:id',
+        name: 'course-detail',
+        component: () => import('@/views/courses/CourseDetailView.vue'),
+        meta: { requiresAuth: true, layout: 'main' },
+      },
 
-      // Lektorská sekce (RBAC: Instructor, Admin)
+      // Lektorská sekce
       {
         path: 'instructor',
         component: () => import('@/layouts/InstructorLayout.vue'),
@@ -60,7 +72,7 @@ export const routes: RouteRecordRaw[] = [
         ],
       },
 
-      // Administrační sekce (RBAC: Admin)
+      // Administrátorská sekce
       {
         path: 'admin',
         component: () => import('@/layouts/AdminLayout.vue'),
@@ -83,7 +95,7 @@ export const routes: RouteRecordRaw[] = [
         ],
       },
 
-      // 403 Přístup odepřen
+      // Přístup odepřen
       {
         path: 'forbidden',
         name: 'forbidden',
@@ -92,22 +104,8 @@ export const routes: RouteRecordRaw[] = [
       },
     ],
   },
-  // Detail kurzu - dočasně veřejná route pro frontend
-  {
-    path: '/courses/:id',
-    component: () => import('@/views/courses/CourseDetailView.vue'),
-    meta: { requiresAuth: false, layout: 'main' },
-    children: [
-      {
-        path: '',
-        name: 'course-detail',
-        component: () => import('@/views/courses/CourseDetailView.vue'),
-        meta: { requiresAuth: false, layout: 'main' },
-      },
-    ],
-  },
 
-  // Záchytná routa pro 404 (Not Found)
+  // Stránka nenalezena
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',

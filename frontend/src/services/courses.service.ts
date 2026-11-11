@@ -67,4 +67,3 @@ export const coursesService = {
     await api.delete(`/api/courses/${id}`)
   },
 }
-

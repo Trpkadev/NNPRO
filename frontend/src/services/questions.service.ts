@@ -38,4 +38,3 @@ export const questionsService = {
     await api.delete(`/api/questions/${questionId}`)
   },
 }
-

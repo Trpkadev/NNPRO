@@ -45,4 +45,3 @@ export const authService = {
     await api.post('/api/auth/logout', payload)
   },
 }
-

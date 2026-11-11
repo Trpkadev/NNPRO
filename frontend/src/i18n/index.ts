@@ -94,6 +94,19 @@ const messages = {
       completed: 'Dokončeno',
       progressError: 'Nepodařilo se aktualizovat dokončení lekce.',
 
+      previousLesson: 'Předchozí lekce',
+      nextLesson: 'Další lekce',
+      lessonPosition: 'Lekce {current} z {total}',
+      searchPlaceholder: 'Hledat kurz...',
+      clearSearch: 'Vymazat hledání',
+      noSearchResults: 'Žádné kurzy neodpovídají hledání.',
+      filterBy: 'Filtrovat podle:',
+      filter: {
+        all: 'Vše',
+        title: 'Název',
+        description: 'Popis',
+      },
+
       mock: {
         csharp: {
           title: 'Základy programování v C#',
@@ -280,6 +293,19 @@ const messages = {
       sampleLesson: 'Sample Lesson',
       lessonPlaceholder: 'The content of the selected lesson will be displayed here.',
       courseNotFound: 'Course not found.',
+
+      previousLesson: 'Previous Lesson',
+      nextLesson: 'Next Lesson',
+      lessonPosition: 'Lesson {current} of {total}',
+      searchPlaceholder: 'Search courses...',
+      clearSearch: 'Clear search',
+      noSearchResults: 'No courses match your search.',
+      filterBy: 'Filter by:',
+      filter: {
+        all: 'All',
+        title: 'Title',
+        description: 'Description',
+      },
 
       // Study progress
       sectionProgress: 'Section progress',

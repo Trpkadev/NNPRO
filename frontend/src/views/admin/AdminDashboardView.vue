@@ -13,9 +13,7 @@ const usersError = computed(() => getApiErrorMessage(error.value, t('admin.users
       <Skeleton v-for="n in 4" :key="n" height="3.5rem" class="rounded-xl" />
     </div>
 
-    <div
-      v-else-if="isError"
-    >
+    <div v-else-if="isError">
       <Message severity="error" :closable="false">{{ usersError }}</Message>
     </div>
 

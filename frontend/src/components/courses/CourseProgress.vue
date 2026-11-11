@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 defineProps<{
   completed: number
@@ -18,22 +17,18 @@ const { t } = useI18n()
         {{ t('courses.sectionProgress') }}
       </h3>
 
-      <span class="font-semibold text-emerald-500">
-        {{ percentage }} %
-      </span>
+      <span class="font-semibold text-emerald-500"> {{ percentage }} % </span>
     </div>
 
-    <ProgressBar
-      :value="percentage"
-      :showValue="false"
-      style="height: 0.75rem"
-    />
+    <ProgressBar :value="percentage" :showValue="false" style="height: 0.75rem" />
 
     <p class="text-sm text-surface-500">
-      {{ t('courses.completedCount', {
-        count: completed,
-        total,
-      }) }}
+      {{
+        t('courses.completedCount', {
+          count: completed,
+          total,
+        })
+      }}
     </p>
   </div>
 </template>

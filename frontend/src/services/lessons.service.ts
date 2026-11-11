@@ -62,4 +62,3 @@ export const lessonsService = {
     await api.delete(`/api/lessons/${lessonId}/attachments/${attachmentId}`)
   },
 }
-

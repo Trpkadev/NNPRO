@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import type { LessonResponseDto } from '@/types/api'
 
@@ -17,11 +16,7 @@ const { t } = useI18n()
   >
     <Skeleton v-if="loading" height="5rem" />
 
-    <Message
-      v-else-if="error"
-      severity="error"
-      :closable="false"
-    >
+    <Message v-else-if="error" severity="error" :closable="false">
       {{ t('courses.loadError') }}
     </Message>
 

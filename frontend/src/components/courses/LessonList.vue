@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import type { LessonResponseDto } from '@/types/api'
 
@@ -34,29 +33,15 @@ const { t } = useI18n()
         class="flex-1 flex items-center gap-3 text-left cursor-pointer"
         @click="emit('select', lesson.id)"
       >
-        <span class="text-emerald-500 font-semibold">
-          {{ index + 1 }}.
-        </span>
+        <span class="text-emerald-500 font-semibold"> {{ index + 1 }}. </span>
 
         <span>{{ lesson.title }}</span>
       </button>
 
       <Button
-        :icon="
-          completedLessons[lesson.id]
-            ? 'pi pi-check-circle'
-            : 'pi pi-circle'
-        "
-        :label="
-          completedLessons[lesson.id]
-            ? t('courses.completed')
-            : t('courses.markCompleted')
-        "
-        :severity="
-          completedLessons[lesson.id]
-            ? 'success'
-            : 'secondary'
-        "
+        :icon="completedLessons[lesson.id] ? 'pi pi-check-circle' : 'pi pi-circle'"
+        :label="completedLessons[lesson.id] ? t('courses.completed') : t('courses.markCompleted')"
+        :severity="completedLessons[lesson.id] ? 'success' : 'secondary'"
         :outlined="!completedLessons[lesson.id]"
         size="small"
         :loading="pendingLessonId === lesson.id"

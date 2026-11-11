@@ -1,7 +1,8 @@
-
 <script setup lang="ts">
 import { UserRoles } from '@/types/api'
 import { getApiErrorMessage } from '@/services/api'
+import CourseSearch from '@/components/courses/CourseSearch.vue'
+import { useCourseFilters } from '@/composables/useCourseFilters'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -20,10 +21,9 @@ const {
 })
 
 const courses = computed(() => thumbnailsResponse.value?.data ?? [])
+const { search, filter, filteredCourses } = useCourseFilters(courses)
 
-const coursesError = computed(() =>
-  getApiErrorMessage(error.value, t('courses.loadError')),
-)
+const coursesError = computed(() => getApiErrorMessage(error.value, t('courses.loadError')))
 
 // Otevření detailu kurzu
 function openCourse(id: number) {
@@ -42,10 +42,7 @@ function openCourse(id: number) {
           {{ t('welcome') }}
         </h1>
 
-        <p
-          v-if="authStore.user"
-          class="text-sm text-surface-600 dark:text-surface-400"
-        >
+        <p v-if="authStore.user" class="text-sm text-surface-600 dark:text-surface-400">
           {{ t('auth.loggedInAs') }}
 
           <span class="font-semibold text-surface-900 dark:text-surface-0">
@@ -83,19 +80,12 @@ function openCourse(id: number) {
     <section class="space-y-4">
       <h2 class="text-lg font-semibold">
         {{ t('nav.courses') }}
+        <CourseSearch v-model="search" v-model:filter="filter" />
       </h2>
 
       <!-- Načítání -->
-      <div
-        v-if="isLoading"
-        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-      >
-        <Skeleton
-          v-for="n in 6"
-          :key="n"
-          height="9rem"
-          class="rounded-xl"
-        />
+      <div v-if="isLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Skeleton v-for="n in 6" :key="n" height="9rem" class="rounded-xl" />
       </div>
 
       <!-- Chyba API -->
@@ -105,19 +95,16 @@ function openCourse(id: number) {
 
       <!-- Prázdný katalog -->
       <div
-        v-else-if="courses.length === 0"
+        v-else-if="filteredCourses.length === 0"
         class="p-8 rounded-2xl bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 text-center text-surface-500 text-sm"
       >
-        {{ t('courses.empty') }}
+        {{ search.trim() ? t('courses.noSearchResults') : t('courses.empty') }}
       </div>
 
       <!-- Kurzy z backendu -->
-      <div
-        v-else
-        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
-      >
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card
-          v-for="course in courses"
+          v-for="course in filteredCourses"
           :key="course.id"
           class="border border-surface-200 dark:border-surface-800 transition-colors hover:border-emerald-500"
         >
