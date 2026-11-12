@@ -13,10 +13,21 @@ V kořenovém adresáři projektu spusť v terminálu:
 
 ```bash
 dotnet dev-certs https --trust -ep ./Backend/aspnetapp.pfx -p nnpro
-
 ```
 
-*(Potvrď systémové okno pro důvěru certifikátu).*
+### Windows
+
+*Dvojklik soubor certifikátu, potvrď systémové okno pro důvěru certifikátu*
+
+Poté restart systému
+
+### Linux (Mint)
+V kořenovém adresáři projektu:
+```bash
+sudo install -m 0644 "$HOME"/.aspnet/dev-certs/trust/aspnetcore-localhost-*.pem /usr/local/share/ca-certificates/aspnetcore-localhost.crt
+sudo update-ca-certificates
+```
+Poté restart systému 
 
 ---
 
