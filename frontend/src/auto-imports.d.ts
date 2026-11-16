@@ -587,7 +587,6 @@ declare module 'vue' {
     readonly useAdminUserSessionsQuery: UnwrapRef<typeof import('./composables/useAdminQueries')['useAdminUserSessionsQuery']>
     readonly useAdminUsersQuery: UnwrapRef<typeof import('./composables/useAdminQueries')['useAdminUsersQuery']>
     readonly useAnimate: UnwrapRef<typeof import('@vueuse/core')['useAnimate']>
-    readonly useAppTheme: UnwrapRef<typeof import('./composables/useAppTheme')['useAppTheme']>
     readonly useArrayDifference: UnwrapRef<typeof import('@vueuse/core')['useArrayDifference']>
     readonly useArrayEvery: UnwrapRef<typeof import('@vueuse/core')['useArrayEvery']>
     readonly useArrayFilter: UnwrapRef<typeof import('@vueuse/core')['useArrayFilter']>
@@ -618,10 +617,8 @@ declare module 'vue' {
     readonly useConfirmDialog: UnwrapRef<typeof import('@vueuse/core')['useConfirmDialog']>
     readonly useCountdown: UnwrapRef<typeof import('@vueuse/core')['useCountdown']>
     readonly useCounter: UnwrapRef<typeof import('@vueuse/core')['useCounter']>
-    readonly useCourseContent: UnwrapRef<typeof import('./composables/useCourseContent')['useCourseContent']>
     readonly useCourseDetailQuery: UnwrapRef<typeof import('./composables/useCoursesQueries')['useCourseDetailQuery']>
     readonly useCourseEnrollmentsQuery: UnwrapRef<typeof import('./composables/useEnrollmentsQueries')['useCourseEnrollmentsQuery']>
-    readonly useCourseFilters: UnwrapRef<typeof import('./composables/useCourseFilters')['useCourseFilters']>
     readonly useCourseInstructorsQuery: UnwrapRef<typeof import('./composables/useCoursesQueries')['useCourseInstructorsQuery']>
     readonly useCourseSectionsQuery: UnwrapRef<typeof import('./composables/useCoursesQueries')['useCourseSectionsQuery']>
     readonly useCourseThumbnailsQuery: UnwrapRef<typeof import('./composables/useCoursesQueries')['useCourseThumbnailsQuery']>
@@ -709,7 +706,6 @@ declare module 'vue' {
     readonly useLastChanged: UnwrapRef<typeof import('@vueuse/core')['useLastChanged']>
     readonly useLessonAttachmentsQuery: UnwrapRef<typeof import('./composables/useLessonsQueries')['useLessonAttachmentsQuery']>
     readonly useLessonDetailQuery: UnwrapRef<typeof import('./composables/useLessonsQueries')['useLessonDetailQuery']>
-    readonly useLessonProgress: UnwrapRef<typeof import('./composables/useLessonProgress')['useLessonProgress']>
     readonly useLink: UnwrapRef<typeof import('vue-router')['useLink']>
     readonly useLiveAnnouncer: UnwrapRef<typeof import('@vueuse/core')['useLiveAnnouncer']>
     readonly useLocalStorage: UnwrapRef<typeof import('@vueuse/core')['useLocalStorage']>
