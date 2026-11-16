@@ -45,3 +45,5 @@ __screenshots__/
 
 # Auto-import ESLint globals
 .eslintrc-auto-import.json
+
+/certs/
