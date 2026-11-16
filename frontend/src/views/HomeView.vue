@@ -1,45 +1,70 @@
 <script setup lang="ts">
 import { UserRoles } from '@/types/api'
-import { getApiErrorMessage } from '@/services/api'
 
 const { t } = useI18n()
 const router = useRouter()
 const authStore = useAuthStore()
 
-const { data: thumbnailsResponse, isLoading, isError, error } = useCourseThumbnailsQuery({
-  Page: 1,
-  PageSize: 12,
-  MaxDescriptionLength: 140,
-})
+// Načtení zapsaných kurzů a studijního postupu přihlášeného uživatele
+const { data: myCoursesAllResponse } = useMyCoursesQuery({ Page: 1, PageSize: 100 })
+const { data: myProgressResponse } = useMyProgressQuery({ Page: 1, PageSize: 100 })
 
-const courses = computed(() => thumbnailsResponse.value?.data ?? [])
-const coursesError = computed(() =>
-  getApiErrorMessage(error.value, t('courses.loadError')),
+const enrolledCourseIds = computed(
+  () => new Set((myCoursesAllResponse.value?.data ?? []).map((c) => c.id)),
 )
+const progressItems = computed(() => myProgressResponse.value?.data ?? [])
+const completedLessonsTotal = computed(
+  () => progressItems.value.filter((p) => p.isCompleted).length,
+)
+
+const enrollDialogVisible = ref(false)
+const enrollTargetCourse = ref<{ id: number; title: string } | null>(null)
+
+function openEnrollDialog(course: { id: number; title: string }) {
+  enrollTargetCourse.value = course
+  enrollDialogVisible.value = true
+}
 </script>
 
 <template>
-  <div class="space-y-6">
-    <!-- Uvítací sekce -->
+  <div class="space-y-8">
+    <!-- Uvítací přehledový banner -->
     <div
-      class="p-6 rounded-2xl bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+      class="p-6 rounded-2xl bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 flex flex-col lg:flex-row lg:items-center justify-between gap-6 shadow-xs"
     >
-      <div class="space-y-1">
-        <h1 class="text-2xl font-bold">{{ t('welcome') }}</h1>
+      <div class="space-y-1.5">
+        <div class="flex items-center gap-2">
+          <h1 class="text-2xl font-bold">{{ t('welcome') }}, {{ authStore.user?.username }}!</h1>
+        </div>
         <p class="text-sm text-surface-600 dark:text-surface-400">
-          {{ t('auth.loggedInAs') }}
-          <span class="font-semibold text-surface-900 dark:text-surface-0">
-            {{ authStore.user?.username }}
+          {{ t('app.subtitle') }} &bull;
+          <span>
+            {{ t('admin.enrollmentsCount') }}:
+            <strong class="text-surface-900 dark:text-surface-0">{{ enrolledCourseIds.size }}</strong>
+          </span>
+          &bull;
+          <span>
+            {{ t('lessons.completed') }}:
+            <strong class="text-primary">{{ completedLessonsTotal }}</strong>
           </span>
         </p>
       </div>
 
-      <div class="flex items-center gap-2">
+      <div class="flex flex-wrap items-center gap-2">
+        <Button
+          :label="t('nav.profile')"
+          icon="oi oi-user"
+          severity="secondary"
+          outlined
+          size="small"
+          @click="router.push({ name: 'profile' })"
+        />
+
         <RoleGuard :roles="[UserRoles.Instructor, UserRoles.Admin]">
           <Button
             :label="t('nav.instructorZone')"
             icon="oi oi-briefcase"
-            severity="secondary"
+            severity="warn"
             outlined
             size="small"
             @click="router.push({ name: 'instructor-dashboard' })"
@@ -59,41 +84,22 @@ const coursesError = computed(() =>
       </div>
     </div>
 
-    <!-- Přehled kurzů (Katalog) -->
-    <section class="space-y-4">
-      <div class="flex items-center justify-between">
-        <h2 class="text-lg font-semibold">{{ t('nav.courses') }}</h2>
-      </div>
+    <!-- Sekce: Moje zapsané kurzy -->
+    <MyCoursesSection :progress-items="progressItems" />
 
-      <div v-if="isLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Skeleton v-for="n in 6" :key="n" height="9rem" class="rounded-xl" />
-      </div>
+    <!-- Sekce: Katalog všech kurzů (vyhledávání, řazení, infinite scroll) -->
+    <CourseCatalogSection
+      :enrolled-course-ids="enrolledCourseIds"
+      :can-enroll-as-student="authStore.isStudent"
+      @request-enroll="openEnrollDialog"
+    />
 
-      <Message v-else-if="isError" severity="error" :closable="false">
-        {{ coursesError }}
-      </Message>
-
-      <div
-        v-else-if="courses.length === 0"
-        class="p-8 rounded-2xl bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 text-center text-surface-500 text-sm"
-      >
-        {{ t('courses.empty') }}
-      </div>
-
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card
-          v-for="course in courses"
-          :key="course.id"
-          class="border border-surface-200 dark:border-surface-800"
-        >
-          <template #title>{{ course.title }}</template>
-          <template #content>
-            <p class="text-sm text-surface-600 dark:text-surface-400">
-              {{ course.shortDescription }}
-            </p>
-          </template>
-        </Card>
-      </div>
-    </section>
+    <!-- Dialog pro zápis do kurzu (veřejný i s přístupovým klíčem) -->
+    <EnrollDialog
+      v-model:visible="enrollDialogVisible"
+      :course-id="enrollTargetCourse?.id ?? null"
+      :course-title="enrollTargetCourse?.title"
+      @enrolled="(id) => router.push({ name: 'course-detail', params: { id } })"
+    />
   </div>
 </template>

@@ -88,15 +88,33 @@ export function isAuthInvalidError(error: unknown): boolean {
 }
 
 /**
- * Připraví query parametry pro Axios (převede objekt Filters na JSON řetězec)
+ * Připraví query parametry pro Axios (doplní výchozí stránkování a převede objekt Filters na JSON řetězec)
  */
 export function serializeQueryParams<T extends QueryParameters>(
   params?: T,
-): Record<string, unknown> | undefined {
-  if (!params) return undefined
-  const result: Record<string, unknown> = { ...params } as Record<string, unknown>
-  if (params.Filters && typeof params.Filters === 'object') {
-    result.Filters = JSON.stringify(params.Filters)
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {
+    Page: params?.Page ?? 1,
+    PageSize: params?.PageSize ?? 20,
+    ...params,
+  }
+  if (params?.Filters && typeof params.Filters === 'object') {
+    const cleanedFilters: Record<string, string> = {}
+    for (const [key, val] of Object.entries(params.Filters)) {
+      if (val !== undefined && val !== null && String(val).trim() !== '') {
+        cleanedFilters[key] = String(val).trim()
+      }
+    }
+    if (Object.keys(cleanedFilters).length > 0) {
+      result.Filters = JSON.stringify(cleanedFilters)
+    } else {
+      delete result.Filters
+    }
+  } else if (!params?.Filters) {
+    delete result.Filters
+  }
+  if (!result.SortBy) {
+    delete result.SortBy
   }
   return result
 }

@@ -36,6 +36,30 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/HomeView.vue'),
         meta: { requiresAuth: true, layout: 'main' },
       },
+      {
+        path: 'profile',
+        name: 'profile',
+        component: () => import('@/views/ProfileView.vue'),
+        meta: { requiresAuth: true, layout: 'main' },
+      },
+      {
+        path: 'courses/:id',
+        name: 'course-detail',
+        component: () => import('@/views/courses/CourseDetailView.vue'),
+        meta: { requiresAuth: true, layout: 'main' },
+      },
+      {
+        path: 'courses/:courseId/lessons/:lessonId',
+        name: 'lesson-detail',
+        component: () => import('@/views/courses/LessonDetailView.vue'),
+        meta: { requiresAuth: true, layout: 'main' },
+      },
+      {
+        path: 'courses/:courseId/quizzes/:quizId',
+        name: 'quiz-detail',
+        component: () => import('@/views/courses/QuizDetailView.vue'),
+        meta: { requiresAuth: true, layout: 'main' },
+      },
 
       // Lektorská sekce (RBAC: Instructor, Admin)
       {
@@ -51,6 +75,16 @@ export const routes: RouteRecordRaw[] = [
             path: '',
             name: 'instructor-dashboard',
             component: () => import('@/views/instructor/InstructorDashboardView.vue'),
+            meta: {
+              requiresAuth: true,
+              roles: [UserRoles.Instructor, UserRoles.Admin],
+              layout: 'instructor',
+            },
+          },
+          {
+            path: 'courses/:id',
+            name: 'instructor-course-editor',
+            component: () => import('@/views/instructor/InstructorCourseEditorView.vue'),
             meta: {
               requiresAuth: true,
               roles: [UserRoles.Instructor, UserRoles.Admin],

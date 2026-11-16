@@ -30,6 +30,11 @@ const navItems = computed(() => {
       icon: 'oi oi-home',
       to: { name: 'home' },
     },
+    {
+      label: t('nav.profile'),
+      icon: 'oi oi-user',
+      to: { name: 'profile' },
+    },
   ]
 
   if (canManageCourses.value) {

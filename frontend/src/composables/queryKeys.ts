@@ -17,6 +17,8 @@ export const queryKeys = {
     thumbnails: () => [...queryKeys.courses.all, 'thumbnails'] as const,
     thumbnailList: (params?: CourseThumbnailQueryParameters) =>
       [...queryKeys.courses.thumbnails(), params ?? {}] as const,
+    thumbnailInfinite: (params?: Omit<CourseThumbnailQueryParameters, 'Page'>) =>
+      [...queryKeys.courses.thumbnails(), 'infinite', params ?? {}] as const,
     details: () => [...queryKeys.courses.all, 'detail'] as const,
     detail: (id: number) => [...queryKeys.courses.details(), id] as const,
     instructors: (courseId: number, params?: QueryParameters) =>
