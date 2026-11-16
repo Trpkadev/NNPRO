@@ -207,9 +207,6 @@ function clearFilters() {
     </div>
 
     <!-- Postranní panel detailu uživatele, změny role a správy relací -->
-    <AdminUserDetailDrawer
-      v-model:visible="detailDrawerVisible"
-      :user-id="selectedUserId"
-    />
+    <AdminUserDetailDrawer v-model:visible="detailDrawerVisible" :user-id="selectedUserId" />
   </div>
 </template>

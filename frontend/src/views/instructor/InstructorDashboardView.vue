@@ -167,15 +167,15 @@ function confirmDeleteCourse(course: CourseResponseDto) {
             </p>
           </div>
 
-          <div class="flex items-center justify-between gap-2 pt-3 border-t border-surface-100 dark:border-surface-800">
+          <div
+            class="flex items-center justify-between gap-2 pt-3 border-t border-surface-100 dark:border-surface-800"
+          >
             <Button
               :label="t('instructor.openEditor')"
               icon="oi oi-cog"
               size="small"
               class="flex-1"
-              @click="
-                router.push({ name: 'instructor-course-editor', params: { id: course.id } })
-              "
+              @click="router.push({ name: 'instructor-course-editor', params: { id: course.id } })"
             />
             <Button
               icon="oi oi-pencil"

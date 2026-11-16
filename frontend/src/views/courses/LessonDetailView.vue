@@ -12,12 +12,7 @@ const toast = useToast()
 const courseId = computed(() => Number(route.params.courseId))
 const lessonId = computed(() => Number(route.params.lessonId))
 
-const {
-  data: lesson,
-  isLoading,
-  isError,
-  error,
-} = useLessonDetailQuery(lessonId)
+const { data: lesson, isLoading, isError, error } = useLessonDetailQuery(lessonId)
 
 const { data: attachmentsResponse, isLoading: attachmentsLoading } = useLessonAttachmentsQuery(
   lessonId,
@@ -164,7 +159,14 @@ async function handleToggleComplete() {
             :src="youtubeEmbedUrl"
             :title="lesson.title"
             class="w-full h-full"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allow="
+              accelerometer;
+              autoplay;
+              clipboard-write;
+              encrypted-media;
+              gyroscope;
+              picture-in-picture;
+            "
             allowfullscreen
           />
         </div>
@@ -189,10 +191,7 @@ async function handleToggleComplete() {
           <Skeleton height="3rem" class="rounded-xl" />
         </div>
 
-        <p
-          v-else-if="attachments.length === 0"
-          class="text-xs text-surface-500 italic"
-        >
+        <p v-else-if="attachments.length === 0" class="text-xs text-surface-500 italic">
           {{ t('lessons.noAttachments') }}
         </p>
 

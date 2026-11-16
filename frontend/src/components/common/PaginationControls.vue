@@ -67,9 +67,7 @@ function goToPage(page: number) {
         :disabled="!canPrev || loading"
         @click="goToPage(currentPage - 1)"
       />
-      <span
-        class="px-3 py-1 rounded-lg bg-surface-100 dark:bg-surface-800 text-xs font-semibold"
-      >
+      <span class="px-3 py-1 rounded-lg bg-surface-100 dark:bg-surface-800 text-xs font-semibold">
         {{ currentPage }} / {{ totalPages }}
       </span>
       <Button

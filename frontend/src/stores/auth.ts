@@ -1,8 +1,4 @@
-import {
-  decodeJwtUser,
-  isAuthInvalidError,
-  isTokenValid,
-} from '@/services/api'
+import { decodeJwtUser, isAuthInvalidError, isTokenValid } from '@/services/api'
 import { authService } from '@/services/auth.service'
 import {
   UserRoles,

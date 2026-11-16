@@ -125,10 +125,7 @@ function confirmRemoveStudent(student: UserResponseDto) {
         <Skeleton v-for="n in 4" :key="n" height="3rem" class="rounded-xl" />
       </div>
 
-      <p
-        v-else-if="students.length === 0"
-        class="text-sm text-surface-500 text-center py-6"
-      >
+      <p v-else-if="students.length === 0" class="text-sm text-surface-500 text-center py-6">
         {{ t('instructor.noEnrolledStudents') }}
       </p>
 

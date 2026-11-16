@@ -79,7 +79,10 @@ function toggleOption(optionId: number) {
       v-html="sanitizeHtml(question.text)"
     />
 
-    <div v-if="question.imageUrl" class="rounded-xl overflow-hidden max-w-md border border-surface-200 dark:border-surface-800">
+    <div
+      v-if="question.imageUrl"
+      class="rounded-xl overflow-hidden max-w-md border border-surface-200 dark:border-surface-800"
+    >
       <img
         :src="question.imageUrl"
         :alt="t('quizzes.questionImageAlt', { number: index + 1 })"

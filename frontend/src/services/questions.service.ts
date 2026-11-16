@@ -79,10 +79,7 @@ export const questionsService = {
    * Vytvoření možnosti odpovědi u otázky (POST /api/questions/{questionId}/options)
    */
   async createOption(questionId: number, payload: CreateAnswerOptionRequestDto): Promise<number> {
-    const { data } = await api.post<WrapperOfUint>(
-      `/api/questions/${questionId}/options`,
-      payload,
-    )
+    const { data } = await api.post<WrapperOfUint>(`/api/questions/${questionId}/options`, payload)
     return Number(data.data)
   },
 

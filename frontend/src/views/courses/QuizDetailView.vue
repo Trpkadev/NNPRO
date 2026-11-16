@@ -183,10 +183,7 @@ function handleAttemptCompleted(payload: {
             <Skeleton v-for="n in 3" :key="n" height="3rem" class="rounded-xl" />
           </div>
 
-          <p
-            v-else-if="myAttempts.length === 0"
-            class="text-sm text-surface-500 text-center py-6"
-          >
+          <p v-else-if="myAttempts.length === 0" class="text-sm text-surface-500 text-center py-6">
             {{ t('quizzes.noAttemptsYet') }}
           </p>
 
@@ -203,7 +200,11 @@ function handleAttemptCompleted(payload: {
             </Column>
             <Column :header="t('quizzes.submittedAt')">
               <template #body="{ data }">
-                {{ data.submittedAtUtc ? formatDateTime(data.submittedAtUtc) : t('quizzes.inProgress') }}
+                {{
+                  data.submittedAtUtc
+                    ? formatDateTime(data.submittedAtUtc)
+                    : t('quizzes.inProgress')
+                }}
               </template>
             </Column>
             <Column :header="t('quizzes.score')">

@@ -250,7 +250,8 @@ api.interceptors.response.use(
           if (currentRoute.name !== 'login') {
             await router.push({
               name: 'login',
-              query: currentRoute.fullPath !== '/' ? { redirect: currentRoute.fullPath } : undefined,
+              query:
+                currentRoute.fullPath !== '/' ? { redirect: currentRoute.fullPath } : undefined,
             })
           }
         }

@@ -115,7 +115,11 @@ async function handleDeleteOption(optionId: number) {
             "
             @click="handleToggleCorrect(opt)"
           >
-            {{ opt.isCorrect ? '✓ ' + t('instructor.optionIsCorrect') : t('instructor.optionIsCorrect') }}
+            {{
+              opt.isCorrect
+                ? '✓ ' + t('instructor.optionIsCorrect')
+                : t('instructor.optionIsCorrect')
+            }}
           </button>
           <span class="truncate font-medium">{{ opt.text }}</span>
           <span v-if="opt.imageUrl" class="text-surface-400 truncate">({{ opt.imageUrl }})</span>

@@ -46,10 +46,7 @@ export function useInfiniteCourseThumbnailsQuery(
         return pagination.page + 1
       }
       const pageSize = toValue(params)?.PageSize ?? 9
-      if (
-        pagination &&
-        pagination.totalItems > allPages.length * pageSize
-      ) {
+      if (pagination && pagination.totalItems > allPages.length * pageSize) {
         return allPages.length + 1
       }
       return undefined

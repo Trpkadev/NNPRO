@@ -227,13 +227,26 @@ async function handleRevokeAll() {
           <label for="admin-edit-username" class="block text-xs font-medium">
             {{ t('admin.username') }}
           </label>
-          <InputText id="admin-edit-username" v-model="editUsername" size="small" class="w-full" required />
+          <InputText
+            id="admin-edit-username"
+            v-model="editUsername"
+            size="small"
+            class="w-full"
+            required
+          />
         </div>
         <div class="space-y-1">
           <label for="admin-edit-email" class="block text-xs font-medium">
             {{ t('admin.email') }}
           </label>
-          <InputText id="admin-edit-email" v-model="editEmail" type="email" size="small" class="w-full" required />
+          <InputText
+            id="admin-edit-email"
+            v-model="editEmail"
+            type="email"
+            size="small"
+            class="w-full"
+            required
+          />
         </div>
         <div class="space-y-1">
           <label for="admin-edit-password" class="block text-xs font-medium">
@@ -306,7 +319,9 @@ async function handleRevokeAll() {
               severity="danger"
               text
               size="small"
-              :loading="revokeSessionMutation.isPending.value && revokingSessionId === session.sessionId"
+              :loading="
+                revokeSessionMutation.isPending.value && revokingSessionId === session.sessionId
+              "
               @click="handleRevokeSession(session.sessionId)"
             />
           </div>

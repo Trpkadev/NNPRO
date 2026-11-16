@@ -55,7 +55,9 @@ const onSubmit = handleSubmit(async (values) => {
 
     const rawRedirect = route.query.redirect
     const redirectPath =
-      typeof rawRedirect === 'string' && rawRedirect.startsWith('/') && !rawRedirect.startsWith('//')
+      typeof rawRedirect === 'string' &&
+      rawRedirect.startsWith('/') &&
+      !rawRedirect.startsWith('//')
         ? rawRedirect
         : '/'
     await router.replace(redirectPath)

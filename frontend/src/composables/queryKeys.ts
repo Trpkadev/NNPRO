@@ -4,7 +4,8 @@ export const queryKeys = {
   admin: {
     all: ['admin'] as const,
     users: () => [...queryKeys.admin.all, 'users'] as const,
-    userList: (params?: QueryParameters) => [...queryKeys.admin.users(), 'list', params ?? {}] as const,
+    userList: (params?: QueryParameters) =>
+      [...queryKeys.admin.users(), 'list', params ?? {}] as const,
     userDetails: () => [...queryKeys.admin.users(), 'detail'] as const,
     userDetail: (userId: number) => [...queryKeys.admin.userDetails(), userId] as const,
     userSessions: (userId: number, params?: QueryParameters) =>
@@ -58,8 +59,7 @@ export const queryKeys = {
       [...queryKeys.quizzes.all, quizId, 'attempts', params ?? {}] as const,
     myAttempts: (quizId: number, params?: QueryParameters) =>
       [...queryKeys.quizzes.all, quizId, 'my-attempts', params ?? {}] as const,
-    attemptDetail: (attemptId: number) =>
-      [...queryKeys.quizzes.all, 'attempt', attemptId] as const,
+    attemptDetail: (attemptId: number) => [...queryKeys.quizzes.all, 'attempt', attemptId] as const,
   },
   questions: {
     all: ['questions'] as const,

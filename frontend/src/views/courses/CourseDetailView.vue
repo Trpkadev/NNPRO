@@ -172,11 +172,7 @@ function handleUnenroll() {
               <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-0">
                 {{ course.title }}
               </h1>
-              <Tag
-                v-if="isEnrolled"
-                :value="t('courses.enrolledBadge')"
-                severity="success"
-              />
+              <Tag v-if="isEnrolled" :value="t('courses.enrolledBadge')" severity="success" />
             </div>
 
             <p class="text-sm text-surface-600 dark:text-surface-300 whitespace-pre-line">
@@ -206,7 +202,9 @@ function handleUnenroll() {
         </div>
 
         <!-- Lektoři kurzu -->
-        <div class="pt-4 border-t border-surface-100 dark:border-surface-800 flex flex-wrap items-center justify-between gap-4">
+        <div
+          class="pt-4 border-t border-surface-100 dark:border-surface-800 flex flex-wrap items-center justify-between gap-4"
+        >
           <div class="flex items-center gap-2 flex-wrap">
             <span class="text-xs font-semibold text-surface-500">
               {{ t('courses.instructors') }}:

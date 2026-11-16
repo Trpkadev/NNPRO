@@ -40,7 +40,9 @@ function openEnrollDialog(course: { id: number; title: string }) {
           {{ t('app.subtitle') }} &bull;
           <span>
             {{ t('admin.enrollmentsCount') }}:
-            <strong class="text-surface-900 dark:text-surface-0">{{ enrolledCourseIds.size }}</strong>
+            <strong class="text-surface-900 dark:text-surface-0">{{
+              enrolledCourseIds.size
+            }}</strong>
           </span>
           &bull;
           <span>

@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { getApiErrorMessage } from '@/services/api'
-import { QuestionTypes, type QuestionResponseDto, type QuestionType, type QuizResponseDto } from '@/types/api'
+import {
+  QuestionTypes,
+  type QuestionResponseDto,
+  type QuestionType,
+  type QuizResponseDto,
+} from '@/types/api'
 
 const visible = defineModel<boolean>('visible', { default: false })
 
@@ -181,7 +186,9 @@ async function handleDeleteQuestion(questionId: number) {
             :label="editingQuestionId ? t('common.save') : t('instructor.addQuestion')"
             icon="oi oi-check"
             size="small"
-            :loading="createQuestionMutation.isPending.value || updateQuestionMutation.isPending.value"
+            :loading="
+              createQuestionMutation.isPending.value || updateQuestionMutation.isPending.value
+            "
           />
         </div>
       </form>
@@ -201,8 +208,16 @@ async function handleDeleteQuestion(questionId: number) {
             <div class="space-y-1">
               <div class="flex items-center gap-2">
                 <span class="text-xs font-bold text-primary">#{{ idx + 1 }}</span>
-                <Tag :value="t(`quizzes.questionType.${q.type}`)" severity="secondary" class="text-xs" />
-                <Tag :value="t('quizzes.pointsLabel', { points: q.points })" severity="info" class="text-xs" />
+                <Tag
+                  :value="t(`quizzes.questionType.${q.type}`)"
+                  severity="secondary"
+                  class="text-xs"
+                />
+                <Tag
+                  :value="t('quizzes.pointsLabel', { points: q.points })"
+                  severity="info"
+                  class="text-xs"
+                />
               </div>
               <p class="text-sm font-semibold">{{ q.text }}</p>
             </div>

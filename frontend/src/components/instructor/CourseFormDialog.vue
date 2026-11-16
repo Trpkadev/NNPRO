@@ -25,9 +25,7 @@ const accessKey = ref('')
 const errorMessage = ref<string | null>(null)
 
 const isEditing = computed(() => !!props.course)
-const isSaving = computed(
-  () => createMutation.isPending.value || updateMutation.isPending.value,
-)
+const isSaving = computed(() => createMutation.isPending.value || updateMutation.isPending.value)
 
 watch(visible, (isOpen) => {
   if (isOpen) {
@@ -122,12 +120,7 @@ async function handleSubmit() {
           text
           @click="visible = false"
         />
-        <Button
-          type="submit"
-          :label="t('common.save')"
-          icon="oi oi-check"
-          :loading="isSaving"
-        />
+        <Button type="submit" :label="t('common.save')" icon="oi oi-check" :loading="isSaving" />
       </div>
     </form>
   </Dialog>

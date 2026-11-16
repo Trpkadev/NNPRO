@@ -55,7 +55,11 @@ async function handleEnroll() {
   <Dialog
     v-model:visible="visible"
     modal
-    :header="courseTitle ? `${t('courses.enrollDialogTitle')}: ${courseTitle}` : t('courses.enrollDialogTitle')"
+    :header="
+      courseTitle
+        ? `${t('courses.enrollDialogTitle')}: ${courseTitle}`
+        : t('courses.enrollDialogTitle')
+    "
     :style="{ width: '28rem', maxWidth: '95vw' }"
   >
     <form class="space-y-4" @submit.prevent="handleEnroll">

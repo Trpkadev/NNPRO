@@ -106,10 +106,7 @@ watch(
           <Skeleton v-for="n in 2" :key="n" height="2.75rem" class="rounded-xl" />
         </div>
 
-        <p
-          v-else-if="lessons.length === 0"
-          class="text-xs text-surface-500 italic py-1"
-        >
+        <p v-else-if="lessons.length === 0" class="text-xs text-surface-500 italic py-1">
           {{ t('lessons.noLessons') }}
         </p>
 
@@ -135,12 +132,7 @@ watch(
               <span class="text-sm font-medium truncate">
                 {{ lesson.order }}. {{ lesson.title }}
               </span>
-              <Tag
-                v-if="lesson.videoUrl"
-                value="Video"
-                severity="info"
-                class="text-xs"
-              />
+              <Tag v-if="lesson.videoUrl" value="Video" severity="info" class="text-xs" />
             </div>
 
             <div class="flex items-center gap-2 shrink-0">
@@ -166,10 +158,7 @@ watch(
           <Skeleton height="2.75rem" class="rounded-xl" />
         </div>
 
-        <p
-          v-else-if="quizzes.length === 0"
-          class="text-xs text-surface-500 italic py-1"
-        >
+        <p v-else-if="quizzes.length === 0" class="text-xs text-surface-500 italic py-1">
           {{ t('quizzes.noQuizzes') }}
         </p>
 

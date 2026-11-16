@@ -122,14 +122,27 @@ function confirmDeleteAccount() {
             <label for="profile-username" class="block text-xs font-medium">
               {{ t('auth.usernameLabel') }}
             </label>
-            <InputText id="profile-username" v-model="username" size="small" class="w-full" required />
+            <InputText
+              id="profile-username"
+              v-model="username"
+              size="small"
+              class="w-full"
+              required
+            />
           </div>
 
           <div class="space-y-1">
             <label for="profile-email" class="block text-xs font-medium">
               {{ t('auth.emailLabel') }}
             </label>
-            <InputText id="profile-email" v-model="email" type="email" size="small" class="w-full" required />
+            <InputText
+              id="profile-email"
+              v-model="email"
+              type="email"
+              size="small"
+              class="w-full"
+              required
+            />
           </div>
 
           <div class="space-y-1">
@@ -155,9 +168,7 @@ function confirmDeleteAccount() {
           />
         </form>
 
-        <div
-          class="p-5 rounded-2xl border border-red-500/30 bg-red-500/5 space-y-3"
-        >
+        <div class="p-5 rounded-2xl border border-red-500/30 bg-red-500/5 space-y-3">
           <h3 class="text-sm font-bold text-red-600 dark:text-red-400">
             {{ t('profile.dangerZone') }}
           </h3>
@@ -186,10 +197,7 @@ function confirmDeleteAccount() {
           <Skeleton v-for="n in 4" :key="n" height="3rem" class="rounded-xl" />
         </div>
 
-        <p
-          v-else-if="progressList.length === 0"
-          class="text-sm text-surface-500 text-center py-8"
-        >
+        <p v-else-if="progressList.length === 0" class="text-sm text-surface-500 text-center py-8">
           {{ t('profile.noProgressYet') }}
         </p>
 
@@ -217,7 +225,9 @@ function confirmDeleteAccount() {
           </Column>
           <Column :header="t('profile.completedAt')">
             <template #body="{ data }">
-              <span class="text-xs text-surface-500">{{ formatDateTime(data.completedAtUtc) }}</span>
+              <span class="text-xs text-surface-500">{{
+                formatDateTime(data.completedAtUtc)
+              }}</span>
             </template>
           </Column>
         </DataTable>

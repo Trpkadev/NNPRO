@@ -26,15 +26,8 @@ const queryParams = computed(() => ({
   Filters: debouncedSearch.value.trim() ? { title: debouncedSearch.value.trim() } : undefined,
 }))
 
-const {
-  data,
-  isLoading,
-  isError,
-  error,
-  hasNextPage,
-  isFetchingNextPage,
-  fetchNextPage,
-} = useInfiniteCourseThumbnailsQuery(queryParams)
+const { data, isLoading, isError, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
+  useInfiniteCourseThumbnailsQuery(queryParams)
 
 const courses = computed(() => data.value?.pages.flatMap((page) => page.data ?? []) ?? [])
 const totalItems = computed(
@@ -62,9 +55,7 @@ function clearFilters() {
     <!-- Hlavička a vyhledávací/řadicí lišta -->
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
       <div class="flex items-center gap-2.5">
-        <div
-          class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center"
-        >
+        <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
           <i class="oi oi-book" />
         </div>
         <div>
@@ -157,7 +148,9 @@ function clearFilters() {
             </p>
           </div>
 
-          <div class="flex items-center gap-2 pt-3 border-t border-surface-100 dark:border-surface-800">
+          <div
+            class="flex items-center gap-2 pt-3 border-t border-surface-100 dark:border-surface-800"
+          >
             <Button
               :label="t('courses.openCourse')"
               icon="oi oi-eye"
@@ -191,10 +184,7 @@ function clearFilters() {
           :loading="isFetchingNextPage"
           @click="fetchNextPage()"
         />
-        <span
-          v-else-if="courses.length > 9"
-          class="text-xs text-surface-400 dark:text-surface-500"
-        >
+        <span v-else-if="courses.length > 9" class="text-xs text-surface-400 dark:text-surface-500">
           {{ t('common.allLoaded') }}
         </span>
       </div>

@@ -163,7 +163,9 @@ function confirmDeleteSection(section: SectionResponseDto) {
           </p>
         </div>
 
-        <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-surface-100 dark:border-surface-800">
+        <div
+          class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-surface-100 dark:border-surface-800"
+        >
           <div class="flex items-center gap-2">
             <Button
               :label="t('instructor.tabCurriculum')"
@@ -227,10 +229,7 @@ function confirmDeleteSection(section: SectionResponseDto) {
       <CourseStudentsManager v-else :course-id="courseId" />
 
       <!-- Dialog pro úpravu kurzu -->
-      <CourseFormDialog
-        v-model:visible="editCourseDialogVisible"
-        :course="course"
-      />
+      <CourseFormDialog v-model:visible="editCourseDialogVisible" :course="course" />
 
       <!-- Dialog pro vytvoření / úpravu sekce -->
       <Dialog
@@ -255,7 +254,12 @@ function confirmDeleteSection(section: SectionResponseDto) {
             <label for="section-order-input" class="block text-sm font-medium">
               {{ t('instructor.sectionOrderLabel') }}
             </label>
-            <InputNumber input-id="section-order-input" v-model="sectionOrder" :min="1" class="w-full" />
+            <InputNumber
+              input-id="section-order-input"
+              v-model="sectionOrder"
+              :min="1"
+              class="w-full"
+            />
           </div>
 
           <div class="flex justify-end gap-2">
@@ -270,7 +274,9 @@ function confirmDeleteSection(section: SectionResponseDto) {
               type="submit"
               :label="t('common.save')"
               icon="oi oi-check"
-              :loading="createSectionMutation.isPending.value || updateSectionMutation.isPending.value"
+              :loading="
+                createSectionMutation.isPending.value || updateSectionMutation.isPending.value
+              "
             />
           </div>
         </form>

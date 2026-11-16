@@ -129,7 +129,8 @@ const messages = {
       unenrollBtn: 'Odhlásit se z kurzu',
       unenrollConfirm: 'Opravdu se chcete odhlásit z tohoto kurzu?',
       enrollDialogTitle: 'Zápis do kurzu',
-      enrollDialogDesc: 'Pokud je kurz uzavřený, zadejte přístupový klíč. U veřejného kurzu ponechte pole prázdné.',
+      enrollDialogDesc:
+        'Pokud je kurz uzavřený, zadejte přístupový klíč. U veřejného kurzu ponechte pole prázdné.',
       accessKeyLabel: 'Přístupový klíč (volitelné pro veřejný kurz)',
       accessKeyPlaceholder: 'Zadejte heslo kurzu, pokud je vyžadováno',
       enrollSuccess: 'Byli jste úspěšně zapsáni do kurzu',
@@ -214,7 +215,8 @@ const messages = {
       tabStudents: 'Zapsaní studenti',
       addSection: 'Přidat sekci',
       editSection: 'Upravit sekci',
-      deleteSectionConfirm: 'Opravdu chcete smazat sekci „{title}“ včetně všech jejích lekcí a kvízů?',
+      deleteSectionConfirm:
+        'Opravdu chcete smazat sekci „{title}“ včetně všech jejích lekcí a kvízů?',
       sectionTitleLabel: 'Název sekce',
       sectionOrderLabel: 'Pořadí sekce',
       addLesson: 'Přidat lekci',
@@ -412,7 +414,8 @@ const messages = {
     },
     courses: {
       empty: 'No courses to display.',
-      myCoursesEmpty: 'You are not enrolled in any courses yet. Pick a course from the catalog below.',
+      myCoursesEmpty:
+        'You are not enrolled in any courses yet. Pick a course from the catalog below.',
       loadError: 'Courses could not be loaded.',
       totalCount: '{count} total',
       searchPlaceholder: 'Search courses by title...',
@@ -425,7 +428,8 @@ const messages = {
       unenrollBtn: 'Unenroll from course',
       unenrollConfirm: 'Are you sure you want to unenroll from this course?',
       enrollDialogTitle: 'Course Enrollment',
-      enrollDialogDesc: 'If this course is private, enter its access key. Leave blank for public courses.',
+      enrollDialogDesc:
+        'If this course is private, enter its access key. Leave blank for public courses.',
       accessKeyLabel: 'Access Key (optional for public courses)',
       accessKeyPlaceholder: 'Enter course access key if required',
       enrollSuccess: 'Successfully enrolled in the course',
@@ -499,7 +503,8 @@ const messages = {
       courseBadge: 'Course #{id}',
       createCourse: 'New Course',
       editCourse: 'Edit Course',
-      deleteCourseConfirm: 'Are you sure you want to delete course "{title}"? This cannot be undone.',
+      deleteCourseConfirm:
+        'Are you sure you want to delete course "{title}"? This cannot be undone.',
       courseTitleLabel: 'Course title',
       courseDescLabel: 'Course description',
       courseAccessKeyLabel: 'Access key (leave empty for public course)',
@@ -510,7 +515,8 @@ const messages = {
       tabStudents: 'Enrolled Students',
       addSection: 'Add Section',
       editSection: 'Edit Section',
-      deleteSectionConfirm: 'Are you sure you want to delete section "{title}" and all its lessons and quizzes?',
+      deleteSectionConfirm:
+        'Are you sure you want to delete section "{title}" and all its lessons and quizzes?',
       sectionTitleLabel: 'Section title',
       sectionOrderLabel: 'Section order',
       addLesson: 'Add Lesson',
@@ -557,7 +563,8 @@ const messages = {
       forceEnrollLabel: 'Force enroll student by User ID',
       forceEnrollPlaceholder: 'Enter numeric student ID',
       forceEnrollBtn: 'Enroll Student',
-      removeStudentConfirm: 'Are you sure you want to remove student "{username}" from this course?',
+      removeStudentConfirm:
+        'Are you sure you want to remove student "{username}" from this course?',
       studentEnrolledSuccess: 'Student enrolled in course',
       studentRemovedSuccess: 'Student removed from course',
     },
@@ -598,7 +605,8 @@ const messages = {
       updateProfileBtn: 'Save Profile Changes',
       profileUpdated: 'Your profile has been updated',
       dangerZone: 'Danger Zone',
-      deleteAccountDesc: 'Deleting your account is permanent and will remove all your learning progress.',
+      deleteAccountDesc:
+        'Deleting your account is permanent and will remove all your learning progress.',
       deleteAccountBtn: 'Delete My Account',
       deleteAccountConfirm: 'Are you sure you want to permanently delete your account?',
       learningProgressTitle: 'My Learning Progress Overview',

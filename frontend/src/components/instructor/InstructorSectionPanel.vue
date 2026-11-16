@@ -227,7 +227,9 @@ function confirmDeleteQuiz(quiz: QuizResponseDto) {
     class="p-5 rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-0 dark:bg-surface-900 space-y-4"
   >
     <!-- Hlavička sekce -->
-    <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-surface-100 dark:border-surface-800">
+    <div
+      class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-surface-100 dark:border-surface-800"
+    >
       <div class="flex items-center gap-3">
         <span
           class="w-8 h-8 rounded-lg bg-primary/10 text-primary text-xs font-bold flex items-center justify-center"
@@ -361,11 +363,7 @@ function confirmDeleteQuiz(quiz: QuizResponseDto) {
           <div class="flex items-center gap-2.5">
             <i class="oi oi-question-circle text-amber-500" />
             <span class="text-sm font-semibold">{{ quiz.title }}</span>
-            <Tag
-              :value="`${quiz.passingThresholdPercent} %`"
-              severity="warn"
-              class="text-xs"
-            />
+            <Tag :value="`${quiz.passingThresholdPercent} %`" severity="warn" class="text-xs" />
           </div>
 
           <div class="flex flex-wrap items-center gap-1.5">
@@ -442,7 +440,12 @@ function confirmDeleteQuiz(quiz: QuizResponseDto) {
             <label for="lesson-order-input" class="block text-sm font-medium">
               {{ t('instructor.lessonOrderLabel') }}
             </label>
-            <InputNumber input-id="lesson-order-input" v-model="lessonOrder" :min="1" class="w-full" />
+            <InputNumber
+              input-id="lesson-order-input"
+              v-model="lessonOrder"
+              :min="1"
+              class="w-full"
+            />
           </div>
         </div>
 
@@ -462,7 +465,13 @@ function confirmDeleteQuiz(quiz: QuizResponseDto) {
           <label for="lesson-content-input" class="block text-sm font-medium">
             {{ t('instructor.lessonContentLabel') }}
           </label>
-          <Textarea id="lesson-content-input" v-model="lessonContent" rows="7" class="w-full" required />
+          <Textarea
+            id="lesson-content-input"
+            v-model="lessonContent"
+            rows="7"
+            class="w-full"
+            required
+          />
         </div>
 
         <div class="flex justify-end gap-2">
@@ -576,10 +585,7 @@ function confirmDeleteQuiz(quiz: QuizResponseDto) {
     </Dialog>
 
     <!-- Dialog otázek kvízu -->
-    <QuizQuestionsDialog
-      v-model:visible="questionsDialogVisible"
-      :quiz="questionsTargetQuiz"
-    />
+    <QuizQuestionsDialog v-model:visible="questionsDialogVisible" :quiz="questionsTargetQuiz" />
 
     <!-- Dialog přehledu všech pokusů studentů u kvízu -->
     <Dialog

@@ -61,7 +61,11 @@ function getSelectedOptionTexts(questionId: number): string[] {
         </span>
         <span
           class="text-3xl font-extrabold"
-          :class="attempt.isPassed ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'"
+          :class="
+            attempt.isPassed
+              ? 'text-emerald-600 dark:text-emerald-400'
+              : 'text-red-600 dark:text-red-400'
+          "
         >
           {{ Math.round(attempt.scorePercent * 10) / 10 }} %
         </span>
@@ -84,10 +88,7 @@ function getSelectedOptionTexts(questionId: number): string[] {
           />
         </div>
 
-        <div
-          class="text-sm font-medium"
-          v-html="sanitizeHtml(question.text)"
-        />
+        <div class="text-sm font-medium" v-html="sanitizeHtml(question.text)" />
 
         <div class="pt-2 border-t border-surface-100 dark:border-surface-800 text-xs space-y-1">
           <span class="font-semibold text-surface-500">{{ t('quizzes.yourAnswer') }}:</span>
