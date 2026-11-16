@@ -166,8 +166,8 @@ function openEditQuiz(quiz: QuizResponseDto) {
   quizPassingThreshold.value = quiz.passingThresholdPercent
   quizMaxAttempts.value = quiz.maxAttempts
   quizTimeLimit.value = quiz.timeLimitSeconds
-  quizRandomizeQuestions.value = false
-  quizRandomizeAnswers.value = false
+  quizRandomizeQuestions.value = quiz.randomizeQuestions ?? false
+  quizRandomizeAnswers.value = quiz.randomizeAnswers ?? false
   quizError.value = null
   quizDialogVisible.value = true
 }
@@ -260,6 +260,7 @@ function confirmDeleteQuiz(quiz: QuizResponseDto) {
           text
           rounded
           size="small"
+          :aria-label="t('instructor.editSection')"
           @click="emit('editSection', section)"
         />
         <Button
@@ -268,6 +269,7 @@ function confirmDeleteQuiz(quiz: QuizResponseDto) {
           text
           rounded
           size="small"
+          :aria-label="t('common.delete')"
           @click="emit('deleteSection', section)"
         />
       </div>
@@ -319,6 +321,7 @@ function confirmDeleteQuiz(quiz: QuizResponseDto) {
               text
               rounded
               size="small"
+              :aria-label="t('instructor.editLesson')"
               @click="openEditLesson(lesson)"
             />
             <Button
@@ -327,6 +330,7 @@ function confirmDeleteQuiz(quiz: QuizResponseDto) {
               text
               rounded
               size="small"
+              :aria-label="t('common.delete')"
               @click="confirmDeleteLesson(lesson)"
             />
           </div>
@@ -398,6 +402,7 @@ function confirmDeleteQuiz(quiz: QuizResponseDto) {
               text
               rounded
               size="small"
+              :aria-label="t('instructor.editQuiz')"
               @click="openEditQuiz(quiz)"
             />
             <Button
@@ -406,6 +411,7 @@ function confirmDeleteQuiz(quiz: QuizResponseDto) {
               text
               rounded
               size="small"
+              :aria-label="t('common.delete')"
               @click="confirmDeleteQuiz(quiz)"
             />
           </div>
@@ -427,23 +433,36 @@ function confirmDeleteQuiz(quiz: QuizResponseDto) {
 
         <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
           <div class="sm:col-span-3 space-y-1">
-            <label class="block text-sm font-medium">{{ t('instructor.lessonTitleLabel') }}</label>
-            <InputText v-model="lessonTitle" class="w-full" required />
+            <label for="lesson-title-input" class="block text-sm font-medium">
+              {{ t('instructor.lessonTitleLabel') }}
+            </label>
+            <InputText id="lesson-title-input" v-model="lessonTitle" class="w-full" required />
           </div>
           <div class="space-y-1">
-            <label class="block text-sm font-medium">{{ t('instructor.lessonOrderLabel') }}</label>
-            <InputNumber v-model="lessonOrder" :min="1" class="w-full" />
+            <label for="lesson-order-input" class="block text-sm font-medium">
+              {{ t('instructor.lessonOrderLabel') }}
+            </label>
+            <InputNumber input-id="lesson-order-input" v-model="lessonOrder" :min="1" class="w-full" />
           </div>
         </div>
 
         <div class="space-y-1">
-          <label class="block text-sm font-medium">{{ t('instructor.lessonVideoLabel') }}</label>
-          <InputText v-model="lessonVideoUrl" placeholder="https://www.youtube.com/watch?v=..." class="w-full" />
+          <label for="lesson-video-input" class="block text-sm font-medium">
+            {{ t('instructor.lessonVideoLabel') }}
+          </label>
+          <InputText
+            id="lesson-video-input"
+            v-model="lessonVideoUrl"
+            placeholder="https://www.youtube.com/watch?v=..."
+            class="w-full"
+          />
         </div>
 
         <div class="space-y-1">
-          <label class="block text-sm font-medium">{{ t('instructor.lessonContentLabel') }}</label>
-          <Textarea v-model="lessonContent" rows="7" class="w-full" required />
+          <label for="lesson-content-input" class="block text-sm font-medium">
+            {{ t('instructor.lessonContentLabel') }}
+          </label>
+          <Textarea id="lesson-content-input" v-model="lessonContent" rows="7" class="w-full" required />
         </div>
 
         <div class="flex justify-end gap-2">
@@ -483,22 +502,47 @@ function confirmDeleteQuiz(quiz: QuizResponseDto) {
         </Message>
 
         <div class="space-y-1">
-          <label class="block text-sm font-medium">{{ t('instructor.quizTitleLabel') }}</label>
-          <InputText v-model="quizTitle" class="w-full" required />
+          <label for="quiz-title-input" class="block text-sm font-medium">
+            {{ t('instructor.quizTitleLabel') }}
+          </label>
+          <InputText id="quiz-title-input" v-model="quizTitle" class="w-full" required />
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div class="space-y-1">
-            <label class="block text-xs font-medium">{{ t('instructor.quizPassingThresholdLabel') }}</label>
-            <InputNumber v-model="quizPassingThreshold" :min="0" :max="100" class="w-full" />
+            <label for="quiz-threshold-input" class="block text-xs font-medium">
+              {{ t('instructor.quizPassingThresholdLabel') }}
+            </label>
+            <InputNumber
+              input-id="quiz-threshold-input"
+              v-model="quizPassingThreshold"
+              :min="0"
+              :max="100"
+              class="w-full"
+            />
           </div>
           <div class="space-y-1">
-            <label class="block text-xs font-medium">{{ t('instructor.quizMaxAttemptsLabel') }}</label>
-            <InputNumber v-model="quizMaxAttempts" :min="1" :max="100" class="w-full" />
+            <label for="quiz-max-attempts-input" class="block text-xs font-medium">
+              {{ t('instructor.quizMaxAttemptsLabel') }}
+            </label>
+            <InputNumber
+              input-id="quiz-max-attempts-input"
+              v-model="quizMaxAttempts"
+              :min="1"
+              :max="100"
+              class="w-full"
+            />
           </div>
           <div class="space-y-1">
-            <label class="block text-xs font-medium">{{ t('instructor.quizTimeLimitLabel') }}</label>
-            <InputNumber v-model="quizTimeLimit" :min="10" class="w-full" />
+            <label for="quiz-time-limit-input" class="block text-xs font-medium">
+              {{ t('instructor.quizTimeLimitLabel') }}
+            </label>
+            <InputNumber
+              input-id="quiz-time-limit-input"
+              v-model="quizTimeLimit"
+              :min="10"
+              class="w-full"
+            />
           </div>
         </div>
 

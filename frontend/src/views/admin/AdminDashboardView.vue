@@ -191,6 +191,7 @@ function clearFilters() {
                 text
                 rounded
                 size="small"
+                :aria-label="t('common.delete')"
                 @click="confirmDeleteUser(data)"
               />
             </div>

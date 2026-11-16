@@ -2,6 +2,7 @@
 import { useConfirm } from 'openvue/useconfirm'
 import { useToast } from 'openvue/usetoast'
 import { getApiErrorMessage } from '@/services/api'
+import { formatDateTime } from '@/utils/formatters'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -13,9 +14,19 @@ const updateCurrentUserMutation = useUpdateCurrentUserMutation()
 const deleteCurrentUserMutation = useDeleteCurrentUserMutation()
 
 const username = ref(authStore.user?.username ?? '')
-const email = ref('')
+const email = ref(authStore.user?.email ?? '')
 const password = ref('')
 const errorMessage = ref<string | null>(null)
+
+watch(
+  () => authStore.user,
+  (u) => {
+    if (u) {
+      if (!username.value) username.value = u.username
+      if (!email.value && u.email) email.value = u.email
+    }
+  },
+)
 
 const progressPage = ref(1)
 const { data: progressResponse, isLoading: progressLoading } = useMyProgressQuery(
@@ -45,7 +56,7 @@ async function handleUpdateProfile() {
     errorMessage.value = t('validation.email')
     return
   }
-  if (password.value.length < 8) {
+  if (password.value.length > 0 && password.value.length < 8) {
     errorMessage.value = t('validation.minLength', { min: 8 })
     return
   }
@@ -56,6 +67,7 @@ async function handleUpdateProfile() {
       email: trimmedEmail,
       password: password.value,
     })
+    authStore.setKnownEmail(trimmedEmail)
     password.value = ''
     toast.add({
       severity: 'success',
@@ -84,15 +96,6 @@ function confirmDeleteAccount() {
     },
   })
 }
-
-function formatDateTime(iso: string | null | undefined): string {
-  if (!iso) return '-'
-  try {
-    return new Date(iso).toLocaleString()
-  } catch {
-    return iso
-  }
-}
 </script>
 
 <template>
@@ -116,18 +119,30 @@ function formatDateTime(iso: string | null | undefined): string {
           </Message>
 
           <div class="space-y-1">
-            <label class="block text-xs font-medium">{{ t('auth.usernameLabel') }}</label>
-            <InputText v-model="username" size="small" class="w-full" required />
+            <label for="profile-username" class="block text-xs font-medium">
+              {{ t('auth.usernameLabel') }}
+            </label>
+            <InputText id="profile-username" v-model="username" size="small" class="w-full" required />
           </div>
 
           <div class="space-y-1">
-            <label class="block text-xs font-medium">{{ t('auth.emailLabel') }}</label>
-            <InputText v-model="email" type="email" size="small" class="w-full" required />
+            <label for="profile-email" class="block text-xs font-medium">
+              {{ t('auth.emailLabel') }}
+            </label>
+            <InputText id="profile-email" v-model="email" type="email" size="small" class="w-full" required />
           </div>
 
           <div class="space-y-1">
-            <label class="block text-xs font-medium">{{ t('profile.newPasswordLabel') }}</label>
-            <Password v-model="password" :feedback="false" toggle-mask fluid required />
+            <label for="profile-password" class="block text-xs font-medium">
+              {{ t('profile.newPasswordLabel') }}
+            </label>
+            <Password
+              input-id="profile-password"
+              v-model="password"
+              :feedback="false"
+              toggle-mask
+              fluid
+            />
           </div>
 
           <Button

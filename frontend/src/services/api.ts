@@ -60,6 +60,7 @@ export function decodeJwtUser(token: string | null | undefined): AuthenticatedUs
     const parsedId = payload.sub !== undefined ? Number(payload.sub) : NaN
     const id = Number.isFinite(parsedId) ? parsedId : null
     const username = typeof payload.name === 'string' ? payload.name.trim() : ''
+    const email = typeof payload.email === 'string' ? payload.email.trim() : ''
     const role = normalizeUserRole(payload.role)
 
     if (id === null || !username || !role) {
@@ -69,6 +70,7 @@ export function decodeJwtUser(token: string | null | undefined): AuthenticatedUs
     return {
       id,
       username,
+      email,
       role,
     }
   } catch {

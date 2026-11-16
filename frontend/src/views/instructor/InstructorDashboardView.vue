@@ -111,6 +111,7 @@ function confirmDeleteCourse(course: CourseResponseDto) {
           severity="secondary"
           outlined
           size="small"
+          :aria-label="descending ? t('common.sortDesc') : t('common.sortAsc')"
           @click="descending = !descending"
         />
 
@@ -182,6 +183,7 @@ function confirmDeleteCourse(course: CourseResponseDto) {
               text
               rounded
               size="small"
+              :aria-label="t('instructor.editCourse')"
               @click="openEditCourse(course)"
             />
             <Button
@@ -190,6 +192,7 @@ function confirmDeleteCourse(course: CourseResponseDto) {
               text
               rounded
               size="small"
+              :aria-label="t('common.delete')"
               @click="confirmDeleteCourse(course)"
             />
           </div>

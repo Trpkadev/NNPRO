@@ -13,7 +13,6 @@ declare module 'vue' {
   export interface GlobalComponents {
     AdminUserDetailDrawer: typeof import('./components/admin/AdminUserDetailDrawer.vue')['default']
     Button: typeof import('openvue/button')['default']
-    Card: typeof import('openvue/card')['default']
     Column: typeof import('openvue/column')['default']
     ConfirmDialog: typeof import('openvue/confirmdialog')['default']
     CourseCatalogSection: typeof import('./components/courses/CourseCatalogSection.vue')['default']

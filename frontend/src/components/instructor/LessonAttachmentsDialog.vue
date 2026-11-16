@@ -1,20 +1,18 @@
 <script setup lang="ts">
 import { getApiErrorMessage } from '@/services/api'
+import { formatBytes } from '@/utils/formatters'
 import type { LessonResponseDto } from '@/types/api'
 
-const props = defineProps<{
-  visible: boolean
-  lesson: LessonResponseDto | null
-}>()
+const visible = defineModel<boolean>('visible', { default: false })
 
-const emit = defineEmits<{
-  'update:visible': [value: boolean]
+const props = defineProps<{
+  lesson: LessonResponseDto | null
 }>()
 
 const { t } = useI18n()
 
 const lessonId = computed(() => props.lesson?.id ?? 0)
-const isEnabled = computed(() => props.visible && lessonId.value > 0)
+const isEnabled = computed(() => visible.value && lessonId.value > 0)
 
 const { data: attachmentsResponse, isLoading } = useLessonAttachmentsQuery(
   lessonId,
@@ -31,14 +29,8 @@ const fileName = ref('')
 const url = ref('')
 const contentType = ref('application/pdf')
 const sizeBytes = ref<number | null>(null)
+const deletingAttachmentId = ref<number | null>(null)
 const errorMessage = ref<string | null>(null)
-
-function formatBytes(bytes: number | null | undefined): string {
-  if (!bytes || bytes <= 0) return ''
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
 
 async function handleAdd() {
   if (!props.lesson) return
@@ -67,6 +59,7 @@ async function handleAdd() {
 async function handleRemove(attachmentId: number) {
   if (!props.lesson) return
   errorMessage.value = null
+  deletingAttachmentId.value = attachmentId
   try {
     await deleteMutation.mutateAsync({
       lessonId: props.lesson.id,
@@ -74,17 +67,18 @@ async function handleRemove(attachmentId: number) {
     })
   } catch (err) {
     errorMessage.value = getApiErrorMessage(err)
+  } finally {
+    deletingAttachmentId.value = null
   }
 }
 </script>
 
 <template>
   <Dialog
-    :visible="visible"
+    v-model:visible="visible"
     modal
     :header="t('instructor.attachmentsDialogTitle', { title: lesson?.title ?? '' })"
     :style="{ width: '36rem', maxWidth: '95vw' }"
-    @update:visible="emit('update:visible', $event)"
   >
     <div class="space-y-5">
       <Message v-if="errorMessage" severity="error" :closable="false">
@@ -124,7 +118,8 @@ async function handleRemove(attachmentId: number) {
               text
               rounded
               size="small"
-              :loading="deleteMutation.isPending.value"
+              :aria-label="t('common.delete')"
+              :loading="deleteMutation.isPending.value && deletingAttachmentId === item.id"
               @click="handleRemove(item.id)"
             />
           </div>
@@ -138,20 +133,28 @@ async function handleRemove(attachmentId: number) {
       >
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div class="space-y-1">
-            <label class="block text-xs font-medium">{{ t('instructor.attachmentFileName') }}</label>
-            <InputText v-model="fileName" size="small" class="w-full" required />
+            <label for="att-file-name" class="block text-xs font-medium">
+              {{ t('instructor.attachmentFileName') }}
+            </label>
+            <InputText id="att-file-name" v-model="fileName" size="small" class="w-full" required />
           </div>
           <div class="space-y-1">
-            <label class="block text-xs font-medium">{{ t('instructor.attachmentUrl') }}</label>
-            <InputText v-model="url" size="small" class="w-full" required />
+            <label for="att-url" class="block text-xs font-medium">
+              {{ t('instructor.attachmentUrl') }}
+            </label>
+            <InputText id="att-url" v-model="url" size="small" class="w-full" required />
           </div>
           <div class="space-y-1">
-            <label class="block text-xs font-medium">{{ t('instructor.attachmentContentType') }}</label>
-            <InputText v-model="contentType" size="small" class="w-full" />
+            <label for="att-content-type" class="block text-xs font-medium">
+              {{ t('instructor.attachmentContentType') }}
+            </label>
+            <InputText id="att-content-type" v-model="contentType" size="small" class="w-full" />
           </div>
           <div class="space-y-1">
-            <label class="block text-xs font-medium">{{ t('instructor.attachmentSizeBytes') }}</label>
-            <InputNumber v-model="sizeBytes" size="small" class="w-full" :min="0" />
+            <label for="att-size-bytes" class="block text-xs font-medium">
+              {{ t('instructor.attachmentSizeBytes') }}
+            </label>
+            <InputNumber id="att-size-bytes" v-model="sizeBytes" size="small" class="w-full" :min="0" />
           </div>
         </div>
 

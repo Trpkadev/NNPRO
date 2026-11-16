@@ -31,9 +31,13 @@ const endAttemptMutation = useEndQuizAttemptMutation()
 
 const selectedAnswers = reactive<Record<number, number[]>>({})
 const optionsByQuestion = reactive<Record<number, AnswerOptionResponseDto[]>>({})
+const deadlineTimestampMs = ref<number | null>(
+  props.quiz.timeLimitSeconds && props.quiz.timeLimitSeconds > 0
+    ? Date.now() + props.quiz.timeLimitSeconds * 1000
+    : null,
+)
 const remainingSeconds = ref<number | null>(props.quiz.timeLimitSeconds ?? null)
 const errorMessage = ref<string | null>(null)
-let timerInterval: ReturnType<typeof setInterval> | null = null
 
 function formatTime(seconds: number): string {
   const mins = Math.floor(seconds / 60)
@@ -70,30 +74,24 @@ async function submitAttempt() {
   }
 }
 
-onMounted(() => {
-  if (remainingSeconds.value !== null && remainingSeconds.value > 0) {
-    timerInterval = setInterval(() => {
-      if (remainingSeconds.value !== null) {
-        if (remainingSeconds.value <= 1) {
-          remainingSeconds.value = 0
-          if (timerInterval) clearInterval(timerInterval)
-          toast.add({
-            severity: 'warn',
-            summary: t('quizzes.timeExpiredAutoSubmit'),
-            life: 4000,
-          })
-          submitAttempt()
-        } else {
-          remainingSeconds.value -= 1
-        }
-      }
-    }, 1000)
-  }
-})
-
-onBeforeUnmount(() => {
-  if (timerInterval) clearInterval(timerInterval)
-})
+const { pause: pauseTimer } = useIntervalFn(
+  () => {
+    if (deadlineTimestampMs.value === null) return
+    const diffSeconds = Math.max(0, Math.ceil((deadlineTimestampMs.value - Date.now()) / 1000))
+    remainingSeconds.value = diffSeconds
+    if (diffSeconds <= 0) {
+      pauseTimer()
+      toast.add({
+        severity: 'warn',
+        summary: t('quizzes.timeExpiredAutoSubmit'),
+        life: 4000,
+      })
+      submitAttempt()
+    }
+  },
+  250,
+  { immediate: deadlineTimestampMs.value !== null },
+)
 </script>
 
 <template>

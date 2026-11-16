@@ -13,17 +13,16 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const router = useRouter()
 
 const isExpanded = ref(props.initiallyExpanded ?? true)
 
-// Lazy loading lekcí a kvízů sekce až ve chvíli, kdy je sekce rozbalená
+// Lekce načítáme pro všechny sekce kurzu, aby byl výpočet celkového postupu kurzem vždy přesný
 const { data: lessonsResponse, isLoading: lessonsLoading } = useSectionLessonsQuery(
   computed(() => props.section.id),
   { Page: 1, PageSize: 50, SortBy: 'Order', Descending: false },
-  isExpanded,
 )
 
+// Kvízy sekce načítáme líně (lazy loading) až při rozbalení sekce
 const { data: quizzesResponse, isLoading: quizzesLoading } = useSectionQuizzesQuery(
   computed(() => props.section.id),
   { Page: 1, PageSize: 50 },
@@ -35,16 +34,22 @@ const lessons = computed(() => {
   return list.sort((a, b) => a.order - b.order)
 })
 
+const completedInSectionCount = computed(
+  () => lessons.value.filter((l) => props.completedLessonIds.has(l.id)).length,
+)
+
 const quizzes = computed(() => quizzesResponse.value?.data ?? [])
 
 watch(
-  lessons,
-  (list) => {
-    emit(
-      'lessonsLoaded',
-      props.section.id,
-      list.map((l) => l.id),
-    )
+  [lessonsResponse, lessons],
+  ([res, list]) => {
+    if (res) {
+      emit(
+        'lessonsLoaded',
+        props.section.id,
+        list.map((l) => l.id),
+      )
+    }
   },
   { immediate: true },
 )
@@ -57,24 +62,33 @@ watch(
     <!-- Hlavička sekce -->
     <button
       type="button"
+      :aria-expanded="isExpanded"
       class="w-full px-5 py-4 flex items-center justify-between gap-4 text-left hover:bg-surface-50 dark:hover:bg-surface-800/60 transition-colors cursor-pointer"
       @click="isExpanded = !isExpanded"
     >
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 min-w-0">
         <span
           class="w-7 h-7 rounded-lg bg-primary/10 text-primary text-xs font-bold flex items-center justify-center shrink-0"
         >
           {{ section.order }}
         </span>
-        <h3 class="font-semibold text-base text-surface-900 dark:text-surface-0">
+        <h3 class="font-semibold text-base text-surface-900 dark:text-surface-0 truncate">
           {{ section.title }}
         </h3>
       </div>
 
-      <i
-        class="oi text-surface-400 transition-transform"
-        :class="isExpanded ? 'oi-chevron-up' : 'oi-chevron-down'"
-      />
+      <div class="flex items-center gap-3 shrink-0">
+        <span
+          v-if="!lessonsLoading && lessons.length > 0"
+          class="text-xs font-medium text-surface-500"
+        >
+          {{ completedInSectionCount }} / {{ lessons.length }}
+        </span>
+        <i
+          class="oi text-surface-400 transition-transform"
+          :class="isExpanded ? 'oi-chevron-up' : 'oi-chevron-down'"
+        />
+      </div>
     </button>
 
     <!-- Obsah sekce (lekce + kvízy) -->
@@ -100,16 +114,14 @@ watch(
         </p>
 
         <div v-else class="space-y-1.5">
-          <div
+          <RouterLink
             v-for="lesson in lessons"
             :key="lesson.id"
-            class="px-3.5 py-2.5 rounded-xl border border-surface-200/70 dark:border-surface-800 flex items-center justify-between gap-3 hover:border-primary/50 hover:bg-surface-50/70 dark:hover:bg-surface-800/40 transition-colors cursor-pointer"
-            @click="
-              router.push({
-                name: 'lesson-detail',
-                params: { courseId, lessonId: lesson.id },
-              })
-            "
+            :to="{
+              name: 'lesson-detail',
+              params: { courseId, lessonId: lesson.id },
+            }"
+            class="px-3.5 py-2.5 rounded-xl border border-surface-200/70 dark:border-surface-800 flex items-center justify-between gap-3 hover:border-primary/50 hover:bg-surface-50/70 dark:hover:bg-surface-800/40 transition-colors no-underline text-surface-900 dark:text-surface-0"
           >
             <div class="flex items-center gap-3 min-w-0">
               <i
@@ -140,7 +152,7 @@ watch(
               />
               <i class="oi oi-chevron-right text-xs text-surface-400" />
             </div>
-          </div>
+          </RouterLink>
         </div>
       </div>
 
@@ -162,16 +174,14 @@ watch(
         </p>
 
         <div v-else class="space-y-1.5">
-          <div
+          <RouterLink
             v-for="quiz in quizzes"
             :key="quiz.id"
-            class="px-3.5 py-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5 flex flex-wrap items-center justify-between gap-3 hover:border-amber-500/60 transition-colors cursor-pointer"
-            @click="
-              router.push({
-                name: 'quiz-detail',
-                params: { courseId, quizId: quiz.id },
-              })
-            "
+            :to="{
+              name: 'quiz-detail',
+              params: { courseId, quizId: quiz.id },
+            }"
+            class="px-3.5 py-2.5 rounded-xl border border-amber-500/30 bg-amber-500/5 flex flex-wrap items-center justify-between gap-3 hover:border-amber-500/60 transition-colors no-underline text-surface-900 dark:text-surface-0"
           >
             <div class="flex items-center gap-3">
               <i class="oi oi-question-circle text-amber-500 text-base" />
@@ -188,7 +198,7 @@ watch(
               </span>
               <i class="oi oi-chevron-right text-xs text-surface-400" />
             </div>
-          </div>
+          </RouterLink>
         </div>
       </div>
     </div>

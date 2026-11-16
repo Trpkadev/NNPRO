@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useToast } from 'openvue/usetoast'
 import { getApiErrorMessage } from '@/services/api'
+import { formatBytes } from '@/utils/formatters'
 import { getYoutubeEmbedUrl, sanitizeHtml } from '@/utils/html'
 
 const { t } = useI18n()
@@ -57,13 +58,6 @@ const nextLesson = computed(() =>
     ? orderedSiblingLessons.value[currentIndex.value + 1]
     : null,
 )
-
-function formatBytes(bytes: number | null | undefined): string {
-  if (!bytes || bytes <= 0) return ''
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
 
 async function handleToggleComplete() {
   if (!lesson.value) return

@@ -3,13 +3,13 @@ import { useToast } from 'openvue/usetoast'
 import { getApiErrorMessage } from '@/services/api'
 import type { CourseResponseDto } from '@/types/api'
 
+const visible = defineModel<boolean>('visible', { default: false })
+
 const props = defineProps<{
-  visible: boolean
   course?: CourseResponseDto | null
 }>()
 
 const emit = defineEmits<{
-  'update:visible': [value: boolean]
   saved: [courseId: number]
 }>()
 
@@ -29,17 +29,14 @@ const isSaving = computed(
   () => createMutation.isPending.value || updateMutation.isPending.value,
 )
 
-watch(
-  () => props.visible,
-  (isOpen) => {
-    if (isOpen) {
-      title.value = props.course?.title ?? ''
-      description.value = props.course?.description ?? ''
-      accessKey.value = ''
-      errorMessage.value = null
-    }
-  },
-)
+watch(visible, (isOpen) => {
+  if (isOpen) {
+    title.value = props.course?.title ?? ''
+    description.value = props.course?.description ?? ''
+    accessKey.value = ''
+    errorMessage.value = null
+  }
+})
 
 async function handleSubmit() {
   errorMessage.value = null
@@ -72,7 +69,7 @@ async function handleSubmit() {
     })
 
     emit('saved', courseId)
-    emit('update:visible', false)
+    visible.value = false
   } catch (err) {
     errorMessage.value = getApiErrorMessage(err)
   }
@@ -81,11 +78,10 @@ async function handleSubmit() {
 
 <template>
   <Dialog
-    :visible="visible"
+    v-model:visible="visible"
     modal
     :header="isEditing ? t('instructor.editCourse') : t('instructor.createCourse')"
     :style="{ width: '32rem', maxWidth: '95vw' }"
-    @update:visible="emit('update:visible', $event)"
   >
     <form class="space-y-4" @submit.prevent="handleSubmit">
       <Message v-if="errorMessage" severity="error" :closable="false">
@@ -93,18 +89,25 @@ async function handleSubmit() {
       </Message>
 
       <div class="space-y-1.5">
-        <label class="block text-sm font-medium">{{ t('instructor.courseTitleLabel') }}</label>
-        <InputText v-model="title" class="w-full" required />
+        <label for="course-form-title" class="block text-sm font-medium">
+          {{ t('instructor.courseTitleLabel') }}
+        </label>
+        <InputText id="course-form-title" v-model="title" class="w-full" required />
       </div>
 
       <div class="space-y-1.5">
-        <label class="block text-sm font-medium">{{ t('instructor.courseDescLabel') }}</label>
-        <Textarea v-model="description" rows="4" class="w-full" required />
+        <label for="course-form-desc" class="block text-sm font-medium">
+          {{ t('instructor.courseDescLabel') }}
+        </label>
+        <Textarea id="course-form-desc" v-model="description" rows="4" class="w-full" required />
       </div>
 
       <div class="space-y-1.5">
-        <label class="block text-sm font-medium">{{ t('instructor.courseAccessKeyLabel') }}</label>
+        <label for="course-form-access-key" class="block text-sm font-medium">
+          {{ t('instructor.courseAccessKeyLabel') }}
+        </label>
         <InputText
+          id="course-form-access-key"
           v-model="accessKey"
           :placeholder="t('courses.accessKeyPlaceholder')"
           class="w-full"
@@ -117,7 +120,7 @@ async function handleSubmit() {
           :label="t('common.cancel')"
           severity="secondary"
           text
-          @click="emit('update:visible', false)"
+          @click="visible = false"
         />
         <Button
           type="submit"

@@ -284,6 +284,8 @@ export interface QuizResponseDto {
   timeLimitSeconds: number | null
   passingThresholdPercent: number
   sectionId: number
+  randomizeQuestions?: boolean
+  randomizeAnswers?: boolean
 }
 
 export interface StartAttemptRequestDto {

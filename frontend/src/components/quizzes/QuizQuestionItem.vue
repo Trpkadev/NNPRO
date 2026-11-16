@@ -82,7 +82,7 @@ function toggleOption(optionId: number) {
     <div v-if="question.imageUrl" class="rounded-xl overflow-hidden max-w-md border border-surface-200 dark:border-surface-800">
       <img
         :src="question.imageUrl"
-        :alt="`Question ${index + 1}`"
+        :alt="t('quizzes.questionImageAlt', { number: index + 1 })"
         class="w-full h-auto object-contain max-h-64"
         loading="lazy"
       />
@@ -126,7 +126,7 @@ function toggleOption(optionId: number) {
           <img
             v-if="option.imageUrl"
             :src="option.imageUrl"
-            alt="Option illustration"
+            :alt="t('quizzes.optionImageAlt')"
             class="max-h-36 rounded-lg border border-surface-200 dark:border-surface-800"
             loading="lazy"
           />

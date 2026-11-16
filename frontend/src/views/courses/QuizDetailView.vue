@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { getApiErrorMessage } from '@/services/api'
+import { formatDateTime } from '@/utils/formatters'
 import type { AnswerOptionResponseDto, QuizAttemptResponseDto } from '@/types/api'
 
 const { t } = useI18n()
@@ -73,15 +74,6 @@ function handleAttemptCompleted(payload: {
 }) {
   activeAttemptId.value = null
   lastResult.value = payload
-}
-
-function formatDateTime(iso: string | null | undefined): string {
-  if (!iso) return '-'
-  try {
-    return new Date(iso).toLocaleString()
-  } catch {
-    return iso
-  }
 }
 </script>
 

@@ -90,10 +90,11 @@ function confirmRemoveStudent(student: UserResponseDto) {
       @submit.prevent="handleForceEnroll"
     >
       <div class="flex-1 space-y-1">
-        <label class="block text-xs font-medium">
+        <label for="force-enroll-student-id" class="block text-xs font-medium">
           {{ t('instructor.forceEnrollLabel') }}
         </label>
         <InputNumber
+          input-id="force-enroll-student-id"
           v-model="studentIdToEnroll"
           :placeholder="t('instructor.forceEnrollPlaceholder')"
           :min="1"
@@ -148,6 +149,7 @@ function confirmRemoveStudent(student: UserResponseDto) {
               text
               rounded
               size="small"
+              :aria-label="t('common.delete')"
               @click="confirmRemoveStudent(data)"
             />
           </template>

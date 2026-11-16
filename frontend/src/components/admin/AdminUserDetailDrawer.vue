@@ -1,23 +1,28 @@
 <script setup lang="ts">
 import { useToast } from 'openvue/usetoast'
 import { getApiErrorMessage } from '@/services/api'
+import { formatDateTime } from '@/utils/formatters'
 import { UserRoles, type UserRole } from '@/types/api'
 
-const props = defineProps<{
-  visible: boolean
-  userId: number | null
-}>()
+const visible = defineModel<boolean>('visible', { default: false })
 
-const emit = defineEmits<{
-  'update:visible': [value: boolean]
+const props = defineProps<{
+  userId: number | null
 }>()
 
 const { t } = useI18n()
 const toast = useToast()
 
 const activeUserId = computed(() => props.userId ?? 0)
-const isEnabled = computed(() => props.visible && activeUserId.value > 0)
+const isEnabled = computed(() => visible.value && activeUserId.value > 0)
 const sessionsPage = ref(1)
+
+watch(
+  () => props.userId,
+  () => {
+    sessionsPage.value = 1
+  },
+)
 
 const { data: userDetail, isLoading: detailLoading } = useAdminUserDetailQuery(
   activeUserId,
@@ -39,6 +44,7 @@ const selectedRole = ref<UserRole>(UserRoles.Student)
 const editUsername = ref('')
 const editEmail = ref('')
 const editPassword = ref('')
+const revokingSessionId = ref<string | null>(null)
 const errorMessage = ref<string | null>(null)
 
 const roleOptions = computed(() => [
@@ -82,7 +88,11 @@ async function handleRoleChange() {
 async function handleUpdateUser() {
   if (!props.userId) return
   errorMessage.value = null
-  if (!editUsername.value.trim() || !editEmail.value.trim() || editPassword.value.length < 8) {
+  if (!editUsername.value.trim() || !editEmail.value.trim()) {
+    errorMessage.value = t('validation.required')
+    return
+  }
+  if (editPassword.value.length > 0 && editPassword.value.length < 8) {
     errorMessage.value = t('validation.minLength', { min: 8 })
     return
   }
@@ -110,6 +120,7 @@ async function handleUpdateUser() {
 async function handleRevokeSession(sessionId: string) {
   if (!props.userId) return
   errorMessage.value = null
+  revokingSessionId.value = sessionId
   try {
     await revokeSessionMutation.mutateAsync({
       userId: props.userId,
@@ -122,6 +133,8 @@ async function handleRevokeSession(sessionId: string) {
     })
   } catch (err) {
     errorMessage.value = getApiErrorMessage(err)
+  } finally {
+    revokingSessionId.value = null
   }
 }
 
@@ -139,24 +152,14 @@ async function handleRevokeAll() {
     errorMessage.value = getApiErrorMessage(err)
   }
 }
-
-function formatDateTime(iso: string | null | undefined): string {
-  if (!iso) return '-'
-  try {
-    return new Date(iso).toLocaleString()
-  } catch {
-    return iso
-  }
-}
 </script>
 
 <template>
   <Drawer
-    :visible="visible"
+    v-model:visible="visible"
     position="right"
     :header="t('admin.userDetailsTitle')"
     class="!w-full sm:!w-[34rem]"
-    @update:visible="emit('update:visible', $event)"
   >
     <div v-if="detailLoading" class="space-y-3">
       <Skeleton height="5rem" class="rounded-xl" />
@@ -191,9 +194,12 @@ function formatDateTime(iso: string | null | undefined): string {
 
       <!-- Změna role (RBAC) -->
       <div class="p-4 rounded-xl border border-surface-200 dark:border-surface-800 space-y-3">
-        <label class="block text-sm font-bold">{{ t('admin.changeRoleLabel') }}</label>
+        <label for="admin-user-role-select" class="block text-sm font-bold">
+          {{ t('admin.changeRoleLabel') }}
+        </label>
         <div class="flex items-center gap-2">
           <Select
+            label-id="admin-user-role-select"
             v-model="selectedRole"
             :options="roleOptions"
             option-label="label"
@@ -218,21 +224,27 @@ function formatDateTime(iso: string | null | undefined): string {
       >
         <h4 class="text-sm font-bold">{{ t('admin.editUserTitle') }}</h4>
         <div class="space-y-1">
-          <label class="block text-xs font-medium">{{ t('admin.username') }}</label>
-          <InputText v-model="editUsername" size="small" class="w-full" required />
+          <label for="admin-edit-username" class="block text-xs font-medium">
+            {{ t('admin.username') }}
+          </label>
+          <InputText id="admin-edit-username" v-model="editUsername" size="small" class="w-full" required />
         </div>
         <div class="space-y-1">
-          <label class="block text-xs font-medium">{{ t('admin.email') }}</label>
-          <InputText v-model="editEmail" type="email" size="small" class="w-full" required />
+          <label for="admin-edit-email" class="block text-xs font-medium">
+            {{ t('admin.email') }}
+          </label>
+          <InputText id="admin-edit-email" v-model="editEmail" type="email" size="small" class="w-full" required />
         </div>
         <div class="space-y-1">
-          <label class="block text-xs font-medium">{{ t('profile.newPasswordLabel') }}</label>
+          <label for="admin-edit-password" class="block text-xs font-medium">
+            {{ t('profile.newPasswordLabel') }}
+          </label>
           <Password
+            input-id="admin-edit-password"
             v-model="editPassword"
             :feedback="false"
             toggle-mask
             fluid
-            required
           />
         </div>
         <div class="flex justify-end">
@@ -294,7 +306,7 @@ function formatDateTime(iso: string | null | undefined): string {
               severity="danger"
               text
               size="small"
-              :loading="revokeSessionMutation.isPending.value"
+              :loading="revokeSessionMutation.isPending.value && revokingSessionId === session.sessionId"
               @click="handleRevokeSession(session.sessionId)"
             />
           </div>

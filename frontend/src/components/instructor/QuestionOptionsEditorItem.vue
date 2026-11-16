@@ -22,6 +22,7 @@ const options = computed(() => optionsResponse.value?.data ?? [])
 const newText = ref('')
 const newImageUrl = ref('')
 const newIsCorrect = ref(false)
+const deletingOptionId = ref<number | null>(null)
 const errorMessage = ref<string | null>(null)
 
 async function handleAddOption() {
@@ -64,6 +65,7 @@ async function handleToggleCorrect(option: AnswerOptionEditorResponseDto) {
 
 async function handleDeleteOption(optionId: number) {
   errorMessage.value = null
+  deletingOptionId.value = optionId
   try {
     await deleteOptionMutation.mutateAsync({
       questionId: props.question.id,
@@ -71,6 +73,8 @@ async function handleDeleteOption(optionId: number) {
     })
   } catch (err) {
     errorMessage.value = getApiErrorMessage(err)
+  } finally {
+    deletingOptionId.value = null
   }
 }
 </script>
@@ -123,6 +127,8 @@ async function handleDeleteOption(optionId: number) {
           text
           rounded
           size="small"
+          :aria-label="t('common.delete')"
+          :loading="deleteOptionMutation.isPending.value && deletingOptionId === opt.id"
           @click="handleDeleteOption(opt.id)"
         />
       </div>
@@ -133,12 +139,14 @@ async function handleDeleteOption(optionId: number) {
       <InputText
         v-model="newText"
         :placeholder="t('instructor.optionTextPlaceholder')"
+        :aria-label="t('instructor.optionTextPlaceholder')"
         size="small"
         class="flex-1 min-w-40"
       />
       <InputText
         v-model="newImageUrl"
         :placeholder="t('instructor.optionImagePlaceholder')"
+        :aria-label="t('instructor.optionImagePlaceholder')"
         size="small"
         class="w-40"
       />

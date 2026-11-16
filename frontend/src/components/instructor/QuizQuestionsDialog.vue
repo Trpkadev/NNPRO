@@ -2,19 +2,16 @@
 import { getApiErrorMessage } from '@/services/api'
 import { QuestionTypes, type QuestionResponseDto, type QuestionType, type QuizResponseDto } from '@/types/api'
 
-const props = defineProps<{
-  visible: boolean
-  quiz: QuizResponseDto | null
-}>()
+const visible = defineModel<boolean>('visible', { default: false })
 
-const emit = defineEmits<{
-  'update:visible': [value: boolean]
+const props = defineProps<{
+  quiz: QuizResponseDto | null
 }>()
 
 const { t } = useI18n()
 
 const quizId = computed(() => props.quiz?.id ?? 0)
-const isEnabled = computed(() => props.visible && quizId.value > 0)
+const isEnabled = computed(() => visible.value && quizId.value > 0)
 
 const { data: questionsResponse, isLoading } = useQuizQuestionsQuery(
   quizId,
@@ -29,6 +26,7 @@ const deleteQuestionMutation = useDeleteQuestionMutation()
 const questions = computed(() => questionsResponse.value?.data ?? [])
 
 const editingQuestionId = ref<number | null>(null)
+const deletingQuestionId = ref<number | null>(null)
 const text = ref('')
 const imageUrl = ref('')
 const type = ref<QuestionType>(QuestionTypes.SingleChoice)
@@ -91,21 +89,23 @@ async function handleSaveQuestion() {
 
 async function handleDeleteQuestion(questionId: number) {
   errorMessage.value = null
+  deletingQuestionId.value = questionId
   try {
     await deleteQuestionMutation.mutateAsync(questionId)
   } catch (err) {
     errorMessage.value = getApiErrorMessage(err)
+  } finally {
+    deletingQuestionId.value = null
   }
 }
 </script>
 
 <template>
   <Dialog
-    :visible="visible"
+    v-model:visible="visible"
     modal
     :header="t('instructor.questionsDialogTitle', { title: quiz?.title ?? '' })"
     :style="{ width: '48rem', maxWidth: '96vw' }"
-    @update:visible="emit('update:visible', $event)"
   >
     <div class="space-y-6">
       <Message v-if="errorMessage" severity="error" :closable="false">
@@ -122,14 +122,19 @@ async function handleDeleteQuestion(questionId: number) {
         </h4>
 
         <div class="space-y-1">
-          <label class="block text-xs font-medium">{{ t('instructor.questionTextLabel') }}</label>
-          <Textarea v-model="text" rows="2" class="w-full" required />
+          <label for="question-text-input" class="block text-xs font-medium">
+            {{ t('instructor.questionTextLabel') }}
+          </label>
+          <Textarea id="question-text-input" v-model="text" rows="2" class="w-full" required />
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div class="space-y-1">
-            <label class="block text-xs font-medium">{{ t('instructor.questionTypeLabel') }}</label>
+            <label for="question-type-select" class="block text-xs font-medium">
+              {{ t('instructor.questionTypeLabel') }}
+            </label>
             <Select
+              label-id="question-type-select"
               v-model="type"
               :options="questionTypeOptions"
               option-label="label"
@@ -140,13 +145,24 @@ async function handleDeleteQuestion(questionId: number) {
           </div>
 
           <div class="space-y-1">
-            <label class="block text-xs font-medium">{{ t('instructor.questionPointsLabel') }}</label>
-            <InputNumber v-model="points" :min="1" :max="100" size="small" class="w-full" />
+            <label for="question-points-input" class="block text-xs font-medium">
+              {{ t('instructor.questionPointsLabel') }}
+            </label>
+            <InputNumber
+              input-id="question-points-input"
+              v-model="points"
+              :min="1"
+              :max="100"
+              size="small"
+              class="w-full"
+            />
           </div>
 
           <div class="space-y-1">
-            <label class="block text-xs font-medium">{{ t('instructor.questionImageUrlLabel') }}</label>
-            <InputText v-model="imageUrl" size="small" class="w-full" />
+            <label for="question-image-input" class="block text-xs font-medium">
+              {{ t('instructor.questionImageUrlLabel') }}
+            </label>
+            <InputText id="question-image-input" v-model="imageUrl" size="small" class="w-full" />
           </div>
         </div>
 
@@ -198,6 +214,7 @@ async function handleDeleteQuestion(questionId: number) {
                 text
                 rounded
                 size="small"
+                :aria-label="t('common.edit')"
                 @click="startEditQuestion(q)"
               />
               <Button
@@ -206,6 +223,8 @@ async function handleDeleteQuestion(questionId: number) {
                 text
                 rounded
                 size="small"
+                :aria-label="t('common.delete')"
+                :loading="deleteQuestionMutation.isPending.value && deletingQuestionId === q.id"
                 @click="handleDeleteQuestion(q.id)"
               />
             </div>

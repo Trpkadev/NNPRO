@@ -2,14 +2,14 @@
 import { useToast } from 'openvue/usetoast'
 import { getApiErrorMessage } from '@/services/api'
 
+const visible = defineModel<boolean>('visible', { default: false })
+
 const props = defineProps<{
-  visible: boolean
   courseId: number | null
   courseTitle?: string
 }>()
 
 const emit = defineEmits<{
-  'update:visible': [value: boolean]
   enrolled: [courseId: number]
 }>()
 
@@ -20,15 +20,12 @@ const enrollMutation = useEnrollCourseMutation()
 const accessKey = ref('')
 const errorMessage = ref<string | null>(null)
 
-watch(
-  () => props.visible,
-  (isOpen) => {
-    if (isOpen) {
-      accessKey.value = ''
-      errorMessage.value = null
-    }
-  },
-)
+watch(visible, (isOpen) => {
+  if (isOpen) {
+    accessKey.value = ''
+    errorMessage.value = null
+  }
+})
 
 async function handleEnroll() {
   if (!props.courseId) return
@@ -47,7 +44,7 @@ async function handleEnroll() {
     })
 
     emit('enrolled', props.courseId)
-    emit('update:visible', false)
+    visible.value = false
   } catch (err) {
     errorMessage.value = getApiErrorMessage(err)
   }
@@ -56,11 +53,10 @@ async function handleEnroll() {
 
 <template>
   <Dialog
-    :visible="visible"
+    v-model:visible="visible"
     modal
     :header="courseTitle ? `${t('courses.enrollDialogTitle')}: ${courseTitle}` : t('courses.enrollDialogTitle')"
     :style="{ width: '28rem', maxWidth: '95vw' }"
-    @update:visible="emit('update:visible', $event)"
   >
     <form class="space-y-4" @submit.prevent="handleEnroll">
       <p class="text-sm text-surface-600 dark:text-surface-400">
@@ -91,7 +87,7 @@ async function handleEnroll() {
           :label="t('common.cancel')"
           severity="secondary"
           text
-          @click="emit('update:visible', false)"
+          @click="visible = false"
         />
         <Button
           type="submit"

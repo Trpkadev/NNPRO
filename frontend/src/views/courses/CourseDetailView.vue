@@ -61,28 +61,41 @@ const completedLessonIds = computed(() => {
   return ids
 })
 
-// Evidence načtených lekcí ze sekcí pro přesný výpočet celkového procenta dokončení kurzu
+// Evidence načtených lekcí ze všech sekcí kurzu pro přesný výpočet celkového procenta dokončení kurzu
 const sectionLessonIdsMap = reactive<Record<number, number[]>>({})
 
 function handleSectionLessonsLoaded(sectionId: number, lessonIds: number[]) {
   sectionLessonIdsMap[sectionId] = lessonIds
 }
 
-const totalCourseLessons = computed(() => {
+const areAllSectionsLoaded = computed(
+  () =>
+    sections.value.length > 0 &&
+    sections.value.every((s) => sectionLessonIdsMap[s.id] !== undefined),
+)
+
+const courseLessonIds = computed(() => {
   const allIds = new Set<number>()
-  for (const ids of Object.values(sectionLessonIdsMap)) {
-    for (const id of ids) allIds.add(id)
+  for (const s of sections.value) {
+    for (const id of sectionLessonIdsMap[s.id] ?? []) {
+      allIds.add(id)
+    }
   }
-  for (const item of myProgressResponse.value?.data ?? []) {
-    if (item.courseId === courseId.value) allIds.add(item.lessonId)
-  }
-  return allIds.size
+  return allIds
 })
 
-const completedCount = computed(() => completedLessonIds.value.size)
+const totalCourseLessons = computed(() => courseLessonIds.value.size)
+
+const completedCount = computed(() => {
+  let count = 0
+  for (const id of courseLessonIds.value) {
+    if (completedLessonIds.value.has(id)) count += 1
+  }
+  return count
+})
 
 const progressPercent = computed(() => {
-  if (totalCourseLessons.value === 0) return 0
+  if (!areAllSectionsLoaded.value || totalCourseLessons.value === 0) return 0
   return Math.min(100, Math.round((completedCount.value / totalCourseLessons.value) * 100))
 })
 
@@ -215,7 +228,7 @@ function handleUnenroll() {
 
         <!-- Celkový průchod kurzem -->
         <div
-          v-if="totalCourseLessons > 0 || completedCount > 0"
+          v-if="areAllSectionsLoaded && totalCourseLessons > 0"
           class="p-4 rounded-xl bg-surface-50 dark:bg-surface-800/50 border border-surface-200/70 dark:border-surface-800 space-y-2"
         >
           <div class="flex items-center justify-between text-xs font-semibold">
@@ -224,7 +237,7 @@ function handleUnenroll() {
               {{
                 t('courses.completedLessonsCount', {
                   completed: completedCount,
-                  total: Math.max(totalCourseLessons, completedCount),
+                  total: totalCourseLessons,
                   percent: progressPercent,
                 })
               }}

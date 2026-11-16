@@ -70,7 +70,7 @@ function clearFilters() {
         <div>
           <h2 class="text-lg font-bold">{{ t('nav.courses') }}</h2>
           <p v-if="!isLoading" class="text-xs text-surface-500">
-            Celkem {{ totalItems }}
+            {{ t('courses.totalCount', { count: totalItems }) }}
           </p>
         </div>
       </div>

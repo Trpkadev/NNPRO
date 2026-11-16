@@ -154,7 +154,9 @@ function confirmDeleteSection(section: SectionResponseDto) {
         class="p-6 rounded-2xl bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 space-y-4"
       >
         <div>
-          <span class="text-xs font-mono text-surface-400">Kurz #{{ course.id }}</span>
+          <span class="text-xs font-mono text-surface-400">
+            {{ t('instructor.courseBadge', { id: course.id }) }}
+          </span>
           <h2 class="text-2xl font-bold">{{ course.title }}</h2>
           <p class="text-sm text-surface-600 dark:text-surface-400 mt-1">
             {{ course.description }}
@@ -243,13 +245,17 @@ function confirmDeleteSection(section: SectionResponseDto) {
           </Message>
 
           <div class="space-y-1">
-            <label class="block text-sm font-medium">{{ t('instructor.sectionTitleLabel') }}</label>
-            <InputText v-model="sectionTitle" class="w-full" required />
+            <label for="section-title-input" class="block text-sm font-medium">
+              {{ t('instructor.sectionTitleLabel') }}
+            </label>
+            <InputText id="section-title-input" v-model="sectionTitle" class="w-full" required />
           </div>
 
           <div class="space-y-1">
-            <label class="block text-sm font-medium">{{ t('instructor.sectionOrderLabel') }}</label>
-            <InputNumber v-model="sectionOrder" :min="1" class="w-full" />
+            <label for="section-order-input" class="block text-sm font-medium">
+              {{ t('instructor.sectionOrderLabel') }}
+            </label>
+            <InputNumber input-id="section-order-input" v-model="sectionOrder" :min="1" class="w-full" />
           </div>
 
           <div class="flex justify-end gap-2">
