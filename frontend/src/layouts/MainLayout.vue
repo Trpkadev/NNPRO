@@ -98,7 +98,6 @@ async function handleLogout() {
       class="sticky top-0 z-30 bg-surface-0/90 dark:bg-surface-900/90 backdrop-blur border-b border-surface-200 dark:border-surface-800"
     >
       <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-        <!-- Logo + Mobilní tlačítko menu -->
         <div class="flex items-center gap-3">
           <Button
             icon="oi oi-bars"
@@ -121,7 +120,6 @@ async function handleLogout() {
           </RouterLink>
         </div>
 
-        <!-- Desktopová navigace -->
         <nav class="hidden md:flex items-center gap-1">
           <RouterLink
             v-for="item in navItems"
@@ -139,7 +137,6 @@ async function handleLogout() {
           </RouterLink>
         </nav>
 
-        <!-- Akce vpravo (jazyk, téma, profil / přihlášení) -->
         <div class="flex items-center gap-2">
           <Button
             :label="locale.toUpperCase()"
@@ -163,10 +160,12 @@ async function handleLogout() {
             <div
               class="hidden sm:flex items-center gap-2 pl-2 border-l border-surface-200 dark:border-surface-800"
             >
-              <p class="text-sm font-semibold leading-tight">
-                {{ authStore.user?.username }}
-              </p>
-              <Tag :value="roleLabel" :severity="roleSeverity" class="text-xs mt-0.5" />
+              <div class="text-right">
+                <p class="text-sm font-semibold leading-tight">
+                  {{ authStore.user?.username }}
+                </p>
+                <Tag :value="roleLabel" :severity="roleSeverity" class="text-xs mt-0.5" />
+              </div>
               <Button
                 icon="oi oi-sign-out"
                 severity="secondary"
@@ -201,79 +200,17 @@ async function handleLogout() {
       </div>
     </header>
 
-    <!-- Mobilní Drawer navigace -->
-    <Drawer v-model:visible="mobileMenuVisible" :header="t('app.name')">
-      <div class="flex flex-col h-full justify-between">
-        <div class="space-y-1">
-          <RouterLink
-            v-for="item in navItems"
-            :key="item.to.name"
-            :to="item.to"
-            class="px-3.5 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-3 no-underline"
-            :class="
-              route.name === item.to.name
-                ? 'bg-primary/10 text-primary font-semibold'
-                : 'text-surface-700 dark:text-surface-200 hover:bg-surface-100 dark:hover:bg-surface-800'
-            "
-            @click="mobileMenuVisible = false"
-          >
-            <i :class="item.icon" />
-            <span>{{ item.label }}</span>
-          </RouterLink>
-        </div>
+    <MobileNavDrawer
+      v-model:visible="mobileMenuVisible"
+      :nav-items="navItems"
+      :is-authenticated="authStore.isAuthenticated"
+      :username="authStore.user?.username"
+      :role-label="roleLabel"
+      :role-severity="roleSeverity"
+      :logout-pending="logoutMutation.isPending.value"
+      @logout="handleLogout"
+    />
 
-        <div class="pt-4 border-t border-surface-200 dark:border-surface-800 space-y-3">
-          <template v-if="authStore.isAuthenticated">
-            <div class="flex items-center justify-between px-2">
-              <div>
-                <p class="text-sm font-semibold">
-                  {{ authStore.user?.username }}
-                </p>
-              </div>
-              <Tag :value="roleLabel" :severity="roleSeverity" />
-            </div>
-            <Button
-              :label="t('nav.logout')"
-              icon="oi oi-sign-out"
-              severity="danger"
-              outlined
-              class="w-full"
-              :loading="logoutMutation.isPending.value"
-              @click="handleLogout"
-            />
-          </template>
-          <template v-else>
-            <div class="flex flex-col gap-2">
-              <Button
-                :label="t('nav.login')"
-                icon="oi oi-sign-in"
-                outlined
-                class="w-full"
-                @click="
-                  () => {
-                    mobileMenuVisible = false
-                    router.push({ name: 'login' })
-                  }
-                "
-              />
-              <Button
-                :label="t('nav.register')"
-                icon="oi oi-user-plus"
-                class="w-full"
-                @click="
-                  () => {
-                    mobileMenuVisible = false
-                    router.push({ name: 'register' })
-                  }
-                "
-              />
-            </div>
-          </template>
-        </div>
-      </div>
-    </Drawer>
-
-    <!-- Hlavní kontejner stránky -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
       <RouterView />
     </main>

@@ -26,8 +26,6 @@ const { data: sectionsResponse, isLoading: sectionsLoading } = useCourseSections
   Descending: false,
 })
 
-const createSectionMutation = useCreateSectionMutation()
-const updateSectionMutation = useUpdateSectionMutation()
 const deleteSectionMutation = useDeleteSectionMutation()
 
 const sections = computed(() =>
@@ -36,56 +34,17 @@ const sections = computed(() =>
 
 const activeTab = ref<'curriculum' | 'students'>('curriculum')
 const editCourseDialogVisible = ref(false)
-
-// Stav dialogu pro sekci
 const sectionDialogVisible = ref(false)
 const editingSection = ref<SectionResponseDto | null>(null)
-const sectionTitle = ref('')
-const sectionOrder = ref(1)
-const sectionError = ref<string | null>(null)
 
 function openAddSection() {
   editingSection.value = null
-  sectionTitle.value = ''
-  sectionOrder.value = sections.value.length + 1
-  sectionError.value = null
   sectionDialogVisible.value = true
 }
 
 function openEditSection(section: SectionResponseDto) {
   editingSection.value = section
-  sectionTitle.value = section.title
-  sectionOrder.value = section.order
-  sectionError.value = null
   sectionDialogVisible.value = true
-}
-
-async function handleSaveSection() {
-  sectionError.value = null
-  if (!sectionTitle.value.trim()) {
-    sectionError.value = t('validation.required')
-    return
-  }
-
-  const payload = {
-    title: sectionTitle.value.trim(),
-    order: Math.max(1, Number(sectionOrder.value) || 1),
-    courseId: courseId.value,
-  }
-
-  try {
-    if (editingSection.value) {
-      await updateSectionMutation.mutateAsync({
-        sectionId: editingSection.value.id,
-        payload,
-      })
-    } else {
-      await createSectionMutation.mutateAsync(payload)
-    }
-    sectionDialogVisible.value = false
-  } catch (err) {
-    sectionError.value = getApiErrorMessage(err)
-  }
 }
 
 function confirmDeleteSection(section: SectionResponseDto) {
@@ -195,7 +154,7 @@ function confirmDeleteSection(section: SectionResponseDto) {
         </div>
       </div>
 
-      <!-- Záložka 1: Struktura a obsah kurzu (sekce, lekce, přílohy, kvízy, otázky) -->
+      <!-- Záložka 1: Struktura a obsah kurzu -->
       <div v-if="activeTab === 'curriculum'" class="space-y-4">
         <div v-if="sectionsLoading" class="space-y-3">
           <Skeleton v-for="n in 2" :key="n" height="8rem" class="rounded-2xl" />
@@ -228,59 +187,14 @@ function confirmDeleteSection(section: SectionResponseDto) {
       <!-- Záložka 2: Správa zapsaných studentů -->
       <CourseStudentsManager v-else :course-id="courseId" />
 
-      <!-- Dialog pro úpravu kurzu -->
       <CourseFormDialog v-model:visible="editCourseDialogVisible" :course="course" />
 
-      <!-- Dialog pro vytvoření / úpravu sekce -->
-      <Dialog
+      <SectionFormDialog
         v-model:visible="sectionDialogVisible"
-        modal
-        :header="editingSection ? t('instructor.editSection') : t('instructor.addSection')"
-        :style="{ width: '28rem', maxWidth: '95vw' }"
-      >
-        <form class="space-y-4" @submit.prevent="handleSaveSection">
-          <Message v-if="sectionError" severity="error" :closable="false">
-            {{ sectionError }}
-          </Message>
-
-          <div class="space-y-1">
-            <label for="section-title-input" class="block text-sm font-medium">
-              {{ t('instructor.sectionTitleLabel') }}
-            </label>
-            <InputText id="section-title-input" v-model="sectionTitle" class="w-full" required />
-          </div>
-
-          <div class="space-y-1">
-            <label for="section-order-input" class="block text-sm font-medium">
-              {{ t('instructor.sectionOrderLabel') }}
-            </label>
-            <InputNumber
-              input-id="section-order-input"
-              v-model="sectionOrder"
-              :min="1"
-              class="w-full"
-            />
-          </div>
-
-          <div class="flex justify-end gap-2">
-            <Button
-              type="button"
-              :label="t('common.cancel')"
-              severity="secondary"
-              text
-              @click="sectionDialogVisible = false"
-            />
-            <Button
-              type="submit"
-              :label="t('common.save')"
-              icon="oi oi-check"
-              :loading="
-                createSectionMutation.isPending.value || updateSectionMutation.isPending.value
-              "
-            />
-          </div>
-        </form>
-      </Dialog>
+        :course-id="courseId"
+        :section="editingSection"
+        :default-order="sections.length + 1"
+      />
     </template>
   </div>
 </template>

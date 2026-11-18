@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { getApiErrorMessage } from '@/services/api'
-import { formatDateTime } from '@/utils/formatters'
 import type { AnswerOptionResponseDto, QuizAttemptResponseDto } from '@/types/api'
 
 const { t } = useI18n()
@@ -79,7 +78,6 @@ function handleAttemptCompleted(payload: {
 
 <template>
   <div class="space-y-6">
-    <!-- Návrat na detail kurzu -->
     <div>
       <Button
         :label="t('lessons.backToCourse')"
@@ -101,7 +99,6 @@ function handleAttemptCompleted(payload: {
     </Message>
 
     <template v-else-if="quiz">
-      <!-- Aktivní průchod kvízem -->
       <QuizPlayer
         v-if="activeAttemptId !== null"
         :quiz="quiz"
@@ -111,7 +108,6 @@ function handleAttemptCompleted(payload: {
         @cancel="activeAttemptId = null"
       />
 
-      <!-- Okamžité vyhodnocení a zpětná vazba po odevzdání -->
       <QuizResultSummary
         v-else-if="lastResult"
         :quiz="quiz"
@@ -122,7 +118,6 @@ function handleAttemptCompleted(payload: {
         @back="lastResult = null"
       />
 
-      <!-- Přehled kvízu + Historie pokusů studenta -->
       <template v-else>
         <div
           class="p-6 rounded-2xl bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs"
@@ -173,61 +168,12 @@ function handleAttemptCompleted(payload: {
           {{ startError }}
         </Message>
 
-        <!-- Historie pokusů studenta -->
-        <section
-          class="p-5 rounded-2xl bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 space-y-4"
-        >
-          <h2 class="text-lg font-bold">{{ t('quizzes.myAttemptsTitle') }}</h2>
-
-          <div v-if="attemptsLoading" class="space-y-2">
-            <Skeleton v-for="n in 3" :key="n" height="3rem" class="rounded-xl" />
-          </div>
-
-          <p v-else-if="myAttempts.length === 0" class="text-sm text-surface-500 text-center py-6">
-            {{ t('quizzes.noAttemptsYet') }}
-          </p>
-
-          <DataTable v-else :value="myAttempts" striped-rows responsive-layout="scroll">
-            <Column field="id" header="#">
-              <template #body="{ data }">
-                <span class="font-semibold">{{ t('quizzes.attemptNumber', { id: data.id }) }}</span>
-              </template>
-            </Column>
-            <Column :header="t('quizzes.startedAt')">
-              <template #body="{ data }">
-                {{ formatDateTime(data.startedAtUtc) }}
-              </template>
-            </Column>
-            <Column :header="t('quizzes.submittedAt')">
-              <template #body="{ data }">
-                {{
-                  data.submittedAtUtc
-                    ? formatDateTime(data.submittedAtUtc)
-                    : t('quizzes.inProgress')
-                }}
-              </template>
-            </Column>
-            <Column :header="t('quizzes.score')">
-              <template #body="{ data }">
-                <span class="font-bold">{{ Math.round(data.scorePercent * 10) / 10 }} %</span>
-              </template>
-            </Column>
-            <Column :header="t('common.actions')">
-              <template #body="{ data }">
-                <Tag
-                  :value="data.isPassed ? t('quizzes.passed') : t('quizzes.failed')"
-                  :severity="data.isPassed ? 'success' : 'danger'"
-                />
-              </template>
-            </Column>
-          </DataTable>
-
-          <PaginationControls
-            :pagination="attemptsPagination"
-            :loading="attemptsLoading"
-            @update:page="attemptsPage = $event"
-          />
-        </section>
+        <QuizAttemptsTable
+          :attempts="myAttempts"
+          :pagination="attemptsPagination"
+          :loading="attemptsLoading"
+          @update:page="attemptsPage = $event"
+        />
       </template>
     </template>
   </div>

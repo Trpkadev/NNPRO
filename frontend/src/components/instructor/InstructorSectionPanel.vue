@@ -31,12 +31,7 @@ const { data: quizzesResponse, isLoading: quizzesLoading } = useSectionQuizzesQu
   PageSize: 50,
 })
 
-const createLessonMutation = useCreateLessonMutation()
-const updateLessonMutation = useUpdateLessonMutation()
 const deleteLessonMutation = useDeleteLessonMutation()
-
-const createQuizMutation = useCreateQuizMutation()
-const updateQuizMutation = useUpdateQuizMutation()
 const deleteQuizMutation = useDeleteQuizMutation()
 
 const lessons = computed(() =>
@@ -44,91 +39,30 @@ const lessons = computed(() =>
 )
 const quizzes = computed(() => quizzesResponse.value?.data ?? [])
 
-// Stav dialogu pro lekci
+// Stavy modálních dialogů
 const lessonDialogVisible = ref(false)
 const editingLesson = ref<LessonResponseDto | null>(null)
-const lessonTitle = ref('')
-const lessonOrder = ref(1)
-const lessonVideoUrl = ref('')
-const lessonContent = ref('')
-const lessonError = ref<string | null>(null)
 
-// Stav dialogu příloh lekce
 const attachmentsDialogVisible = ref(false)
 const attachmentsTargetLesson = ref<LessonResponseDto | null>(null)
 
-// Stav dialogu pro kvíz
 const quizDialogVisible = ref(false)
 const editingQuiz = ref<QuizResponseDto | null>(null)
-const quizTitle = ref('')
-const quizPassingThreshold = ref(75)
-const quizMaxAttempts = ref<number | null>(null)
-const quizTimeLimit = ref<number | null>(null)
-const quizRandomizeQuestions = ref(false)
-const quizRandomizeAnswers = ref(false)
-const quizError = ref<string | null>(null)
 
-// Stav dialogu otázek kvízu a pokusů kvízu
 const questionsDialogVisible = ref(false)
 const questionsTargetQuiz = ref<QuizResponseDto | null>(null)
+
 const attemptsDialogVisible = ref(false)
 const attemptsTargetQuiz = ref<QuizResponseDto | null>(null)
-const attemptsPage = ref(1)
-
-const { data: quizAttemptsResponse, isLoading: attemptsLoading } = useQuizAttemptsQuery(
-  computed(() => attemptsTargetQuiz.value?.id ?? 0),
-  computed(() => ({ Page: attemptsPage.value, PageSize: 10 })),
-  computed(() => attemptsDialogVisible.value && !!attemptsTargetQuiz.value),
-)
 
 function openAddLesson() {
   editingLesson.value = null
-  lessonTitle.value = ''
-  lessonOrder.value = lessons.value.length + 1
-  lessonVideoUrl.value = ''
-  lessonContent.value = ''
-  lessonError.value = null
   lessonDialogVisible.value = true
 }
 
 function openEditLesson(lesson: LessonResponseDto) {
   editingLesson.value = lesson
-  lessonTitle.value = lesson.title
-  lessonOrder.value = lesson.order
-  lessonVideoUrl.value = lesson.videoUrl ?? ''
-  lessonContent.value = lesson.content
-  lessonError.value = null
   lessonDialogVisible.value = true
-}
-
-async function handleSaveLesson() {
-  lessonError.value = null
-  if (!lessonTitle.value.trim() || !lessonContent.value.trim()) {
-    lessonError.value = t('validation.required')
-    return
-  }
-
-  const payload = {
-    title: lessonTitle.value.trim(),
-    content: lessonContent.value,
-    videoUrl: lessonVideoUrl.value.trim() ? lessonVideoUrl.value.trim() : null,
-    order: Math.max(1, Number(lessonOrder.value) || 1),
-    sectionId: props.section.id,
-  }
-
-  try {
-    if (editingLesson.value) {
-      await updateLessonMutation.mutateAsync({
-        lessonId: editingLesson.value.id,
-        payload,
-      })
-    } else {
-      await createLessonMutation.mutateAsync(payload)
-    }
-    lessonDialogVisible.value = false
-  } catch (err) {
-    lessonError.value = getApiErrorMessage(err)
-  }
 }
 
 function confirmDeleteLesson(lesson: LessonResponseDto) {
@@ -150,58 +84,12 @@ function confirmDeleteLesson(lesson: LessonResponseDto) {
 
 function openAddQuiz() {
   editingQuiz.value = null
-  quizTitle.value = ''
-  quizPassingThreshold.value = 75
-  quizMaxAttempts.value = null
-  quizTimeLimit.value = null
-  quizRandomizeQuestions.value = false
-  quizRandomizeAnswers.value = false
-  quizError.value = null
   quizDialogVisible.value = true
 }
 
 function openEditQuiz(quiz: QuizResponseDto) {
   editingQuiz.value = quiz
-  quizTitle.value = quiz.title
-  quizPassingThreshold.value = quiz.passingThresholdPercent
-  quizMaxAttempts.value = quiz.maxAttempts
-  quizTimeLimit.value = quiz.timeLimitSeconds
-  quizRandomizeQuestions.value = quiz.randomizeQuestions ?? false
-  quizRandomizeAnswers.value = quiz.randomizeAnswers ?? false
-  quizError.value = null
   quizDialogVisible.value = true
-}
-
-async function handleSaveQuiz() {
-  quizError.value = null
-  if (!quizTitle.value.trim()) {
-    quizError.value = t('validation.required')
-    return
-  }
-
-  const payload = {
-    title: quizTitle.value.trim(),
-    sectionId: props.section.id,
-    maxAttempts: quizMaxAttempts.value ? Number(quizMaxAttempts.value) : null,
-    timeLimitSeconds: quizTimeLimit.value ? Number(quizTimeLimit.value) : null,
-    passingThresholdPercent: Number(quizPassingThreshold.value) || 0,
-    randomizeQuestions: quizRandomizeQuestions.value,
-    randomizeAnswers: quizRandomizeAnswers.value,
-  }
-
-  try {
-    if (editingQuiz.value) {
-      await updateQuizMutation.mutateAsync({
-        quizId: editingQuiz.value.id,
-        payload,
-      })
-    } else {
-      await createQuizMutation.mutateAsync(payload)
-    }
-    quizDialogVisible.value = false
-  } catch (err) {
-    quizError.value = getApiErrorMessage(err)
-  }
 }
 
 function confirmDeleteQuiz(quiz: QuizResponseDto) {
@@ -389,7 +277,6 @@ function confirmDeleteQuiz(quiz: QuizResponseDto) {
               @click="
                 () => {
                   attemptsTargetQuiz = quiz
-                  attemptsPage = 1
                   attemptsDialogVisible = true
                 }
               "
@@ -417,224 +304,27 @@ function confirmDeleteQuiz(quiz: QuizResponseDto) {
       </div>
     </div>
 
-    <!-- Dialog pro vytvoření / úpravu lekce -->
-    <Dialog
+    <!-- Modální dialogy -->
+    <LessonFormDialog
       v-model:visible="lessonDialogVisible"
-      modal
-      :header="editingLesson ? t('instructor.editLesson') : t('instructor.addLesson')"
-      :style="{ width: '38rem', maxWidth: '95vw' }"
-    >
-      <form class="space-y-4" @submit.prevent="handleSaveLesson">
-        <Message v-if="lessonError" severity="error" :closable="false">
-          {{ lessonError }}
-        </Message>
+      :section-id="section.id"
+      :lesson="editingLesson"
+      :default-order="lessons.length + 1"
+    />
 
-        <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
-          <div class="sm:col-span-3 space-y-1">
-            <label for="lesson-title-input" class="block text-sm font-medium">
-              {{ t('instructor.lessonTitleLabel') }}
-            </label>
-            <InputText id="lesson-title-input" v-model="lessonTitle" class="w-full" required />
-          </div>
-          <div class="space-y-1">
-            <label for="lesson-order-input" class="block text-sm font-medium">
-              {{ t('instructor.lessonOrderLabel') }}
-            </label>
-            <InputNumber
-              input-id="lesson-order-input"
-              v-model="lessonOrder"
-              :min="1"
-              class="w-full"
-            />
-          </div>
-        </div>
-
-        <div class="space-y-1">
-          <label for="lesson-video-input" class="block text-sm font-medium">
-            {{ t('instructor.lessonVideoLabel') }}
-          </label>
-          <InputText
-            id="lesson-video-input"
-            v-model="lessonVideoUrl"
-            placeholder="https://www.youtube.com/watch?v=..."
-            class="w-full"
-          />
-        </div>
-
-        <div class="space-y-1">
-          <label for="lesson-content-input" class="block text-sm font-medium">
-            {{ t('instructor.lessonContentLabel') }}
-          </label>
-          <Textarea
-            id="lesson-content-input"
-            v-model="lessonContent"
-            rows="7"
-            class="w-full"
-            required
-          />
-        </div>
-
-        <div class="flex justify-end gap-2">
-          <Button
-            type="button"
-            :label="t('common.cancel')"
-            severity="secondary"
-            text
-            @click="lessonDialogVisible = false"
-          />
-          <Button
-            type="submit"
-            :label="t('common.save')"
-            icon="oi oi-check"
-            :loading="createLessonMutation.isPending.value || updateLessonMutation.isPending.value"
-          />
-        </div>
-      </form>
-    </Dialog>
-
-    <!-- Dialog příloh lekce -->
     <LessonAttachmentsDialog
       v-model:visible="attachmentsDialogVisible"
       :lesson="attachmentsTargetLesson"
     />
 
-    <!-- Dialog pro vytvoření / úpravu kvízu -->
-    <Dialog
+    <QuizFormDialog
       v-model:visible="quizDialogVisible"
-      modal
-      :header="editingQuiz ? t('instructor.editQuiz') : t('instructor.addQuiz')"
-      :style="{ width: '34rem', maxWidth: '95vw' }"
-    >
-      <form class="space-y-4" @submit.prevent="handleSaveQuiz">
-        <Message v-if="quizError" severity="error" :closable="false">
-          {{ quizError }}
-        </Message>
+      :section-id="section.id"
+      :quiz="editingQuiz"
+    />
 
-        <div class="space-y-1">
-          <label for="quiz-title-input" class="block text-sm font-medium">
-            {{ t('instructor.quizTitleLabel') }}
-          </label>
-          <InputText id="quiz-title-input" v-model="quizTitle" class="w-full" required />
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div class="space-y-1">
-            <label for="quiz-threshold-input" class="block text-xs font-medium">
-              {{ t('instructor.quizPassingThresholdLabel') }}
-            </label>
-            <InputNumber
-              input-id="quiz-threshold-input"
-              v-model="quizPassingThreshold"
-              :min="0"
-              :max="100"
-              class="w-full"
-            />
-          </div>
-          <div class="space-y-1">
-            <label for="quiz-max-attempts-input" class="block text-xs font-medium">
-              {{ t('instructor.quizMaxAttemptsLabel') }}
-            </label>
-            <InputNumber
-              input-id="quiz-max-attempts-input"
-              v-model="quizMaxAttempts"
-              :min="1"
-              :max="100"
-              class="w-full"
-            />
-          </div>
-          <div class="space-y-1">
-            <label for="quiz-time-limit-input" class="block text-xs font-medium">
-              {{ t('instructor.quizTimeLimitLabel') }}
-            </label>
-            <InputNumber
-              input-id="quiz-time-limit-input"
-              v-model="quizTimeLimit"
-              :min="10"
-              class="w-full"
-            />
-          </div>
-        </div>
-
-        <div class="flex flex-wrap gap-6 pt-1">
-          <label class="flex items-center gap-2 text-sm cursor-pointer">
-            <Checkbox v-model="quizRandomizeQuestions" binary />
-            <span>{{ t('instructor.quizRandomizeQuestionsLabel') }}</span>
-          </label>
-          <label class="flex items-center gap-2 text-sm cursor-pointer">
-            <Checkbox v-model="quizRandomizeAnswers" binary />
-            <span>{{ t('instructor.quizRandomizeAnswersLabel') }}</span>
-          </label>
-        </div>
-
-        <div class="flex justify-end gap-2 pt-2">
-          <Button
-            type="button"
-            :label="t('common.cancel')"
-            severity="secondary"
-            text
-            @click="quizDialogVisible = false"
-          />
-          <Button
-            type="submit"
-            :label="t('common.save')"
-            icon="oi oi-check"
-            :loading="createQuizMutation.isPending.value || updateQuizMutation.isPending.value"
-          />
-        </div>
-      </form>
-    </Dialog>
-
-    <!-- Dialog otázek kvízu -->
     <QuizQuestionsDialog v-model:visible="questionsDialogVisible" :quiz="questionsTargetQuiz" />
 
-    <!-- Dialog přehledu všech pokusů studentů u kvízu -->
-    <Dialog
-      v-model:visible="attemptsDialogVisible"
-      modal
-      :header="t('instructor.attemptsDialogTitle', { title: attemptsTargetQuiz?.title ?? '' })"
-      :style="{ width: '44rem', maxWidth: '96vw' }"
-    >
-      <div class="space-y-4">
-        <div v-if="attemptsLoading" class="space-y-2">
-          <Skeleton v-for="n in 3" :key="n" height="2.75rem" class="rounded-xl" />
-        </div>
-
-        <p
-          v-else-if="(quizAttemptsResponse?.data ?? []).length === 0"
-          class="text-sm text-surface-500 text-center py-4"
-        >
-          {{ t('quizzes.noAttemptsYet') }}
-        </p>
-
-        <DataTable
-          v-else
-          :value="quizAttemptsResponse?.data ?? []"
-          striped-rows
-          responsive-layout="scroll"
-        >
-          <Column field="id" header="ID" />
-          <Column field="studentId" :header="t('instructor.studentIdColumn')" />
-          <Column :header="t('quizzes.score')">
-            <template #body="{ data }">
-              <span class="font-bold">{{ Math.round(data.scorePercent * 10) / 10 }} %</span>
-            </template>
-          </Column>
-          <Column :header="t('common.actions')">
-            <template #body="{ data }">
-              <Tag
-                :value="data.isPassed ? t('quizzes.passed') : t('quizzes.failed')"
-                :severity="data.isPassed ? 'success' : 'danger'"
-              />
-            </template>
-          </Column>
-        </DataTable>
-
-        <PaginationControls
-          :pagination="quizAttemptsResponse?.metadata?.pagination"
-          :loading="attemptsLoading"
-          @update:page="attemptsPage = $event"
-        />
-      </div>
-    </Dialog>
+    <QuizAttemptsDialog v-model:visible="attemptsDialogVisible" :quiz="attemptsTargetQuiz" />
   </div>
 </template>
