@@ -18,15 +18,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [EndpointDescription("Returns the full details of a course including its title and description.")]
     [ProducesResponseType<Wrapper<CourseResponseDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<CourseResponseDto>> GetCourseById(uint id, CancellationToken cancellationToken)
-    {
-        var course = await courseService.GetByIdAsync(id, cancellationToken);
-
-        if (course is null)
-            return NotFound();
-
-        return Ok(course);
-    }
+    public async Task<ActionResult<CourseResponseDto>> GetCourseById(uint id, CancellationToken cancellationToken) => Ok(await courseService.GetByIdAsync(id, cancellationToken));
 
     [HttpGet]
     [RequiresPaging]
@@ -48,13 +40,10 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [RequiresPaging]
     [EndpointSummary("Get course instructors")]
     [ProducesResponseType<Wrapper<CourseInstructorResponseDto[]>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CourseInstructorResponseDto[]>> GetCourseInstructors(uint courseId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        await Task.CompletedTask;
-        var instructors = new[] {
-            new CourseInstructorResponseDto(1, "dummy_instructor"),
-            new CourseInstructorResponseDto(2, "another_instructor")
-        };
+        var instructors = await courseService.GetInstructorsAsync(courseId, cancellationToken);
         return OkPaged(instructors, requestQuery);
     }
 
@@ -63,13 +52,10 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [RequiresPaging]
     [EndpointSummary("Get course sections")]
     [ProducesResponseType<Wrapper<SectionResponseDto[]>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<SectionResponseDto[]>> GetCourseSections(uint courseId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        await Task.CompletedTask;
-        var sections = new[] {
-            new SectionResponseDto(1, "Introduction", 1, courseId),
-            new SectionResponseDto(2, "Advanced topics", 2, courseId)
-        };
+        var sections = await courseService.GetSectionsAsync(courseId, cancellationToken);
         return OkPaged(sections, requestQuery);
     }
 
@@ -81,7 +67,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<uint>> AddCourse([FromBody] CourseCreateRequestDto courseCreateRequestDto, CancellationToken cancellationToken)
     {
-        uint newCourseId = await courseService.CreateAsync(courseCreateRequestDto, cancellationToken);
+        uint newCourseId = await courseService.CreateAsync(AuthenticatedUserId, courseCreateRequestDto, cancellationToken);
         return CreatedAtAction(nameof(GetCourseById), new { id = newCourseId }, newCourseId);
     }
 
@@ -93,11 +79,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RemoveCourse(uint id, CancellationToken cancellationToken)
     {
-        bool success = await courseService.RemoveAsync(id, cancellationToken);
-
-        if (!success)
-            return NotFound();
-
+        await courseService.RemoveAsync(AuthenticatedUserId, id, cancellationToken);
         return NoContent();
     }
 
@@ -110,11 +92,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateCourse(uint id, [FromBody] CourseUpdateRequestDto courseUpdateRequestDto, CancellationToken cancellationToken)
     {
-        bool success = await courseService.UpdateAsync(id, courseUpdateRequestDto, cancellationToken);
-
-        if (!success)
-            return NotFound();
-
+        await courseService.UpdateAsync(AuthenticatedUserId, id, courseUpdateRequestDto, cancellationToken);
         return NoContent();
     }
 

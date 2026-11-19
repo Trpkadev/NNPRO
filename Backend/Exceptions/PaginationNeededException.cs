@@ -1,3 +1,3 @@
 ﻿namespace Backend.Exceptions;
 
-public class PaginationNeededException : Exception {}
+public class PaginationNeededException : Exception;

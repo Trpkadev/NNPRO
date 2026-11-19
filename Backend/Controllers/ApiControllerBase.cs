@@ -11,6 +11,8 @@ namespace Backend.Controllers;
 [EnableRateLimiting("PublicGetPolicy")]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
 public class ApiControllerBase : ControllerBase {
+    protected uint AuthenticatedUserId => uint.TryParse(User.FindFirst("sub")?.Value, out uint userId) ? userId : throw ServiceException.Forbidden(Resources.ErrorAuthenticatedUserIdentityInvalid);
+
     protected OkObjectResult Ok<T>(T data, Metadata metadata) => base.Ok(new Wrapper<T>(data, metadata));
 
     protected OkObjectResult OkPaged<T>(T[] items, RequestQuery query)

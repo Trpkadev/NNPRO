@@ -1,5 +1,6 @@
 using Backend.Config;
 using Backend.Data;
+using Backend.Exceptions;
 using Backend.Extensions;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
@@ -22,22 +23,26 @@ public class AdminService(AppDbContext dbContext, IAuthService authService, ITok
         return (userResponses, new Metadata(pagination, query));
     }
 
-    public Task<AdminUserDetailsDto?> GetUserAsync(uint userId, CancellationToken ct) =>
-        dbContext.Users.AsNoTracking()
+    public async Task<AdminUserDetailsDto> GetUserAsync(uint userId, CancellationToken ct)
+    {
+        var user = await dbContext.Users.AsNoTracking()
             .Where(user => user.Id == userId)
             .Select(user => new AdminUserDetailsDto(user.Id, user.Username, user.Email, user.Role.ToString(), user.Enrollments.Count, user.LessonProgresses.Count, user.QuizAttempts.Count, user.RefreshTokens.Count(token => token.RevokedAtUtc == null && token.ExpiresAtUtc > DateTime.UtcNow)))
             .FirstOrDefaultAsync(ct);
+        return user ?? throw ServiceException.NotFound(Resources.ErrorUserNotFound);
+    }
 
-    public async Task<bool> UpdateUserRoleAsync(uint userId, UserRole role, string? adminIp, CancellationToken ct)
+    public async Task UpdateUserRoleAsync(uint userId, UserRole role, string? adminIp, CancellationToken ct)
     {
         if (!Enum.IsDefined(role))
-            throw new ArgumentOutOfRangeException(nameof(role), role, null);
+            throw ServiceException.BadRequest(Resources.ErrorInvalidUserRole);
 
         var user = await dbContext.Users.FirstOrDefaultAsync(candidate => candidate.Id == userId, ct);
         if (user is null)
-            return false;
+            throw ServiceException.NotFound(Resources.ErrorUserNotFound);
+
         if (user.Role == role)
-            return true;
+            return;
 
         var nowUtc = DateTime.UtcNow;
         await using var transaction = await dbContext.Database.BeginTransactionAsync(ct);
@@ -54,42 +59,57 @@ public class AdminService(AppDbContext dbContext, IAuthService authService, ITok
         await transaction.CommitAsync(ct);
 
         await BlacklistUnexpiredAccessTokensAsync(userId, nowUtc, ct);
-        return true;
     }
 
-    public async Task<(AdminSessionResponseDto[] Sessions, Metadata Metadata)?> GetSessionsAsync(uint userId, RequestQuery query, CancellationToken ct)
+    public async Task<(AdminSessionResponseDto[] Sessions, Metadata Metadata)> GetSessionsAsync(uint userId, RequestQuery query, CancellationToken ct)
     {
         bool userExists = await dbContext.Users.AsNoTracking().AnyAsync(user => user.Id == userId, ct);
         if (!userExists)
-            return null;
+            throw ServiceException.NotFound(Resources.ErrorUserNotFound);
 
         var nowUtc = DateTime.UtcNow;
         bool useDefaultSort = string.IsNullOrWhiteSpace(query.SortBy) || string.Equals(query.SortBy, "Id", StringComparison.OrdinalIgnoreCase);
         string sortBy = (useDefaultSort ? nameof(AdminSessionResponseDto.CreatedAtUtc) : query.SortBy) ?? "Id";
         bool descending = useDefaultSort || (query.Descending ?? false);
+        var filters = query.Filters.ToDictionary(filter => string.Equals(filter.Key, nameof(AdminSessionResponseDto.SessionId), StringComparison.OrdinalIgnoreCase) ? nameof(RefreshToken.TokenFamilyId) : filter.Key, filter => filter.Value, StringComparer.OrdinalIgnoreCase);
 
-        var effectiveQuery = new RequestQuery {
+        query = new RequestQuery {
             Page = query.Page,
             PageSize = query.PageSize,
             SortBy = sortBy,
             Descending = descending,
-            Filters = query.Filters
+            Filters = filters
         };
-        var filters = query.Filters.ToDictionary(filter => string.Equals(filter.Key, nameof(AdminSessionResponseDto.SessionId), StringComparison.OrdinalIgnoreCase) ? nameof(RefreshToken.TokenFamilyId) : filter.Key, filter => filter.Value, StringComparer.OrdinalIgnoreCase);
         string entitySortBy = string.Equals(sortBy, nameof(AdminSessionResponseDto.SessionId), StringComparison.OrdinalIgnoreCase) ? nameof(RefreshToken.TokenFamilyId) : sortBy;
         var sessionsQuery = dbContext.RefreshTokens.AsNoTracking()
             .Where(token => token.UserId == userId && token.RevokedAtUtc == null && token.ExpiresAtUtc > nowUtc)
             .Filter(filters)
             .OrderByProperty(new SortingMetadata { SortBy = entitySortBy, IsDescending = descending });
-        var (sessions, pagination) = await sessionsQuery.ToPagedResultAsync(effectiveQuery, databaseLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
+        var (sessions, pagination) = await sessionsQuery.ToPagedResultAsync(query, databaseLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
 
         AdminSessionResponseDto[] sessionResponses = [.. sessions.Select(token => new AdminSessionResponseDto(token.TokenFamilyId, token.DeviceName, token.UserAgent, token.CreatedByIp, token.CreatedAtUtc, token.ExpiresAtUtc))];
-        return (sessionResponses, new Metadata(pagination, effectiveQuery));
+        return (sessionResponses, new Metadata(pagination, query));
     }
 
-    public Task<bool> RevokeSessionAsync(uint userId, Guid sessionId, string? adminIp, CancellationToken ct) => authService.RevokeSessionFamilyAsync(userId, sessionId, adminIp, "Revoked by administrator", ct);
+    public async Task RevokeSessionAsync(uint userId, Guid sessionId, string? adminIp, CancellationToken ct)
+    {
+        await EnsureUserExistsAsync(userId, ct);
+        bool revoked = await authService.RevokeSessionFamilyAsync(userId, sessionId, adminIp, "Revoked by administrator", ct);
+        if (!revoked)
+            throw ServiceException.NotFound(Resources.ErrorSessionNotFound);
+    }
 
-    public Task<bool> RevokeAllSessionsAsync(uint userId, string? adminIp, CancellationToken ct) => authService.RevokeAllSessionsAsync(userId, adminIp, ct);
+    public async Task RevokeAllSessionsAsync(uint userId, string? adminIp, CancellationToken ct)
+    {
+        await EnsureUserExistsAsync(userId, ct);
+        await authService.RevokeAllSessionsAsync(userId, adminIp, ct);
+    }
+
+    private async Task EnsureUserExistsAsync(uint userId, CancellationToken ct)
+    {
+        if (!await dbContext.Users.AsNoTracking().AnyAsync(user => user.Id == userId, ct))
+            throw ServiceException.NotFound(Resources.ErrorUserNotFound);
+    }
 
     private async Task BlacklistUnexpiredAccessTokensAsync(uint userId, DateTime nowUtc, CancellationToken ct)
     {

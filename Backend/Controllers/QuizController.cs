@@ -1,7 +1,7 @@
 ﻿using Backend.Extensions;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
-using Backend.Models.Entities;
+using Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,17 +11,13 @@ namespace Backend.Controllers;
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
 [Route("api/quizzes")]
 [Tags("Quizzes")]
-public class QuizController : ApiControllerBase {
+public class QuizController(IQuizService quizService) : ApiControllerBase {
     [HttpGet("{quizId:uint}")]
     [Authorize]
     [EndpointSummary("Get quiz detail")]
     [ProducesResponseType<Wrapper<QuizResponseDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<QuizResponseDto>> GetQuiz(uint quizId, CancellationToken cancellationToken)
-    {
-        await Task.CompletedTask;
-        return Ok(new QuizResponseDto(quizId, "Dummy Quiz", null, null, 75.0m, 1));
-    }
+    public async Task<ActionResult<QuizResponseDto>> GetQuiz(uint quizId, CancellationToken cancellationToken) => Ok(await quizService.GetByIdAsync(quizId, cancellationToken));
 
     [HttpGet("{quizId:uint}/questions")]
     [Authorize]
@@ -32,11 +28,7 @@ public class QuizController : ApiControllerBase {
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<QuestionResponseDto[]>> GetQuestions(uint quizId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        await Task.CompletedTask;
-        var questions = new[] {
-            new QuestionResponseDto(1, "Dummy question?", null, QuestionType.SingleChoice, 1, quizId),
-            new QuestionResponseDto(2, "Choose all that apply.", null, QuestionType.MultipleChoice, 2, quizId)
-        };
+        var questions = await quizService.GetQuestionsAsync(quizId, cancellationToken);
         return OkPaged(questions, requestQuery);
     }
 
@@ -45,10 +37,10 @@ public class QuizController : ApiControllerBase {
     [EndpointSummary("Create a quiz")]
     [ProducesResponseType<Wrapper<uint>>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<uint>> CreateQuiz([FromBody] CreateQuizRequestDto requestDto, CancellationToken cancellationToken)
     {
-        await Task.CompletedTask;
-        const uint newQuizId = 1;
+        uint newQuizId = await quizService.CreateAsync(AuthenticatedUserId, requestDto, cancellationToken);
         return CreatedAtAction(nameof(GetQuiz), new { quizId = newQuizId }, newQuizId);
     }
 
@@ -60,7 +52,7 @@ public class QuizController : ApiControllerBase {
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateQuiz(uint quizId, [FromBody] CreateQuizRequestDto requestDto, CancellationToken cancellationToken)
     {
-        await Task.CompletedTask;
+        await quizService.UpdateAsync(AuthenticatedUserId, quizId, requestDto, cancellationToken);
         return NoContent();
     }
 
@@ -71,7 +63,7 @@ public class QuizController : ApiControllerBase {
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteQuiz(uint quizId, CancellationToken cancellationToken)
     {
-        await Task.CompletedTask;
+        await quizService.DeleteAsync(AuthenticatedUserId, quizId, cancellationToken);
         return NoContent();
     }
 
@@ -80,11 +72,7 @@ public class QuizController : ApiControllerBase {
     [EndpointSummary("Get quiz data for editor")]
     [ProducesResponseType<Wrapper<QuizResponseDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<QuizResponseDto>> GetQuizEditor(uint quizId, CancellationToken cancellationToken)
-    {
-        await Task.CompletedTask;
-        return Ok(new QuizResponseDto(quizId, "Dummy Quiz", 1, null, 75.0m, 1));
-    }
+    public async Task<ActionResult<QuizResponseDto>> GetQuizEditor(uint quizId, CancellationToken cancellationToken) => Ok(await quizService.GetForEditorAsync(AuthenticatedUserId, quizId, cancellationToken));
 
     [HttpGet("{quizId:uint}/attempts")]
     [Authorize(Roles = "Admin,Instructor")]
@@ -92,13 +80,10 @@ public class QuizController : ApiControllerBase {
     [EndpointSummary("Get all attempts for a quiz")]
     [ProducesResponseType<Wrapper<QuizAttemptResponseDto[]>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<QuizAttemptResponseDto[]>> GetAttempts(uint quizId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        await Task.CompletedTask;
-        var attempts = new[] {
-            new QuizAttemptResponseDto(1, quizId, 1, DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(-1).AddMinutes(20), 85.0m, true),
-            new QuizAttemptResponseDto(2, quizId, 2, DateTime.UtcNow, null, 0, false)
-        };
+        var attempts = await quizService.GetAttemptsAsync(AuthenticatedUserId, quizId, cancellationToken);
         return OkPaged(attempts, requestQuery);
     }
 
@@ -108,13 +93,10 @@ public class QuizController : ApiControllerBase {
     [EndpointSummary("Get my quiz attempts")]
     [ProducesResponseType<Wrapper<MyQuizAttemptResponseDto[]>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<MyQuizAttemptResponseDto[]>> GetMyAttempts(uint quizId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        await Task.CompletedTask;
-        var attempts = new[] {
-            new MyQuizAttemptResponseDto(1, DateTime.UtcNow.AddDays(-1), DateTime.UtcNow.AddDays(-1).AddMinutes(20), 85.0m, true),
-            new MyQuizAttemptResponseDto(2, DateTime.UtcNow, null, 0, false)
-        };
+        var attempts = await quizService.GetMyAttemptsAsync(AuthenticatedUserId, quizId, cancellationToken);
         return OkPaged(attempts, requestQuery);
     }
 
@@ -123,33 +105,29 @@ public class QuizController : ApiControllerBase {
     [EndpointSummary("Get specific quiz attempt")]
     [ProducesResponseType<Wrapper<QuizAttemptResponseDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<QuizAttemptResponseDto>> GetAttempt(uint attemptId, CancellationToken cancellationToken)
-    {
-        await Task.CompletedTask;
-        return Ok(new QuizAttemptResponseDto(attemptId, 1, 1, DateTime.UtcNow, null, 0, false));
-    }
+    public async Task<ActionResult<QuizAttemptResponseDto>> GetAttempt(uint attemptId, CancellationToken cancellationToken) => Ok(await quizService.GetAttemptAsync(AuthenticatedUserId, attemptId, cancellationToken));
 
     [HttpPost("attempt/start")]
     [Authorize(Roles = "Student")]
     [EndpointSummary("Start a quiz attempt")]
     [ProducesResponseType<Wrapper<uint>>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<uint>> StartAttempt([FromBody] StartAttemptRequestDto requestDto, CancellationToken cancellationToken)
     {
-        await Task.CompletedTask;
-        const uint newAttemptId = 1;
+        uint newAttemptId = await quizService.StartAttemptAsync(AuthenticatedUserId, requestDto, cancellationToken);
         return CreatedAtAction(nameof(GetAttempt), new { attemptId = newAttemptId }, newAttemptId);
     }
 
     [HttpPost("attempt/end")]
     [Authorize(Roles = "Student")]
     [EndpointSummary("Submit and end a quiz attempt")]
+    [EndpointDescription("AnswersJson must be a JSON object mapping question IDs to arrays of selected option IDs.")]
     [ProducesResponseType<Wrapper<QuizAttemptResponseDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<QuizAttemptResponseDto>> EndAttempt([FromBody] EndAttemptRequestDto requestDto, CancellationToken cancellationToken)
-    {
-        await Task.CompletedTask;
-        return Ok(new QuizAttemptResponseDto(requestDto.AttemptId, 1, 1, DateTime.UtcNow, DateTime.UtcNow, 100.0m, true));
-    }
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<QuizAttemptResponseDto>> EndAttempt([FromBody] EndAttemptRequestDto requestDto, CancellationToken cancellationToken) => Ok(await quizService.EndAttemptAsync(AuthenticatedUserId, requestDto, cancellationToken));
 }

@@ -1,5 +1,6 @@
 using Backend.Config;
 using Backend.Data;
+using Backend.Exceptions;
 using Backend.Extensions;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
@@ -11,12 +12,13 @@ using Microsoft.Extensions.Options;
 namespace Backend.Services;
 
 public class CourseService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions> dbLimitsOptions) : ICourseService {
-    public async Task<CourseResponseDto?> GetByIdAsync(uint id, CancellationToken ct)
+    public async Task<CourseResponseDto> GetByIdAsync(uint id, CancellationToken ct)
     {
-        return await dbContext.Courses.AsNoTracking()
+        var course = await dbContext.Courses.AsNoTracking()
             .Where(x => x.Id == id)
             .Select(x => new CourseResponseDto(x.Id, x.Title, x.Description))
             .FirstOrDefaultAsync(ct);
+        return course ?? throw ServiceException.NotFound(Resources.ErrorCourseNotFound);
     }
 
     public async Task<(CourseResponseDto[] Courses, Metadata Metadata)> GetAsync(RequestQuery requestDto, CancellationToken ct)
@@ -50,13 +52,21 @@ public class CourseService(AppDbContext dbContext, IOptions<DatabaseLimitsOption
         return (thumbnails, new Metadata(paginationMetadata, requestDto));
     }
 
-    public async Task<uint> CreateAsync(CourseCreateRequestDto requestDto, CancellationToken ct)
+    public async Task<uint> CreateAsync(uint requestingUserId, CourseCreateRequestDto requestDto, CancellationToken ct)
     {
+        var user = await dbContext.Users.FirstOrDefaultAsync(candidate => candidate.Id == requestingUserId, ct);
+        if (user is null)
+            throw ServiceException.NotFound(Resources.ErrorUserNotFound);
+        if (user.Role is not (UserRole.Admin or UserRole.Instructor))
+            throw ServiceException.Forbidden(Resources.ErrorCreateCourseForbidden);
+
         Course course = new() {
             AccessKey = requestDto.AccessKey,
             Description = requestDto.Description,
             Title = requestDto.Title
         };
+        if (user.Role == UserRole.Instructor)
+            course.Instructors.Add(user);
 
         dbContext.Courses.Add(course);
         await dbContext.SaveChangesAsync(ct);
@@ -64,21 +74,45 @@ public class CourseService(AppDbContext dbContext, IOptions<DatabaseLimitsOption
         return course.Id;
     }
 
-    public async Task<bool> RemoveAsync(uint id, CancellationToken ct)
+    public async Task RemoveAsync(uint requestingUserId, uint id, CancellationToken ct)
     {
-        int deletedRows = await dbContext.Courses.Where(c => c.Id == id).ExecuteDeleteAsync(ct);
-        return deletedRows > 0;
+        await CourseAuthorization.EnsureCanManageCourseAsync(dbContext, requestingUserId, id, ct);
+        await dbContext.Courses.Where(c => c.Id == id).ExecuteDeleteAsync(ct);
     }
 
-    public async Task<bool> UpdateAsync(uint id, CourseUpdateRequestDto requestDto, CancellationToken ct)
+    public async Task UpdateAsync(uint requestingUserId, uint id, CourseUpdateRequestDto requestDto, CancellationToken ct)
     {
-        int updatedRows = await dbContext.Courses.Where(c => c.Id == id)
+        await CourseAuthorization.EnsureCanManageCourseAsync(dbContext, requestingUserId, id, ct);
+        await dbContext.Courses.Where(c => c.Id == id)
             .ExecuteUpdateAsync(setters => setters
                     .SetProperty(c => c.Title, requestDto.Title)
                     .SetProperty(c => c.Description, requestDto.Description)
                     .SetProperty(c => c.AccessKey, requestDto.AccessKey),
                 ct);
+    }
 
-        return updatedRows > 0;
+    public async Task<CourseInstructorResponseDto[]> GetInstructorsAsync(uint courseId, CancellationToken ct)
+    {
+        if (!await dbContext.Courses.AnyAsync(course => course.Id == courseId, ct))
+            throw ServiceException.NotFound(Resources.ErrorCourseNotFound);
+
+        return await dbContext.Courses.AsNoTracking()
+            .Where(course => course.Id == courseId)
+            .SelectMany(course => course.Instructors.OrderBy(instructor => instructor.Id)
+                .Select(instructor => new CourseInstructorResponseDto(instructor.Id, instructor.Username)))
+            .ToArrayAsync(ct);
+    }
+
+    public async Task<SectionResponseDto[]> GetSectionsAsync(uint courseId, CancellationToken ct)
+    {
+        if (!await dbContext.Courses.AnyAsync(course => course.Id == courseId, ct))
+            throw ServiceException.NotFound(Resources.ErrorCourseNotFound);
+
+        return await dbContext.Sections.AsNoTracking()
+            .Where(section => section.CourseId == courseId)
+            .OrderBy(section => section.Order)
+            .ThenBy(section => section.Id)
+            .Select(section => new SectionResponseDto(section.Id, section.Title, section.Order, section.CourseId))
+            .ToArrayAsync(ct);
     }
 }

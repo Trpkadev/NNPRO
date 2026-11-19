@@ -30,7 +30,7 @@ public class AdminController(IAdminService adminService) : ApiControllerBase {
     public async Task<IActionResult> GetUser(uint userId, CancellationToken cancellationToken)
     {
         var user = await adminService.GetUserAsync(userId, cancellationToken);
-        return user is null ? NotFound() : Ok(user);
+        return Ok(user);
     }
 
     [HttpPut("users/{userId:uint}/role")]
@@ -40,9 +40,8 @@ public class AdminController(IAdminService adminService) : ApiControllerBase {
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateUserRole(uint userId, [FromBody] UpdateUserRoleRequestDto request, CancellationToken cancellationToken)
     {
-        bool userExists = await adminService.UpdateUserRoleAsync(userId, request.Role, HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
-
-        return userExists ? NoContent() : NotFound();
+        await adminService.UpdateUserRoleAsync(userId, request.Role, HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
+        return NoContent();
     }
 
     [HttpGet("users/{userId:uint}/sessions")]
@@ -53,7 +52,7 @@ public class AdminController(IAdminService adminService) : ApiControllerBase {
     public async Task<IActionResult> GetSessions(uint userId, [FromQuery] RequestQuery query, CancellationToken cancellationToken)
     {
         var result = await adminService.GetSessionsAsync(userId, query, cancellationToken);
-        return result is null ? NotFound() : Ok(result.Value.Sessions, result.Value.Metadata);
+        return Ok(result.Sessions, result.Metadata);
     }
 
     [HttpDelete("users/{userId:uint}/sessions/{sessionId:guid}")]
@@ -63,9 +62,8 @@ public class AdminController(IAdminService adminService) : ApiControllerBase {
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RevokeSession(uint userId, Guid sessionId, CancellationToken cancellationToken)
     {
-        bool sessionExists = await adminService.RevokeSessionAsync(userId, sessionId, HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
-
-        return sessionExists ? NoContent() : NotFound();
+        await adminService.RevokeSessionAsync(userId, sessionId, HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
+        return NoContent();
     }
 
     [HttpDelete("users/{userId:uint}/sessions")]
@@ -75,8 +73,7 @@ public class AdminController(IAdminService adminService) : ApiControllerBase {
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RevokeAllSessions(uint userId, CancellationToken cancellationToken)
     {
-        bool userExists = await adminService.RevokeAllSessionsAsync(userId, HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
-
-        return userExists ? NoContent() : NotFound();
+        await adminService.RevokeAllSessionsAsync(userId, HttpContext.Connection.RemoteIpAddress?.ToString(), cancellationToken);
+        return NoContent();
     }
 }
