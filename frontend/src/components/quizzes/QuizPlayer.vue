@@ -53,10 +53,10 @@ async function submitAttempt() {
   if (endAttemptMutation.isPending.value) return
   errorMessage.value = null
 
-  const answersPayload = props.questions.map((q) => ({
-    questionId: q.id,
-    selectedOptionIds: selectedAnswers[q.id] ?? [],
-  }))
+  // answer payload = { "questionId": [selectedOptionIds], "questionId": [selectedOptionIds] ... }
+  const answersPayload: Record<QuestionResponseDto['id'], AnswerOptionResponseDto['id'][]> = Object.fromEntries(
+    props.questions.map((q) => [q.id, selectedAnswers[q.id] ?? []]),
+  )
 
   try {
     const result = await endAttemptMutation.mutateAsync({
