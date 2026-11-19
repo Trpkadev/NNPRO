@@ -109,7 +109,6 @@ const onSubmit = handleSubmit(async (formValues) => {
           id="username"
           v-model="username"
           v-bind="usernameAttrs"
-          :placeholder="t('auth.usernamePlaceholder')"
           :invalid="!!errors.username"
           autocomplete="username"
           class="w-full"
@@ -128,7 +127,6 @@ const onSubmit = handleSubmit(async (formValues) => {
           v-model="email"
           v-bind="emailAttrs"
           type="email"
-          :placeholder="t('auth.emailPlaceholder')"
           :invalid="!!errors.email"
           autocomplete="email"
           class="w-full"
@@ -146,7 +144,6 @@ const onSubmit = handleSubmit(async (formValues) => {
           input-id="reg-password"
           v-model="password"
           v-bind="passwordAttrs"
-          :placeholder="t('auth.passwordPlaceholder')"
           toggle-mask
           :invalid="!!errors.password"
           autocomplete="new-password"
@@ -165,7 +162,6 @@ const onSubmit = handleSubmit(async (formValues) => {
           input-id="confirm-password"
           v-model="confirmPassword"
           v-bind="confirmPasswordAttrs"
-          :placeholder="t('auth.confirmPasswordPlaceholder')"
           :feedback="false"
           toggle-mask
           :invalid="!!errors.confirmPassword"

@@ -1,160 +1,217 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useConfirm } from 'openvue/useconfirm'
+import { useToast } from 'openvue/usetoast'
 import { getApiErrorMessage } from '@/services/api'
-import { useCourseDetailQuery } from '@/composables/useCoursesQueries'
-import { useCourseContent } from '@/composables/useCourseContent'
-import { useLessonProgress } from '@/composables/useLessonProgress'
-import CourseHeader from '@/components/courses/CourseHeader.vue'
-import CourseSections from '@/components/courses/CourseSections.vue'
-import CourseProgress from '@/components/courses/CourseProgress.vue'
-import LessonList from '@/components/courses/LessonList.vue'
-import LessonDetail from '@/components/courses/LessonDetail.vue'
-import LessonNavigation from '@/components/courses/LessonNavigation.vue'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
+const confirm = useConfirm()
+const toast = useToast()
+const authStore = useAuthStore()
+const { canManageCourses } = usePermissions()
 
-const courseId = computed(() => {
-  const value = route.params.id
-  if (typeof value !== 'string' || !/^[1-9]\d*$/.test(value)) return 0
-
-  const id = Number(value)
-  return Number.isSafeInteger(id) ? id : 0
-})
+const courseId = computed(() => Number(route.params.id))
 
 const {
   data: course,
   isLoading: courseLoading,
-  isError: courseIsError,
-  error: courseError,
+  isError: courseError,
+  error: courseErrorObj,
 } = useCourseDetailQuery(courseId)
 
-const {
-  sections,
-  lessons,
-  selectedLesson,
-  selectedSectionId,
-  selectedLessonId,
-  sectionsLoading,
-  sectionsIsError,
-  lessonsLoading,
-  lessonsIsError,
-  lessonLoading,
-  lessonIsError,
-  selectSection,
-  openLesson,
-  startLearning,
-} = useCourseContent(courseId)
+const { data: instructorsResponse } = useCourseInstructorsQuery(courseId, {
+  Page: 1,
+  PageSize: 20,
+})
 
-const lessonIds = computed(() => lessons.value.map((lesson) => lesson.id))
+const sectionsPage = ref(1)
+const { data: sectionsResponse, isLoading: sectionsLoading } = useCourseSectionsQuery(
+  courseId,
+  computed(() => ({
+    Page: sectionsPage.value,
+    PageSize: 20,
+    SortBy: 'Order',
+    Descending: false,
+  })),
+)
 
-const {
-  completedLessons,
-  completedCount,
-  progressPercent,
-  pendingLessonId,
-  progressError,
-  progressLoading,
-  progressLoadError,
-  retryProgress,
-  toggleLesson,
-} = useLessonProgress(lessonIds, courseId)
+const { data: myCoursesResponse } = useMyCoursesQuery({ Page: 1, PageSize: 100 })
+const { data: myProgressResponse } = useMyProgressQuery({ Page: 1, PageSize: 100 })
+
+const unenrollMutation = useUnenrollCourseMutation()
+
+const instructors = computed(() => instructorsResponse.value?.data ?? [])
+const sections = computed(() =>
+  [...(sectionsResponse.value?.data ?? [])].sort((a, b) => a.order - b.order),
+)
+const sectionsPagination = computed(() => sectionsResponse.value?.metadata?.pagination ?? null)
+
+const isEnrolled = computed(() =>
+  (myCoursesResponse.value?.data ?? []).some((c) => c.id === courseId.value),
+)
+
+const completedLessonIds = computed(() => {
+  const ids = new Set<number>()
+  for (const item of myProgressResponse.value?.data ?? []) {
+    if (item.courseId === courseId.value && item.isCompleted) {
+      ids.add(item.lessonId)
+    }
+  }
+  return ids
+})
+
+const sectionLessonIdsMap = reactive<Record<number, number[]>>({})
+
+function handleSectionLessonsLoaded(sectionId: number, lessonIds: number[]) {
+  sectionLessonIdsMap[sectionId] = lessonIds
+}
+
+const areAllSectionsLoaded = computed(
+  () =>
+    sections.value.length > 0 &&
+    sections.value.every((s) => sectionLessonIdsMap[s.id] !== undefined),
+)
+
+const courseLessonIds = computed(() => {
+  const allIds = new Set<number>()
+  for (const s of sections.value) {
+    for (const id of sectionLessonIdsMap[s.id] ?? []) {
+      allIds.add(id)
+    }
+  }
+  return allIds
+})
+
+const totalCourseLessons = computed(() => courseLessonIds.value.size)
+
+const completedCount = computed(() => {
+  let count = 0
+  for (const id of courseLessonIds.value) {
+    if (completedLessonIds.value.has(id)) count += 1
+  }
+  return count
+})
+
+const progressPercent = computed(() => {
+  if (!areAllSectionsLoaded.value || totalCourseLessons.value === 0) return 0
+  return Math.min(100, Math.round((completedCount.value / totalCourseLessons.value) * 100))
+})
+
+const enrollDialogVisible = ref(false)
+
+function handleUnenroll() {
+  confirm.require({
+    header: t('courses.unenrollBtn'),
+    message: t('courses.unenrollConfirm'),
+    acceptLabel: t('common.yes'),
+    rejectLabel: t('common.no'),
+    acceptProps: { severity: 'danger' },
+    accept: async () => {
+      try {
+        await unenrollMutation.mutateAsync(courseId.value)
+        toast.add({
+          severity: 'info',
+          summary: t('courses.unenrollSuccess'),
+          life: 3000,
+        })
+      } catch (err) {
+        toast.add({
+          severity: 'error',
+          summary: getApiErrorMessage(err),
+          life: 4000,
+        })
+      }
+    },
+  })
+}
 </script>
 
 <template>
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-    <Button
-      :label="t('courses.backToCatalog')"
-      icon="pi pi-arrow-left"
-      text
-      severity="secondary"
-      @click="router.push('/home')"
-    />
+  <div class="space-y-6">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <Button
+        :label="t('courses.backToCatalog')"
+        icon="oi oi-arrow-left"
+        severity="secondary"
+        text
+        size="small"
+        @click="router.push({ name: 'home' })"
+      />
 
-    <Message v-if="courseId === 0" severity="warn" :closable="false">
-      {{ t('courses.courseNotFound') }}
-    </Message>
+      <Button
+        v-if="canManageCourses"
+        :label="t('courses.manageInStudio')"
+        icon="oi oi-cog"
+        severity="warn"
+        outlined
+        size="small"
+        @click="router.push({ name: 'instructor-course-editor', params: { id: courseId } })"
+      />
+    </div>
 
-    <Skeleton v-else-if="courseLoading" height="12rem" />
+    <div v-if="courseLoading" class="space-y-4">
+      <Skeleton height="10rem" class="rounded-2xl" />
+      <Skeleton height="14rem" class="rounded-2xl" />
+    </div>
 
-    <Message v-else-if="courseIsError" severity="error" :closable="false">
-      {{ getApiErrorMessage(courseError, t('courses.loadError')) }}
+    <Message v-else-if="courseError" severity="error" :closable="false">
+      {{ getApiErrorMessage(courseErrorObj, t('courses.loadError')) }}
     </Message>
 
     <template v-else-if="course">
-      <CourseHeader
-        :title="course.title"
-        :description="course.description"
-        :can-start="lessons.length > 0"
-        @start="startLearning"
+      <CourseOverviewCard
+        :course="course"
+        :instructors="instructors"
+        :is-enrolled="isEnrolled"
+        :is-student="authStore.isStudent"
+        :unenroll-pending="unenrollMutation.isPending.value"
+        :show-progress="areAllSectionsLoaded && totalCourseLessons > 0"
+        :completed-count="completedCount"
+        :total-course-lessons="totalCourseLessons"
+        :progress-percent="progressPercent"
+        @enroll="enrollDialogVisible = true"
+        @unenroll="handleUnenroll"
       />
 
       <section class="space-y-4">
-        <Skeleton v-if="sectionsLoading || lessonsLoading" height="8rem" />
+        <h2 class="text-lg font-bold">{{ t('courses.curriculum') }}</h2>
 
-        <Message v-else-if="sectionsIsError || lessonsIsError" severity="error" :closable="false">
-          {{ t('courses.loadError') }}
-        </Message>
+        <div v-if="sectionsLoading" class="space-y-3">
+          <Skeleton v-for="n in 3" :key="n" height="5rem" class="rounded-2xl" />
+        </div>
 
-        <template v-else>
-          <CourseSections
-            :sections="sections"
-            :selected-section-id="selectedSectionId"
-            @select="selectSection"
+        <div
+          v-else-if="sections.length === 0"
+          class="p-8 rounded-2xl bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 text-center text-surface-500 text-sm"
+        >
+          {{ t('courses.noSections') }}
+        </div>
+
+        <div v-else class="space-y-3">
+          <CourseSectionItem
+            v-for="(section, idx) in sections"
+            :key="section.id"
+            :section="section"
+            :course-id="courseId"
+            :completed-lesson-ids="completedLessonIds"
+            :initially-expanded="idx === 0"
+            @lessons-loaded="handleSectionLessonsLoaded"
           />
 
-          <CourseProgress
-            v-if="lessons.length > 0 && !progressLoading && !progressLoadError"
-            :completed="completedCount"
-            :total="lessons.length"
-            :percentage="progressPercent"
+          <PaginationControls
+            :pagination="sectionsPagination"
+            :loading="sectionsLoading"
+            @update:page="sectionsPage = $event"
           />
-
-          <Message v-if="progressLoadError" severity="error" :closable="false">
-            {{ t('courses.progressError') }}
-            <Button
-              :label="t('courses.retryProgress')"
-              size="small"
-              text
-              @click="retryProgress()"
-            />
-          </Message>
-
-          <Message v-else-if="progressError" severity="error" :closable="false">
-            {{ t('courses.progressError') }}
-          </Message>
-
-          <LessonList
-            :lessons="lessons"
-            :selected-lesson-id="selectedLessonId"
-            :completed-lessons="completedLessons"
-            :pending-lesson-id="pendingLessonId"
-            :progress-unavailable="progressLoading || progressLoadError"
-            @select="openLesson"
-            @toggle="toggleLesson"
-          />
-
-          <Message v-if="sections.length === 0" severity="info" :closable="false">
-            {{ t('courses.empty') }}
-          </Message>
-        </template>
+        </div>
       </section>
 
-      <div v-if="selectedLessonId !== null" class="space-y-4">
-        <LessonDetail :lesson="selectedLesson" :loading="lessonLoading" :error="lessonIsError" />
-
-        <LessonNavigation
-          :lessons="lessons"
-          :selected-lesson-id="selectedLessonId"
-          @select="openLesson"
-        />
-      </div>
+      <EnrollDialog
+        v-model:visible="enrollDialogVisible"
+        :course-id="course.id"
+        :course-title="course.title"
+      />
     </template>
-
-    <Message v-else severity="warn" :closable="false">
-      {{ t('courses.courseNotFound') }}
-    </Message>
   </div>
 </template>

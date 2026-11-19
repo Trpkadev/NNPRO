@@ -64,4 +64,3 @@ export const adminService = {
     await api.delete(`/api/admin/users/${userId}/sessions/${sessionId}`)
   },
 }
-

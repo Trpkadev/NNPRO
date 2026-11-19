@@ -12,6 +12,8 @@ export interface JwtPayload {
   iat: number
   /** Uživatelské jméno (user.username) */
   name: string
+  /** Volitelný e-mail uživatele */
+  email?: string
   /** Role uživatele (user.role) */
   role: UserRole
   /** Čas vypršení platnosti tokenu (expiresAt - Unix timestamp v sekundách) */
@@ -25,6 +27,7 @@ export interface JwtPayload {
 export interface AuthenticatedUser {
   id: number
   username: string
+  email: string
   role: UserRole
 }
 

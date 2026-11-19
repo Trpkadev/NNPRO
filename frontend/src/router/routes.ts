@@ -3,7 +3,7 @@ import { UserRoles } from '@/types/api'
 import '@/types/auth'
 
 export const routes: RouteRecordRaw[] = [
-  // Přihlášení a registrace
+  // Autentizační routy (AuthLayout)
   {
     path: '/auth',
     component: () => import('@/layouts/AuthLayout.vue'),
@@ -24,32 +24,44 @@ export const routes: RouteRecordRaw[] = [
     ],
   },
 
-  // Hlavní aplikace
+  // Hlavní aplikační routy (MainLayout)
   {
     path: '/',
     component: () => import('@/layouts/MainLayout.vue'),
     meta: { requiresAuth: true, layout: 'main' },
     children: [
-      // Přesměrování na homepage
       {
         path: '',
-        redirect: { name: 'home' },
-      },
-      {
-        path: 'home',
         name: 'home',
         component: () => import('@/views/HomeView.vue'),
         meta: { requiresAuth: true, layout: 'main' },
       },
-      // Detail kurzu
+      {
+        path: 'profile',
+        name: 'profile',
+        component: () => import('@/views/ProfileView.vue'),
+        meta: { requiresAuth: true, layout: 'main' },
+      },
       {
         path: 'courses/:id',
         name: 'course-detail',
         component: () => import('@/views/courses/CourseDetailView.vue'),
         meta: { requiresAuth: true, layout: 'main' },
       },
+      {
+        path: 'courses/:courseId/lessons/:lessonId',
+        name: 'lesson-detail',
+        component: () => import('@/views/courses/LessonDetailView.vue'),
+        meta: { requiresAuth: true, layout: 'main' },
+      },
+      {
+        path: 'courses/:courseId/quizzes/:quizId',
+        name: 'quiz-detail',
+        component: () => import('@/views/courses/QuizDetailView.vue'),
+        meta: { requiresAuth: true, layout: 'main' },
+      },
 
-      // Lektorská sekce
+      // Lektorská sekce (RBAC: Instructor, Admin)
       {
         path: 'instructor',
         component: () => import('@/layouts/InstructorLayout.vue'),
@@ -69,10 +81,20 @@ export const routes: RouteRecordRaw[] = [
               layout: 'instructor',
             },
           },
+          {
+            path: 'courses/:id',
+            name: 'instructor-course-editor',
+            component: () => import('@/views/instructor/InstructorCourseEditorView.vue'),
+            meta: {
+              requiresAuth: true,
+              roles: [UserRoles.Instructor, UserRoles.Admin],
+              layout: 'instructor',
+            },
+          },
         ],
       },
 
-      // Administrátorská sekce
+      // Administrační sekce (RBAC: Admin)
       {
         path: 'admin',
         component: () => import('@/layouts/AdminLayout.vue'),
@@ -95,7 +117,7 @@ export const routes: RouteRecordRaw[] = [
         ],
       },
 
-      // Přístup odepřen
+      // 403 Přístup odepřen
       {
         path: 'forbidden',
         name: 'forbidden',
@@ -105,7 +127,7 @@ export const routes: RouteRecordRaw[] = [
     ],
   },
 
-  // Stránka nenalezena
+  // Záchytná routa pro 404 (Not Found)
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',

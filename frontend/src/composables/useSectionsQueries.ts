@@ -1,11 +1,7 @@
 import type { MaybeRefOrGetter } from 'vue'
 import { sectionsService } from '@/services/sections.service'
 import { queryKeys } from './queryKeys'
-import type {
-  CreateSectionRequestDto,
-  QueryParameters,
-  UpdateSectionRequestDto,
-} from '@/types/api'
+import type { CreateSectionRequestDto, QueryParameters, UpdateSectionRequestDto } from '@/types/api'
 
 export function useSectionDetailQuery(
   sectionId: MaybeRefOrGetter<number>,

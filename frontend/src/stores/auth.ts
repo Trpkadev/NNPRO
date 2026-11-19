@@ -1,8 +1,4 @@
-import {
-  decodeJwtUser,
-  isAuthInvalidError,
-  isTokenValid,
-} from '@/services/api'
+import { decodeJwtUser, isAuthInvalidError, isTokenValid } from '@/services/api'
 import { authService } from '@/services/auth.service'
 import {
   UserRoles,
@@ -21,11 +17,17 @@ export const useAuthStore = defineStore('auth', () => {
   // Access token držíme výhradně v paměti (ne v localStorage)
   const token = ref<string | null>(null)
   const expiresAtUtc = ref<string | null>(null)
+  const knownEmail = ref<string>('')
   const isInitialized = ref(false)
 
   const user = computed<AuthenticatedUser | null>(() => {
     if (!token.value) return null
-    return decodeJwtUser(token.value)
+    const decoded = decodeJwtUser(token.value)
+    if (!decoded) return null
+    return {
+      ...decoded,
+      email: decoded.email || knownEmail.value,
+    }
   })
 
   const isAuthenticated = computed(
@@ -61,17 +63,26 @@ export const useAuthStore = defineStore('auth', () => {
   function clearAuth() {
     token.value = null
     expiresAtUtc.value = null
+    knownEmail.value = ''
     localStorage.removeItem(HAS_SESSION_KEY)
+  }
+
+  function setKnownEmail(email: string) {
+    knownEmail.value = email.trim()
   }
 
   async function login(payload: LoginRequestDto): Promise<AuthResponseDto> {
     const authData = await authService.login(payload)
+    if (payload.email) {
+      knownEmail.value = payload.email.trim()
+    }
     setAuth(authData)
     return authData
   }
 
   async function register(payload: RegisterRequestDto): Promise<AuthResponseDto> {
     const authData = await authService.register(payload)
+    knownEmail.value = payload.email.trim()
     setAuth(authData)
     return authData
   }
@@ -134,6 +145,7 @@ export const useAuthStore = defineStore('auth', () => {
     hasAnyRole,
     setToken,
     setAuth,
+    setKnownEmail,
     clearAuth,
     login,
     register,

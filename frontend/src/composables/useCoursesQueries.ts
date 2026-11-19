@@ -1,4 +1,5 @@
 import type { MaybeRefOrGetter } from 'vue'
+import { useInfiniteQuery } from '@tanstack/vue-query'
 import { coursesService } from '@/services/courses.service'
 import { queryKeys } from './queryKeys'
 import type {
@@ -21,6 +22,35 @@ export function useCourseThumbnailsQuery(
   return useQuery({
     queryKey: computed(() => queryKeys.courses.thumbnailList(toValue(params))),
     queryFn: () => coursesService.getThumbnails(toValue(params)),
+  })
+}
+
+export function useInfiniteCourseThumbnailsQuery(
+  params?: MaybeRefOrGetter<Omit<CourseThumbnailQueryParameters, 'Page'> | undefined>,
+) {
+  return useInfiniteQuery({
+    queryKey: computed(() => queryKeys.courses.thumbnailInfinite(toValue(params))),
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
+      coursesService.getThumbnails({
+        ...toValue(params),
+        Page: pageParam,
+        PageSize: toValue(params)?.PageSize ?? 9,
+      }),
+    getNextPageParam: (lastPage, allPages) => {
+      const pagination = lastPage.metadata?.pagination
+      if (pagination?.hasNextPage) {
+        return pagination.page + 1
+      }
+      if (pagination && pagination.page < pagination.totalPages) {
+        return pagination.page + 1
+      }
+      const pageSize = toValue(params)?.PageSize ?? 9
+      if (pagination && pagination.totalItems > allPages.length * pageSize) {
+        return allPages.length + 1
+      }
+      return undefined
+    },
   })
 }
 

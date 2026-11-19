@@ -109,7 +109,7 @@ export interface UserResponseDto {
 export interface UpdateUserRequestDto {
   username: string
   email: string
-  password: string
+  password?: string | null
 }
 
 export interface UpdateUserRoleRequestDto {
@@ -284,6 +284,8 @@ export interface QuizResponseDto {
   timeLimitSeconds: number | null
   passingThresholdPercent: number
   sectionId: number
+  randomizeQuestions?: boolean
+  randomizeAnswers?: boolean
 }
 
 export interface StartAttemptRequestDto {

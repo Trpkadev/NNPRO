@@ -60,6 +60,7 @@ export function decodeJwtUser(token: string | null | undefined): AuthenticatedUs
     const parsedId = payload.sub !== undefined ? Number(payload.sub) : NaN
     const id = Number.isFinite(parsedId) ? parsedId : null
     const username = typeof payload.name === 'string' ? payload.name.trim() : ''
+    const email = typeof payload.email === 'string' ? payload.email.trim() : ''
     const role = normalizeUserRole(payload.role)
 
     if (id === null || !username || !role) {
@@ -69,6 +70,7 @@ export function decodeJwtUser(token: string | null | undefined): AuthenticatedUs
     return {
       id,
       username,
+      email,
       role,
     }
   } catch {
@@ -88,15 +90,33 @@ export function isAuthInvalidError(error: unknown): boolean {
 }
 
 /**
- * Připraví query parametry pro Axios (převede objekt Filters na JSON řetězec)
+ * Připraví query parametry pro Axios (doplní výchozí stránkování a převede objekt Filters na JSON řetězec)
  */
 export function serializeQueryParams<T extends QueryParameters>(
   params?: T,
-): Record<string, unknown> | undefined {
-  if (!params) return undefined
-  const result: Record<string, unknown> = { ...params } as Record<string, unknown>
-  if (params.Filters && typeof params.Filters === 'object') {
-    result.Filters = JSON.stringify(params.Filters)
+): Record<string, unknown> {
+  const result: Record<string, unknown> = {
+    Page: params?.Page ?? 1,
+    PageSize: params?.PageSize ?? 20,
+    ...params,
+  }
+  if (params?.Filters && typeof params.Filters === 'object') {
+    const cleanedFilters: Record<string, string> = {}
+    for (const [key, val] of Object.entries(params.Filters)) {
+      if (val !== undefined && val !== null && String(val).trim() !== '') {
+        cleanedFilters[key] = String(val).trim()
+      }
+    }
+    if (Object.keys(cleanedFilters).length > 0) {
+      result.Filters = JSON.stringify(cleanedFilters)
+    } else {
+      delete result.Filters
+    }
+  } else if (!params?.Filters) {
+    delete result.Filters
+  }
+  if (!result.SortBy) {
+    delete result.SortBy
   }
   return result
 }
@@ -199,6 +219,8 @@ api.interceptors.response.use(
       requestUrl.includes('/api/auth/logout')
 
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
+      originalRequest._retry = true
+
       if (isRefreshing) {
         return new Promise<string>((resolve, reject) => {
           failedQueue.push({ resolve, reject })
@@ -208,7 +230,6 @@ api.interceptors.response.use(
         })
       }
 
-      originalRequest._retry = true
       isRefreshing = true
 
       try {
@@ -230,7 +251,8 @@ api.interceptors.response.use(
           if (currentRoute.name !== 'login') {
             await router.push({
               name: 'login',
-              query: currentRoute.fullPath !== '/' ? { redirect: currentRoute.fullPath } : undefined,
+              query:
+                currentRoute.fullPath !== '/' ? { redirect: currentRoute.fullPath } : undefined,
             })
           }
         }
