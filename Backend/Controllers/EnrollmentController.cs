@@ -1,6 +1,7 @@
 using Backend.Extensions;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
+using Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,9 +12,9 @@ namespace Backend.Controllers;
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
-public class EnrollmentController : ApiControllerBase {
+public class EnrollmentController(IEnrollmentService enrollmentService) : ApiControllerBase {
     [HttpGet("{courseId:uint}")]
-    [Authorize(Roles = "Admin,Instructor")]
+    [Authorize(Roles = "Admin, Instructor")]
     [RequiresPaging]
     [EndpointSummary("Get list of enrolled users in a course")]
     [EndpointDescription("Returns a paginated list of all students enrolled in a specific course.")]
@@ -21,12 +22,8 @@ public class EnrollmentController : ApiControllerBase {
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserResponseDto[]>> GetEnrolledUsers([FromRoute] uint courseId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        await Task.CompletedTask;
-        var students = new[] {
-            new UserResponseDto(1, "dummy_student", "student@example.com", "Student"),
-            new UserResponseDto(2, "another_student", "another@example.com", "Student")
-        };
-        return OkPaged(students, requestQuery);
+        var (students, metadata) = await enrollmentService.GetEnrolledUsersAsync(courseId, AuthenticatedUserId, requestQuery, cancellationToken);
+        return Ok(students, metadata);
     }
 
     [HttpPost]
@@ -34,21 +31,24 @@ public class EnrollmentController : ApiControllerBase {
     [EndpointSummary("Enroll currently authenticated student into a course")]
     [EndpointDescription("Enrolls the currently authenticated student into a course, requiring an access key if the course is private.")]
     [ProducesResponseType<Wrapper<uint>>(StatusCodes.Status201Created)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult> EnrollIntoCourse([FromBody] EnrollmentRequestDto enrollmentRequest, CancellationToken cancellationToken)
     {
-        await Task.CompletedTask;
-        const uint newEnrollmentId = 1;
-        return CreatedAtAction(nameof(GetEnrolledUsers), new { courseId = enrollmentRequest.CourseId, page = 1, pageSize = 10 }, newEnrollmentId);
+        uint newEnrollmentId = await enrollmentService.EnrollIntoCourseAsync(AuthenticatedUserId, enrollmentRequest, cancellationToken);
+        return CreatedAtAction(nameof(CourseController.GetCourseById), "Course", new { id = enrollmentRequest.CourseId }, newEnrollmentId);
     }
 
     [HttpPost("forceenroll")]
     [Authorize(Roles = "Admin, Instructor")]
     [EndpointSummary("Force enroll student into a course")]
     [ProducesResponseType<Wrapper<uint>>(StatusCodes.Status201Created)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult> ForceEnrollIntoCourse([FromBody] ForceEnrollmentRequestDto forceEnrollmentRequest, CancellationToken cancellationToken)
     {
-        await Task.CompletedTask;
-        const uint newEnrollmentId = 1;
+        uint newEnrollmentId = await enrollmentService.ForceEnrollIntoCourseAsync(AuthenticatedUserId, forceEnrollmentRequest, cancellationToken);
         return CreatedAtAction(nameof(GetEnrolledUsers), new { courseId = forceEnrollmentRequest.CourseId, page = 1, pageSize = 10 }, newEnrollmentId);
     }
 
@@ -57,9 +57,10 @@ public class EnrollmentController : ApiControllerBase {
     [EndpointSummary("Unenroll currently authenticated student from a course")]
     [EndpointDescription("Removes the currently authenticated student from the specified course.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> Unenroll([FromRoute] uint courseId, CancellationToken cancellationToken)
     {
-        await Task.CompletedTask;
+        await enrollmentService.UnenrollAsync(AuthenticatedUserId, courseId, cancellationToken);
         return NoContent();
     }
 
@@ -68,9 +69,10 @@ public class EnrollmentController : ApiControllerBase {
     [EndpointSummary("Remove student from course")]
     [EndpointDescription("Allows an instructor or admin to forcibly remove a specific student from a course.")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> ForceUnenroll([FromRoute] uint courseId, [FromRoute] uint studentId, CancellationToken cancellationToken)
     {
-        await Task.CompletedTask;
+        await enrollmentService.ForceUnenrollAsync(AuthenticatedUserId, courseId, studentId, cancellationToken);
         return NoContent();
     }
 }

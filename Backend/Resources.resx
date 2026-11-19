@@ -158,33 +158,119 @@
     <value>1.3</value>
   </resheader>
   <resheader name="reader">
-    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral,
-            PublicKeyToken=b77a5c561934e089
-        </value>
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <resheader name="writer">
-    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral,
-            PublicKeyToken=b77a5c561934e089
-        </value>
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="ErrorAccessTokenRevoked" xml:space="preserve">
     <value>The access token has been revoked.</value>
   </data>
+  <data name="ErrorAlreadyEnrolled" xml:space="preserve">
+    <value>You are already enrolled in this course.</value>
+  </data>
+  <data name="ErrorAnswerOptionDoesNotBelongToQuestion" xml:space="preserve">
+    <value>Answer option does not belong to the specified question.</value>
+  </data>
+  <data name="ErrorAnswerOptionNotFound" xml:space="preserve">
+    <value>Answer option was not found.</value>
+  </data>
+  <data name="ErrorAnswersContainDuplicateOptions" xml:space="preserve">
+    <value>Answers contain duplicate options.</value>
+  </data>
+  <data name="ErrorAnswersContainUnknownQuestion" xml:space="preserve">
+    <value>Answers contain an unknown question.</value>
+  </data>
+  <data name="ErrorAnswersMustBeJsonObject" xml:space="preserve">
+    <value>Answers must be a JSON object.</value>
+  </data>
+  <data name="ErrorAnswersMustBeValidJsonObject" xml:space="preserve">
+    <value>Answers must be a valid JSON object.</value>
+  </data>
+  <data name="ErrorAttemptAlreadySubmitted" xml:space="preserve">
+    <value>This quiz attempt has already been submitted.</value>
+  </data>
+  <data name="ErrorCourseAccessKeyInvalid" xml:space="preserve">
+    <value>Course access key is invalid.</value>
+  </data>
+  <data name="ErrorCourseEnrollmentRequiredForProgress" xml:space="preserve">
+    <value>Course enrollment is required to track lesson progress.</value>
+  </data>
+  <data name="ErrorCourseManagementForbidden" xml:space="preserve">
+    <value>You are not allowed to manage this course.</value>
+  </data>
+  <data name="ErrorCourseNotFound" xml:space="preserve">
+    <value>Course was not found.</value>
+  </data>
+  <data name="ErrorCreateCourseForbidden" xml:space="preserve">
+    <value>You are not allowed to create a course.</value>
+  </data>
   <data name="ErrorBadRequestDescription" xml:space="preserve">
-        <value>One or more values in the request are invalid.</value>
-    </data>
+    <value>One or more values in the request are invalid.</value>
+  </data>
   <data name="ErrorBadRequestTitle" xml:space="preserve">
-        <value>Invalid request data</value>
-    </data>
+    <value>Invalid request data</value>
+  </data>
   <data name="ErrorDefaultConnectionStringMissing" xml:space="preserve">
     <value>Connection string 'DefaultConnection' was not found.</value>
   </data>
+  <data name="ErrorEnrollmentNotFound" xml:space="preserve">
+    <value>Enrollment was not found.</value>
+  </data>
   <data name="ErrorInternalServerError" xml:space="preserve">
-        <value>An unexpected error occurred</value>
-    </data>
+    <value>An unexpected error occurred</value>
+  </data>
+  <data name="ErrorInvalidUserRole" xml:space="preserve">
+    <value>User role is invalid.</value>
+  </data>
+  <data name="ErrorLessonAttachmentNotFound" xml:space="preserve">
+    <value>Lesson attachment was not found.</value>
+  </data>
+  <data name="ErrorLessonNotFound" xml:space="preserve">
+    <value>Lesson was not found.</value>
+  </data>
+  <data name="ErrorOnlyStudentsCanEnroll" xml:space="preserve">
+    <value>Only students can enroll in a course.</value>
+  </data>
+  <data name="ErrorOnlyStudentsCanStartQuiz" xml:space="preserve">
+    <value>Only students can start a quiz.</value>
+  </data>
+  <data name="ErrorQuestionHasSubmittedAnswers" xml:space="preserve">
+    <value>This question already has submitted answers.</value>
+  </data>
+  <data name="ErrorQuestionNotFound" xml:space="preserve">
+    <value>Question was not found.</value>
+  </data>
+  <data name="ErrorQuestionTypeInvalid" xml:space="preserve">
+    <value>Question type is invalid.</value>
+  </data>
+  <data name="ErrorQuizAttemptNotFound" xml:space="preserve">
+    <value>Quiz attempt was not found.</value>
+  </data>
+  <data name="ErrorQuizEnrollmentRequired" xml:space="preserve">
+    <value>Course enrollment is required to access this quiz.</value>
+  </data>
+  <data name="ErrorQuizMaxAttemptsReached" xml:space="preserve">
+    <value>Maximum number of quiz attempts has been reached.</value>
+  </data>
+  <data name="ErrorQuizNotFound" xml:space="preserve">
+    <value>Quiz was not found.</value>
+  </data>
+  <data name="ErrorSectionNotFound" xml:space="preserve">
+    <value>Section was not found.</value>
+  </data>
+  <data name="ErrorSessionNotFound" xml:space="preserve">
+    <value>Session was not found.</value>
+  </data>
+  <data name="ErrorUserIdentityAlreadyInUse" xml:space="preserve">
+    <value>Username or email address is already in use.</value>
+  </data>
+  <data name="ErrorUserNotFound" xml:space="preserve">
+    <value>User was not found.</value>
+  </data>
   <data name="ErrorInvalidFilter" xml:space="preserve">
-        <value>Property {0} in filter is invalid</value>
-    </data>
+    <value>Property {0} in filter is invalid</value>
+  </data>
   <data name="ErrorInvalidSort" xml:space="preserve">
     <value>Sort property {0} is invalid</value>
   </data>
@@ -201,8 +287,8 @@
     <value>Pagination is required for this request</value>
   </data>
   <data name="ErrorPagingInvalidParams" xml:space="preserve">
-        <value>Both Page and PageSize must be either set or unset together.</value>
-    </data>
+    <value>Both Page and PageSize must be either set or unset together.</value>
+   </data>
   <data name="ErrorPagingRequired" xml:space="preserve">
     <value>Both Page and PageSize are required for this endpoint.</value>
   </data>
@@ -241,5 +327,20 @@
   </data>
   <data name="ValidationUnsubmittedQuizAttemptMustNotHaveResult" xml:space="preserve">
     <value>An unsubmitted attempt cannot have a score or be marked as passed.</value>
+  </data>
+  <data name="ErrorAuthenticatedUserIdentityInvalid" xml:space="preserve">
+    <value>The authenticated user identity is invalid.</value>
+  </data>
+  <data name="ErrorCourseAccessDenied" xml:space="preserve">
+    <value>Course access is denied.</value>
+  </data>
+  <data name="ErrorAttemptTimeLimitReached" xml:space="preserve">
+    <value>Time limit for submission has been reached.</value>
+  </data>
+  <data name="ErrorAlreadyEnrolledForce" xml:space="preserve">
+    <value>This student is already enrolled.</value>
+  </data>
+  <data name="ErrorActiveAttempt" xml:space="preserve">
+    <value>You already have an active attempt for this quiz.</value>
   </data>
 </root>

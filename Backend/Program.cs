@@ -137,6 +137,7 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<PaginationNeededExceptionHandler>();
 builder.Services.AddExceptionHandler<InvalidFilterExceptionHandler>();
 builder.Services.AddExceptionHandler<InvalidSortExceptionHandler>();
+builder.Services.AddExceptionHandler<ServiceExceptionHandler>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 const string bearerSecuritySchemeName = "Bearer";
@@ -249,6 +250,11 @@ builder.Services.AddHealthChecks();
 
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<ILessonService, LessonService>();
+builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
+builder.Services.AddScoped<IQuestionService, QuestionService>();
+builder.Services.AddScoped<IQuizService, QuizService>();
+builder.Services.AddScoped<ISectionService, SectionService>();
+builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddSingleton<ITokenBlacklistService, TokenBlacklistService>();
 builder.Services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();

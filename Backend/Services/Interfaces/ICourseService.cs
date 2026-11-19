@@ -4,15 +4,19 @@ using Backend.Models.DTOs.Response;
 namespace Backend.Services.Interfaces;
 
 public interface ICourseService {
-    Task<CourseResponseDto?> GetByIdAsync(uint id, CancellationToken ct);
+    Task<CourseResponseDto> GetByIdAsync(uint id, uint userId, CancellationToken ct);
 
     Task<(CourseResponseDto[] Courses, Metadata Metadata)> GetAsync(RequestQuery requestDto, CancellationToken ct);
 
-    Task<uint> CreateAsync(CourseCreateRequestDto requestDto, CancellationToken ct);
+    Task<uint> CreateAsync(uint requestingUserId, CourseCreateRequestDto requestDto, CancellationToken ct);
 
-    Task<bool> RemoveAsync(uint id, CancellationToken ct);
+    Task RemoveAsync(uint requestingUserId, uint id, CancellationToken ct);
 
-    Task<bool> UpdateAsync(uint id, CourseUpdateRequestDto requestDto, CancellationToken ct);
+    Task UpdateAsync(uint requestingUserId, uint id, CourseUpdateRequestDto requestDto, CancellationToken ct);
 
     Task<(CourseThumbnailResponseDto[]Courses, Metadata Metadata)> GetCourseThumbnailsAsync(CourseThumbnailRequestDto requestDto, CancellationToken ct);
+
+    Task<(CourseInstructorResponseDto[] Instructors, Metadata Metadata)> GetInstructorsAsync(uint courseId, RequestQuery request, CancellationToken ct);
+
+    Task<(SectionResponseDto[] Sections, Metadata Metadata)> GetSectionsAsync(uint courseId, uint userId, RequestQuery request, CancellationToken ct);
 }

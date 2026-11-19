@@ -19,8 +19,9 @@ public class JwtTokenGenerator(IOptions<JwtOptions> jwtOptions) : IJwtTokenGener
         string jwtId = Guid.NewGuid().ToString("N");
         var issuedAtUtc = DateTime.UtcNow;
         var expiresAtUtc = issuedAtUtc.AddMinutes(options.AccessTokenExpirationMinutes);
+
         Claim[] claims = [
-            new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+            new(JwtRegisteredClaimNames.Sub, user.Id.ToString(CultureInfo.InvariantCulture)),
             new(JwtRegisteredClaimNames.Jti, jwtId),
             new(JwtRegisteredClaimNames.Iat, EpochTime.GetIntDate(issuedAtUtc).ToString(CultureInfo.InvariantCulture), ClaimValueTypes.Integer64),
             new("name", user.Username),
