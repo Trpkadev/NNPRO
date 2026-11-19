@@ -53,7 +53,7 @@ async function handleUpdateProfile() {
     await updateCurrentUserMutation.mutateAsync({
       username: trimmedUser,
       email: trimmedEmail,
-      password: password.value,
+      ...(password.value ? { password: password.value } : {}),
     })
     authStore.setKnownEmail(trimmedEmail)
     password.value = ''

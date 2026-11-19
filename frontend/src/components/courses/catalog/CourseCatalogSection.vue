@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { getApiErrorMessage } from '@/services/api'
 
-const props = defineProps<{
+defineProps<{
   enrolledCourseIds: Set<number>
   canEnrollAsStudent: boolean
 }>()

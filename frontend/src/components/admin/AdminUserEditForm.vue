@@ -71,7 +71,7 @@ async function handleUpdateUser() {
       payload: {
         username: editUsername.value.trim(),
         email: editEmail.value.trim(),
-        password: editPassword.value,
+        ...(editPassword.value ? { password: editPassword.value } : {}),
       },
     })
     editPassword.value = ''

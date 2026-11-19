@@ -20,7 +20,7 @@ const updateQuestionMutation = useUpdateQuestionMutation()
 const text = ref('')
 const imageUrl = ref('')
 const type = ref<QuestionType>(QuestionTypes.SingleChoice)
-const points = ref(1)
+const points = ref<number | null>(1)
 const errorMessage = ref<string | null>(null)
 
 const questionTypeOptions = computed(() => [
@@ -48,11 +48,21 @@ async function handleSave() {
     return
   }
 
+  if (
+    points.value === null ||
+    !Number.isInteger(points.value) ||
+    points.value < 1 ||
+    points.value > 100
+  ) {
+    errorMessage.value = t('validation.invalidNumberRange', { min: 1, max: 100 })
+    return
+  }
+
   const payload = {
     text: text.value.trim(),
     imageUrl: imageUrl.value.trim() ? imageUrl.value.trim() : null,
     type: type.value,
-    points: Math.max(1, Number(points.value) || 1),
+    points: points.value,
     quizId: props.quizId,
   }
 

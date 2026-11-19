@@ -16,7 +16,7 @@ const createLessonMutation = useCreateLessonMutation()
 const updateLessonMutation = useUpdateLessonMutation()
 
 const lessonTitle = ref('')
-const lessonOrder = ref(1)
+const lessonOrder = ref<number | null>(1)
 const lessonVideoUrl = ref('')
 const lessonContent = ref('')
 const lessonError = ref<string | null>(null)
@@ -35,6 +35,15 @@ watch(visible, (isOpen) => {
   }
 })
 
+function isValidHttpUrl(rawUrl: string): boolean {
+  try {
+    const parsed = new URL(rawUrl)
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
 async function handleSaveLesson() {
   lessonError.value = null
   if (!lessonTitle.value.trim() || !lessonContent.value.trim()) {
@@ -42,11 +51,27 @@ async function handleSaveLesson() {
     return
   }
 
+  const trimmedVideoUrl = lessonVideoUrl.value.trim()
+  if (trimmedVideoUrl && !isValidHttpUrl(trimmedVideoUrl)) {
+    lessonError.value = t('validation.invalidUrl')
+    return
+  }
+
+  if (
+    lessonOrder.value === null ||
+    !Number.isInteger(lessonOrder.value) ||
+    lessonOrder.value < 1 ||
+    lessonOrder.value > 65535
+  ) {
+    lessonError.value = t('validation.invalidNumberRange', { min: 1, max: 65535 })
+    return
+  }
+
   const payload = {
     title: lessonTitle.value.trim(),
     content: lessonContent.value,
-    videoUrl: lessonVideoUrl.value.trim() ? lessonVideoUrl.value.trim() : null,
-    order: Math.max(1, Number(lessonOrder.value) || 1),
+    videoUrl: trimmedVideoUrl ? trimmedVideoUrl : null,
+    order: lessonOrder.value,
     sectionId: props.sectionId,
   }
 

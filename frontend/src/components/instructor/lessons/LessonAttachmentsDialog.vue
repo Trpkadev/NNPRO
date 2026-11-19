@@ -155,7 +155,7 @@ async function handleRemove(attachmentId: number) {
               {{ t('instructor.attachmentSizeBytes') }}
             </label>
             <InputNumber
-              id="att-size-bytes"
+              input-id="att-size-bytes"
               v-model="sizeBytes"
               size="small"
               class="w-full"

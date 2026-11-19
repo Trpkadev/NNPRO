@@ -84,7 +84,6 @@ function confirmRemoveStudent(student: UserResponseDto) {
 
 <template>
   <div class="space-y-6">
-    <!-- Formulář pro přímý zápis studenta lektorem/adminem -->
     <form
       class="p-4 rounded-2xl bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 flex flex-col sm:flex-row sm:items-end gap-3"
       @submit.prevent="handleForceEnroll"
@@ -115,7 +114,6 @@ function confirmRemoveStudent(student: UserResponseDto) {
       {{ errorMessage || getApiErrorMessage(error) }}
     </Message>
 
-    <!-- Tabulka zapsaných studentů -->
     <div
       class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-0 dark:bg-surface-900 overflow-hidden p-4 space-y-4"
     >

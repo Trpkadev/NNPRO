@@ -109,7 +109,7 @@ export interface UserResponseDto {
 export interface UpdateUserRequestDto {
   username: string
   email: string
-  password: string
+  password?: string | null
 }
 
 export interface UpdateUserRoleRequestDto {

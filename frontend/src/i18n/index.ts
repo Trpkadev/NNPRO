@@ -108,6 +108,8 @@ const messages = {
       minLength: 'Minimální délka je {min} znaků',
       usernameNoAt: "Uživatelské jméno nesmí obsahovat znak {'@'}",
       passwordsDontMatch: 'Hesla se neshodují',
+      invalidUrl: 'Zadejte platnou HTTP/HTTPS URL adresu',
+      invalidNumberRange: 'Zadejte platné číslo v rozsahu {min} až {max}',
     },
     courses: {
       empty: 'Žádné kurzy k zobrazení.',
@@ -401,6 +403,8 @@ const messages = {
       minLength: 'Minimum length is {min} characters',
       usernameNoAt: "Username cannot contain the {'@'} character",
       passwordsDontMatch: 'Passwords do not match',
+      invalidUrl: 'Enter a valid HTTP/HTTPS URL',
+      invalidNumberRange: 'Enter a valid number between {min} and {max}',
     },
     courses: {
       empty: 'No courses to display.',

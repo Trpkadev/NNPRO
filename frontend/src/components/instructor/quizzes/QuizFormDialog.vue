@@ -15,7 +15,7 @@ const createQuizMutation = useCreateQuizMutation()
 const updateQuizMutation = useUpdateQuizMutation()
 
 const quizTitle = ref('')
-const quizPassingThreshold = ref(75)
+const quizPassingThreshold = ref<number | null>(75)
 const quizMaxAttempts = ref<number | null>(null)
 const quizTimeLimit = ref<number | null>(null)
 const quizRandomizeQuestions = ref(false)
@@ -45,12 +45,44 @@ async function handleSaveQuiz() {
     return
   }
 
+  const threshold = quizPassingThreshold.value
+  if (
+    threshold === null ||
+    typeof threshold !== 'number' ||
+    !Number.isFinite(threshold) ||
+    threshold < 0 ||
+    threshold > 100
+  ) {
+    quizError.value = t('validation.invalidNumberRange', { min: 0, max: 100 })
+    return
+  }
+
+  if (
+    quizMaxAttempts.value !== null &&
+    (!Number.isInteger(quizMaxAttempts.value) ||
+      quizMaxAttempts.value < 1 ||
+      quizMaxAttempts.value > 100)
+  ) {
+    quizError.value = t('validation.invalidNumberRange', { min: 1, max: 100 })
+    return
+  }
+
+  if (
+    quizTimeLimit.value !== null &&
+    (!Number.isInteger(quizTimeLimit.value) ||
+      quizTimeLimit.value < 1 ||
+      quizTimeLimit.value > 86400)
+  ) {
+    quizError.value = t('validation.invalidNumberRange', { min: 1, max: 86400 })
+    return
+  }
+
   const payload = {
     title: quizTitle.value.trim(),
     sectionId: props.sectionId,
-    maxAttempts: quizMaxAttempts.value ? Number(quizMaxAttempts.value) : null,
-    timeLimitSeconds: quizTimeLimit.value ? Number(quizTimeLimit.value) : null,
-    passingThresholdPercent: Number(quizPassingThreshold.value) || 0,
+    maxAttempts: quizMaxAttempts.value,
+    timeLimitSeconds: quizTimeLimit.value,
+    passingThresholdPercent: threshold,
     randomizeQuestions: quizRandomizeQuestions.value,
     randomizeAnswers: quizRandomizeAnswers.value,
   }
@@ -122,7 +154,7 @@ async function handleSaveQuiz() {
           <InputNumber
             input-id="quiz-time-limit-input"
             v-model="quizTimeLimit"
-            :min="10"
+            :min="1"
             class="w-full"
           />
         </div>
