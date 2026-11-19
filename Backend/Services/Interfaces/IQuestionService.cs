@@ -4,11 +4,11 @@ using Backend.Models.DTOs.Response;
 namespace Backend.Services.Interfaces;
 
 public interface IQuestionService {
-    Task<QuestionResponseDto> GetByIdAsync(uint questionId, CancellationToken ct);
+    Task<QuestionResponseDto> GetByIdAsync(uint questionId, uint userId, CancellationToken ct);
 
-    Task<AnswerOptionResponseDto[]> GetOptionsAsync(uint questionId, CancellationToken ct);
+    Task<(AnswerOptionResponseDto[] Options, Metadata metadata)> GetOptionsAsync(uint questionId, uint userId, RequestQuery requestQuery, CancellationToken ct);
 
-    Task<AnswerOptionEditorResponseDto[]> GetOptionsForEditorAsync(uint requestingUserId, uint questionId, CancellationToken ct);
+    Task<(AnswerOptionEditorResponseDto[] Options, Metadata metadata)> GetOptionsForEditorAsync(uint requestingUserId, uint questionId, RequestQuery requestQuery, CancellationToken ct);
 
     Task<uint> CreateAnswerOptionAsync(uint requestingUserId, uint questionId, CreateAnswerOptionRequestDto request, CancellationToken ct);
 

@@ -1,14 +1,17 @@
+using Backend.Config;
 using Backend.Data;
 using Backend.Exceptions;
+using Backend.Extensions;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
 using Backend.Models.Entities;
 using Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Backend.Services;
 
-public class SectionService(AppDbContext dbContext) : ISectionService {
+public class SectionService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions> dbLimitsOptions) : ISectionService {
     public async Task<SectionResponseDto> GetByIdAsync(uint requestingUserId, uint sectionId, CancellationToken ct)
     {
         var section = await dbContext.Sections.AsNoTracking()
@@ -27,29 +30,43 @@ public class SectionService(AppDbContext dbContext) : ISectionService {
         return new SectionResponseDto(section.Id, section.Title, section.Order, section.CourseId);
     }
 
-    public async Task<LessonResponseDto[]> GetLessonsAsync(uint sectionId, CancellationToken ct)
+    public async Task<(LessonResponseDto[] Lessons, Metadata Metadata)> GetLessonsAsync(uint sectionId, uint userId, RequestQuery request, CancellationToken ct)
     {
-        if (!await dbContext.Sections.AnyAsync(section => section.Id == sectionId, ct))
-            throw ServiceException.NotFound(Resources.ErrorSectionNotFound);
+        uint courseId = await dbContext.Sections.AsNoTracking()
+                            .Where(s => s.Id == sectionId)
+                            .Select(s => (uint?)s.CourseId)
+                            .FirstOrDefaultAsync(ct)
+                        ?? throw ServiceException.NotFound(Resources.ErrorSectionNotFound);
 
-        return await dbContext.Lessons.AsNoTracking()
+        await CourseAuthorization.EnsureCanAccessCourseAsync(dbContext, courseId, userId, ct);
+
+        var (lessons, metadata) = await dbContext.Lessons.AsNoTracking()
             .Where(lesson => lesson.SectionId == sectionId)
             .OrderBy(lesson => lesson.Order)
             .ThenBy(lesson => lesson.Id)
             .Select(lesson => new LessonResponseDto(lesson.Id, lesson.Title, lesson.Content, lesson.VideoUrl, lesson.Order, lesson.SectionId))
-            .ToArrayAsync(ct);
+            .ToPagedResultAsync(request, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
+
+        return (lessons, new Metadata(metadata, request));
     }
 
-    public async Task<QuizResponseDto[]> GetQuizzesAsync(uint sectionId, CancellationToken ct)
+    public async Task<(QuizResponseDto[] Quizzes, Metadata Metadata)> GetQuizzesAsync(uint sectionId, uint userId, RequestQuery request, CancellationToken ct)
     {
-        if (!await dbContext.Sections.AnyAsync(section => section.Id == sectionId, ct))
-            throw ServiceException.NotFound(Resources.ErrorSectionNotFound);
+        uint courseId = await dbContext.Sections.AsNoTracking()
+                            .Where(s => s.Id == sectionId)
+                            .Select(s => (uint?)s.CourseId)
+                            .FirstOrDefaultAsync(ct)
+                        ?? throw ServiceException.NotFound(Resources.ErrorSectionNotFound);
 
-        return await dbContext.Quizzes.AsNoTracking()
+        await CourseAuthorization.EnsureCanAccessCourseAsync(dbContext, courseId, userId, ct);
+
+        var (quizzes, metadata) = await dbContext.Quizzes.AsNoTracking()
             .Where(quiz => quiz.SectionId == sectionId)
             .OrderBy(quiz => quiz.Id)
             .Select(quiz => new QuizResponseDto(quiz.Id, quiz.Title, quiz.MaxAttempts, quiz.TimeLimitSeconds, quiz.PassingThresholdPercent, quiz.SectionId))
-            .ToArrayAsync(ct);
+            .ToPagedResultAsync(request, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
+
+        return (quizzes, new Metadata(metadata, request));
     }
 
     public async Task<uint> CreateAsync(uint requestingUserId, CreateSectionRequestDto request, CancellationToken ct)

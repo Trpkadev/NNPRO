@@ -4,7 +4,7 @@ using Backend.Models.DTOs.Response;
 namespace Backend.Services.Interfaces;
 
 public interface ICourseService {
-    Task<CourseResponseDto> GetByIdAsync(uint id, CancellationToken ct);
+    Task<CourseResponseDto> GetByIdAsync(uint id, uint userId, CancellationToken ct);
 
     Task<(CourseResponseDto[] Courses, Metadata Metadata)> GetAsync(RequestQuery requestDto, CancellationToken ct);
 
@@ -16,7 +16,7 @@ public interface ICourseService {
 
     Task<(CourseThumbnailResponseDto[]Courses, Metadata Metadata)> GetCourseThumbnailsAsync(CourseThumbnailRequestDto requestDto, CancellationToken ct);
 
-    Task<CourseInstructorResponseDto[]> GetInstructorsAsync(uint courseId, CancellationToken ct);
+    Task<(CourseInstructorResponseDto[] Instructors, Metadata Metadata)> GetInstructorsAsync(uint courseId, RequestQuery request, CancellationToken ct);
 
-    Task<SectionResponseDto[]> GetSectionsAsync(uint courseId, CancellationToken ct);
+    Task<(SectionResponseDto[] Sections, Metadata Metadata)> GetSectionsAsync(uint courseId, uint userId, RequestQuery request, CancellationToken ct);
 }

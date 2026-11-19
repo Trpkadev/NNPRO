@@ -1,41 +1,68 @@
+using Backend.Config;
 using Backend.Data;
 using Backend.Exceptions;
+using Backend.Extensions;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
 using Backend.Models.Entities;
 using Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Backend.Services;
 
-public class QuestionService(AppDbContext dbContext) : IQuestionService {
-    public async Task<QuestionResponseDto> GetByIdAsync(uint questionId, CancellationToken ct)
+public class QuestionService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions> dbLimitsOptions) : IQuestionService {
+    public async Task<QuestionResponseDto> GetByIdAsync(uint questionId, uint userId, CancellationToken ct)
     {
         var question = await dbContext.Questions.AsNoTracking()
             .Where(question => question.Id == questionId)
             .Select(question => new QuestionResponseDto(question.Id, question.Text, question.ImageUrl, question.Type, question.Points, question.QuizId))
             .FirstOrDefaultAsync(ct);
+
+        uint courseId = await dbContext.Questions.AsNoTracking()
+                            .Where(q => q.Id == questionId)
+                            .Select(q => (uint?)q.Quiz.Section.CourseId)
+                            .FirstOrDefaultAsync(ct)
+                        ?? throw ServiceException.NotFound(Resources.ErrorQuestionNotFound);
+        await CourseAuthorization.EnsureCanAccessCourseAsync(dbContext, courseId, userId, ct);
+
         return question ?? throw ServiceException.NotFound(Resources.ErrorQuestionNotFound);
     }
 
-    public async Task<AnswerOptionResponseDto[]> GetOptionsAsync(uint questionId, CancellationToken ct)
+    public async Task<(AnswerOptionResponseDto[] Options, Metadata metadata)> GetOptionsAsync(uint questionId, uint userId, RequestQuery requestQuery, CancellationToken ct)
     {
-        await EnsureQuestionExistsAsync(questionId, ct);
-        return await dbContext.AnswerOptions.AsNoTracking()
+        var questionInfo = await dbContext.Questions.AsNoTracking()
+                               .Where(q => q.Id == questionId)
+                               .Select(q => new {
+                                   q.Quiz.Section.CourseId,
+                                   q.Quiz.RandomizeAnswers
+                               })
+                               .FirstOrDefaultAsync(ct)
+                           ?? throw ServiceException.NotFound(Resources.ErrorQuestionNotFound);
+
+        await CourseAuthorization.EnsureCanAccessCourseAsync(dbContext, questionInfo.CourseId, userId, ct);
+
+        var (options, metadata) = await dbContext.AnswerOptions.AsNoTracking()
             .Where(option => option.QuestionId == questionId)
             .OrderBy(option => option.Id)
             .Select(option => new AnswerOptionResponseDto(option.Id, option.Text, option.ImageUrl, option.QuestionId))
-            .ToArrayAsync(ct);
+            .ToPagedResultAsync(requestQuery, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
+
+        if (questionInfo.RandomizeAnswers)
+            Random.Shared.Shuffle(options);
+
+        return (options, new Metadata { Pagination = metadata });
     }
 
-    public async Task<AnswerOptionEditorResponseDto[]> GetOptionsForEditorAsync(uint requestingUserId, uint questionId, CancellationToken ct)
+    public async Task<(AnswerOptionEditorResponseDto[] Options, Metadata metadata)> GetOptionsForEditorAsync(uint requestingUserId, uint questionId, RequestQuery requestQuery, CancellationToken ct)
     {
         await EnsureCanManageQuestionAsync(requestingUserId, questionId, ct);
-        return await dbContext.AnswerOptions.AsNoTracking()
+        var (options, metadata) = await dbContext.AnswerOptions.AsNoTracking()
             .Where(option => option.QuestionId == questionId)
             .OrderBy(option => option.Id)
             .Select(option => new AnswerOptionEditorResponseDto(option.Id, option.Text, option.ImageUrl, option.IsCorrect, option.QuestionId))
-            .ToArrayAsync(ct);
+            .ToPagedResultAsync(requestQuery, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
+        return (options, new Metadata { Pagination = metadata });
     }
 
     public async Task<uint> CreateAnswerOptionAsync(uint requestingUserId, uint questionId, CreateAnswerOptionRequestDto request, CancellationToken ct)

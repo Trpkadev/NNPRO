@@ -334,7 +334,13 @@
   <data name="ErrorResourceNotFound" xml:space="preserve">
     <value>Zdroj {0} nebyl nalezen.</value>
   </data>
-  <data name="Quiz" xml:space="preserve">
-    <value>Kvíz</value>
+  <data name="ErrorCourseAccessDenied" xml:space="preserve">
+    <value>Přístup ke kurzu je zamítnut.</value>
+  </data>
+  <data name="ErrorAttemptTimeLimitReached" xml:space="preserve">
+    <value>Limit na odevzdání testu vypršel.</value>
+  </data>
+  <data name="ErrorAlreadyEnrolledForce" xml:space="preserve">
+    <value>Student je již zapsán.</value>
   </data>
 </root>

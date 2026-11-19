@@ -28,8 +28,8 @@ public class SectionController(ISectionService sectionService) : ApiControllerBa
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<LessonResponseDto[]>> GetSectionLessons([FromRoute] uint sectionId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        var lessons = await sectionService.GetLessonsAsync(sectionId, cancellationToken);
-        return OkPaged(lessons, requestQuery);
+        var (lessons, metadata) = await sectionService.GetLessonsAsync(sectionId, AuthenticatedUserId, requestQuery, cancellationToken);
+        return Ok(lessons, metadata);
     }
 
     [HttpGet("{sectionId:uint}/quizzes")]
@@ -40,8 +40,8 @@ public class SectionController(ISectionService sectionService) : ApiControllerBa
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<QuizResponseDto[]>> GetSectionQuizzes([FromRoute] uint sectionId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        var quizzes = await sectionService.GetQuizzesAsync(sectionId, cancellationToken);
-        return OkPaged(quizzes, requestQuery);
+        var (quizzes, metadata) = await sectionService.GetQuizzesAsync(sectionId, AuthenticatedUserId, requestQuery, cancellationToken);
+        return Ok(quizzes, metadata);
     }
 
     [HttpPost]

@@ -18,7 +18,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [EndpointDescription("Returns the full details of a course including its title and description.")]
     [ProducesResponseType<Wrapper<CourseResponseDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<CourseResponseDto>> GetCourseById(uint id, CancellationToken cancellationToken) => Ok(await courseService.GetByIdAsync(id, cancellationToken));
+    public async Task<ActionResult<CourseResponseDto>> GetCourseById(uint id, CancellationToken cancellationToken) => Ok(await courseService.GetByIdAsync(id, AuthenticatedUserId, cancellationToken));
 
     [HttpGet]
     [RequiresPaging]
@@ -43,8 +43,8 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CourseInstructorResponseDto[]>> GetCourseInstructors(uint courseId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        var instructors = await courseService.GetInstructorsAsync(courseId, cancellationToken);
-        return OkPaged(instructors, requestQuery);
+        var (instructors, metadata) = await courseService.GetInstructorsAsync(courseId, requestQuery, cancellationToken);
+        return Ok(instructors, metadata);
     }
 
     [HttpGet("{courseId:uint}/sections")]
@@ -55,8 +55,8 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<SectionResponseDto[]>> GetCourseSections(uint courseId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        var sections = await courseService.GetSectionsAsync(courseId, cancellationToken);
-        return OkPaged(sections, requestQuery);
+        var (sections, metadata) = await courseService.GetSectionsAsync(courseId, AuthenticatedUserId, requestQuery, cancellationToken);
+        return Ok(sections, metadata);
     }
 
     [HttpPost]

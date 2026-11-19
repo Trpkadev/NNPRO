@@ -4,7 +4,7 @@ using Backend.Models.DTOs.Response;
 namespace Backend.Services.Interfaces;
 
 public interface IEnrollmentService {
-    Task<UserResponseDto[]> GetEnrolledUsersAsync(uint courseId, uint requestingUserId, CancellationToken ct);
+    Task<(UserResponseDto[] Users, Metadata Metadata)> GetEnrolledUsersAsync(uint courseId, uint requestingUserId, RequestQuery request, CancellationToken ct);
 
     Task<uint> EnrollIntoCourseAsync(uint studentId, EnrollmentRequestDto request, CancellationToken ct);
 

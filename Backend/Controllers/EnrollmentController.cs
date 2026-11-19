@@ -22,8 +22,8 @@ public class EnrollmentController(IEnrollmentService enrollmentService) : ApiCon
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserResponseDto[]>> GetEnrolledUsers([FromRoute] uint courseId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        var students = await enrollmentService.GetEnrolledUsersAsync(courseId, AuthenticatedUserId, cancellationToken);
-        return OkPaged(students, requestQuery);
+        var (students, metadata) = await enrollmentService.GetEnrolledUsersAsync(courseId, AuthenticatedUserId, requestQuery, cancellationToken);
+        return Ok(students, metadata);
     }
 
     [HttpPost]

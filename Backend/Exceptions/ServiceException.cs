@@ -7,7 +7,9 @@ public sealed class ServiceException(int statusCode, string message) : Exception
 
     public static ServiceException Forbidden(string message) => new(StatusCodes.Status403Forbidden, message);
 
-    public static ServiceException NotFound(string resource) => new(StatusCodes.Status404NotFound, string.Format(Resources.ErrorResourceNotFound, resource));
+    public static ServiceException Unauthorized(string message) => new(StatusCodes.Status401Unauthorized, message);
+
+    public static ServiceException NotFound(string message) => new(StatusCodes.Status404NotFound, message);
 
     public static ServiceException Conflict(string message) => new(StatusCodes.Status409Conflict, message);
 }

@@ -1,22 +1,30 @@
+using Backend.Config;
 using Backend.Data;
 using Backend.Exceptions;
+using Backend.Extensions;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
 using Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Backend.Services;
 
-public class UserService(AppDbContext dbContext, IAuthService authService) : IUserService {
-    public Task<UserCourseResponseDto[]> GetMyCoursesAsync(uint userId, CancellationToken ct) =>
-        dbContext.Enrollments.AsNoTracking()
+public class UserService(AppDbContext dbContext, IAuthService authService, IOptions<DatabaseLimitsOptions> dbLimitsOptions) : IUserService {
+    public async Task<(UserCourseResponseDto[] Courses, Metadata Metadata)> GetMyCoursesAsync(uint userId, RequestQuery request, CancellationToken ct)
+    {
+        var (courses, metadata) = await dbContext.Enrollments.AsNoTracking()
             .Where(enrollment => enrollment.StudentId == userId)
             .OrderBy(enrollment => enrollment.CourseId)
             .Select(enrollment => new UserCourseResponseDto(enrollment.Course.Id, enrollment.Course.Title, enrollment.Course.Description))
-            .ToArrayAsync(ct);
+            .ToPagedResultAsync(request, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
 
-    public Task<UserLessonProgressResponseDto[]> GetMyProgressAsync(uint userId, CancellationToken ct) =>
-        dbContext.StudentLessonProgresses.AsNoTracking()
+        return (courses, new Metadata(metadata, request));
+    }
+
+    public async Task<(UserLessonProgressResponseDto[] Progress, Metadata Metadata)> GetMyProgressAsync(uint userId, RequestQuery request, CancellationToken ct)
+    {
+        var (progress, metadata) = await dbContext.StudentLessonProgresses.AsNoTracking()
             .Where(progress => progress.StudentId == userId)
             .OrderBy(progress => progress.LessonId)
             .Select(progress => new UserLessonProgressResponseDto(
@@ -26,7 +34,10 @@ public class UserService(AppDbContext dbContext, IAuthService authService) : IUs
                 progress.Lesson.Section.CourseId,
                 progress.IsCompleted,
                 progress.CompletedAtUtc))
-            .ToArrayAsync(ct);
+            .ToPagedResultAsync(request, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
+
+        return (progress, new Metadata(metadata, request));
+    }
 
     public async Task UpdateAsync(uint userId, UpdateUserRequestDto request, CancellationToken ct)
     {

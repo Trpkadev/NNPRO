@@ -12,12 +12,14 @@ using Microsoft.Extensions.Options;
 namespace Backend.Services;
 
 public class CourseService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions> dbLimitsOptions) : ICourseService {
-    public async Task<CourseResponseDto> GetByIdAsync(uint id, CancellationToken ct)
+    public async Task<CourseResponseDto> GetByIdAsync(uint id, uint userId, CancellationToken ct)
     {
         var course = await dbContext.Courses.AsNoTracking()
             .Where(x => x.Id == id)
             .Select(x => new CourseResponseDto(x.Id, x.Title, x.Description))
             .FirstOrDefaultAsync(ct);
+        await CourseAuthorization.EnsureCanAccessCourseAsync(dbContext, id, userId, ct);
+
         return course ?? throw ServiceException.NotFound(Resources.ErrorCourseNotFound);
     }
 
@@ -91,28 +93,31 @@ public class CourseService(AppDbContext dbContext, IOptions<DatabaseLimitsOption
                 ct);
     }
 
-    public async Task<CourseInstructorResponseDto[]> GetInstructorsAsync(uint courseId, CancellationToken ct)
+    public async Task<(CourseInstructorResponseDto[] Instructors, Metadata Metadata)> GetInstructorsAsync(uint courseId, RequestQuery request, CancellationToken ct)
     {
         if (!await dbContext.Courses.AnyAsync(course => course.Id == courseId, ct))
             throw ServiceException.NotFound(Resources.ErrorCourseNotFound);
 
-        return await dbContext.Courses.AsNoTracking()
+        var (instructors, metadata) = await dbContext.Courses.AsNoTracking()
             .Where(course => course.Id == courseId)
             .SelectMany(course => course.Instructors.OrderBy(instructor => instructor.Id)
                 .Select(instructor => new CourseInstructorResponseDto(instructor.Id, instructor.Username)))
-            .ToArrayAsync(ct);
+            .ToPagedResultAsync(request, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
+
+        return (instructors, new Metadata(metadata, request));
     }
 
-    public async Task<SectionResponseDto[]> GetSectionsAsync(uint courseId, CancellationToken ct)
+    public async Task<(SectionResponseDto[] Sections, Metadata Metadata)> GetSectionsAsync(uint courseId, uint userId, RequestQuery request, CancellationToken ct)
     {
-        if (!await dbContext.Courses.AnyAsync(course => course.Id == courseId, ct))
-            throw ServiceException.NotFound(Resources.ErrorCourseNotFound);
+        await CourseAuthorization.EnsureCanAccessCourseAsync(dbContext, courseId, userId, ct);
 
-        return await dbContext.Sections.AsNoTracking()
+        var (sections, metadata) = await dbContext.Sections.AsNoTracking()
             .Where(section => section.CourseId == courseId)
             .OrderBy(section => section.Order)
             .ThenBy(section => section.Id)
             .Select(section => new SectionResponseDto(section.Id, section.Title, section.Order, section.CourseId))
-            .ToArrayAsync(ct);
+            .ToPagedResultAsync(request, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
+
+        return (sections, new Metadata(metadata, request));
     }
 }

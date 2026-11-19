@@ -1,18 +1,22 @@
+using Backend.Config;
 using Backend.Data;
 using Backend.Exceptions;
+using Backend.Extensions;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
 using Backend.Models.Entities;
 using Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Backend.Services;
 
-public class EnrollmentService(AppDbContext dbContext) : IEnrollmentService {
-    public async Task<UserResponseDto[]> GetEnrolledUsersAsync(uint courseId, uint requestingUserId, CancellationToken ct)
+public class EnrollmentService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions> dbLimitsOptions) : IEnrollmentService {
+    public async Task<(UserResponseDto[] Users, Metadata Metadata)> GetEnrolledUsersAsync(uint courseId, uint requestingUserId, RequestQuery request, CancellationToken ct)
     {
         await CourseAuthorization.EnsureCanManageCourseAsync(dbContext, requestingUserId, courseId, ct);
-        return await dbContext.Enrollments.AsNoTracking()
+
+        var (users, metadata) = await dbContext.Enrollments.AsNoTracking()
             .Where(enrollment => enrollment.CourseId == courseId)
             .OrderBy(enrollment => enrollment.StudentId)
             .Select(enrollment => new UserResponseDto(
@@ -20,7 +24,9 @@ public class EnrollmentService(AppDbContext dbContext) : IEnrollmentService {
                 enrollment.Student.Username,
                 enrollment.Student.Email,
                 enrollment.Student.Role.ToString()))
-            .ToArrayAsync(ct);
+            .ToPagedResultAsync(request, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
+
+        return (users, new Metadata(metadata, request));
     }
 
     public async Task<uint> EnrollIntoCourseAsync(uint studentId, EnrollmentRequestDto request, CancellationToken ct)
@@ -47,7 +53,7 @@ public class EnrollmentService(AppDbContext dbContext) : IEnrollmentService {
         await CourseAuthorization.EnsureCanManageCourseAsync(dbContext, requestingUserId, request.CourseId, ct);
         await EnsureStudentAsync(request.StudentId, ct);
         if (await dbContext.Enrollments.AsNoTracking().AnyAsync(enrollment => enrollment.StudentId == request.StudentId && enrollment.CourseId == request.CourseId, ct))
-            throw ServiceException.Conflict(Resources.ErrorAlreadyEnrolled);
+            throw ServiceException.Conflict(Resources.ErrorAlreadyEnrolledForce);
 
         Enrollment enrollment = new() { StudentId = request.StudentId, CourseId = request.CourseId };
         dbContext.Enrollments.Add(enrollment);

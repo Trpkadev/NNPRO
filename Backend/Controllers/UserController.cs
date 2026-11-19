@@ -20,8 +20,8 @@ public class UserController(IUserService userService) : ApiControllerBase {
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<UserCourseResponseDto[]>> GetMyCourses([FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        var courses = await userService.GetMyCoursesAsync(AuthenticatedUserId, cancellationToken);
-        return OkPaged(courses, requestQuery);
+        var (courses, metadata) = await userService.GetMyCoursesAsync(AuthenticatedUserId, requestQuery, cancellationToken);
+        return Ok(courses, metadata);
     }
 
     [HttpGet("me/progress")]
@@ -32,8 +32,8 @@ public class UserController(IUserService userService) : ApiControllerBase {
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<UserLessonProgressResponseDto[]>> GetMyProgress([FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        var progress = await userService.GetMyProgressAsync(AuthenticatedUserId, cancellationToken);
-        return OkPaged(progress, requestQuery);
+        var (progress, metadata) = await userService.GetMyProgressAsync(AuthenticatedUserId, requestQuery, cancellationToken);
+        return Ok(progress, metadata);
     }
 
     [HttpPut]

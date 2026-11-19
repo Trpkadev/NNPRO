@@ -4,9 +4,9 @@ using Backend.Models.DTOs.Response;
 namespace Backend.Services.Interfaces;
 
 public interface ILessonService {
-    Task<LessonResponseDto> GetByIdAsync(uint id, CancellationToken ct);
+    Task<LessonResponseDto> GetByIdAsync(uint id, uint userId, CancellationToken ct);
 
-    Task<AttachmentResponseDto[]> GetAttachmentsAsync(uint lessonId, CancellationToken ct);
+    Task<(AttachmentResponseDto[] Attachments, Metadata Metadata)> GetAttachmentsAsync(uint lessonId, uint userId, RequestQuery request, CancellationToken ct);
 
     Task<uint> CreateAsync(uint requestingUserId, CreateLessonRequestDto request, CancellationToken ct);
 

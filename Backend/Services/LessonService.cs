@@ -1,29 +1,43 @@
+using Backend.Config;
 using Backend.Data;
 using Backend.Exceptions;
+using Backend.Extensions;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
 using Backend.Models.Entities;
 using Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Backend.Services;
 
-public class LessonService(AppDbContext dbContext) : ILessonService {
-    public async Task<LessonResponseDto> GetByIdAsync(uint id, CancellationToken ct)
+public class LessonService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions> dbLimitsOptions) : ILessonService {
+    public async Task<LessonResponseDto> GetByIdAsync(uint id, uint userId, CancellationToken ct)
     {
-        var lesson = await dbContext.Lessons.AsNoTracking()
-            .Where(lesson => lesson.Id == id)
-            .Select(lesson => new LessonResponseDto(lesson.Id, lesson.Title, lesson.Content, lesson.VideoUrl, lesson.Order, lesson.SectionId))
-            .FirstOrDefaultAsync(ct);
-        return lesson ?? throw ServiceException.NotFound(Resources.ErrorLessonNotFound);
+        var data = await dbContext.Lessons.AsNoTracking()
+                       .Where(l => l.Id == id)
+                       .Select(l => new {
+                           l.Section.CourseId,
+                           Dto = new LessonResponseDto(l.Id, l.Title, l.Content, l.VideoUrl, l.Order, l.SectionId)
+                       })
+                       .FirstOrDefaultAsync(ct)
+                   ?? throw ServiceException.NotFound(Resources.ErrorLessonNotFound);
+
+        await CourseAuthorization.EnsureCanAccessCourseAsync(dbContext, data.CourseId, userId, ct);
+        return data.Dto;
     }
 
-    public async Task<AttachmentResponseDto[]> GetAttachmentsAsync(uint lessonId, CancellationToken ct)
+    public async Task<(AttachmentResponseDto[] Attachments, Metadata Metadata)> GetAttachmentsAsync(uint lessonId, uint userId, RequestQuery request, CancellationToken ct)
     {
-        if (!await dbContext.Lessons.AnyAsync(lesson => lesson.Id == lessonId, ct))
-            throw ServiceException.NotFound(Resources.ErrorLessonNotFound);
+        uint courseId = await dbContext.Lessons.AsNoTracking()
+                            .Where(l => l.Id == lessonId)
+                            .Select(l => (uint?)l.Section.CourseId)
+                            .FirstOrDefaultAsync(ct)
+                        ?? throw ServiceException.NotFound(Resources.ErrorLessonNotFound);
 
-        return await dbContext.LessonAttachments.AsNoTracking()
+        await CourseAuthorization.EnsureCanAccessCourseAsync(dbContext, courseId, userId, ct);
+
+        var (attachments, metadata) = await dbContext.LessonAttachments.AsNoTracking()
             .Where(attachment => attachment.LessonId == lessonId)
             .OrderBy(attachment => attachment.Id)
             .Select(attachment => new AttachmentResponseDto(
@@ -33,7 +47,9 @@ public class LessonService(AppDbContext dbContext) : ILessonService {
                 attachment.ContentType,
                 attachment.SizeBytes,
                 attachment.LessonId))
-            .ToArrayAsync(ct);
+            .ToPagedResultAsync(request, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
+
+        return (attachments, new Metadata(metadata, request));
     }
 
     public async Task<uint> CreateAsync(uint requestingUserId, CreateLessonRequestDto request, CancellationToken ct)

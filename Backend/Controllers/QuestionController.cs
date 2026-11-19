@@ -17,7 +17,7 @@ public class QuestionController(IQuestionService questionService) : ApiControlle
     [EndpointSummary("Get question detail")]
     [ProducesResponseType<Wrapper<QuestionResponseDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<QuestionResponseDto>> GetQuestion(uint questionId, CancellationToken cancellationToken) => Ok(await questionService.GetByIdAsync(questionId, cancellationToken));
+    public async Task<ActionResult<QuestionResponseDto>> GetQuestion(uint questionId, CancellationToken cancellationToken) => Ok(await questionService.GetByIdAsync(questionId, AuthenticatedUserId, cancellationToken));
 
     [HttpGet("{questionId:uint}/options")]
     [Authorize]
@@ -28,8 +28,8 @@ public class QuestionController(IQuestionService questionService) : ApiControlle
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<AnswerOptionResponseDto[]>> GetAnswerOptions(uint questionId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        var options = await questionService.GetOptionsAsync(questionId, cancellationToken);
-        return OkPaged(options, requestQuery);
+        var (options, metadata) = await questionService.GetOptionsAsync(questionId, AuthenticatedUserId, requestQuery, cancellationToken);
+        return Ok(options, metadata);
     }
 
     [HttpGet("{questionId:uint}/options/editor")]
@@ -41,8 +41,8 @@ public class QuestionController(IQuestionService questionService) : ApiControlle
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<AnswerOptionEditorResponseDto[]>> GetAnswerOptionsForEditor(uint questionId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        var options = await questionService.GetOptionsForEditorAsync(AuthenticatedUserId, questionId, cancellationToken);
-        return OkPaged(options, requestQuery);
+        var (options, metadata) = await questionService.GetOptionsForEditorAsync(AuthenticatedUserId, questionId, requestQuery, cancellationToken);
+        return Ok(options, metadata);
     }
 
     [HttpPost("{questionId:uint}/options")]

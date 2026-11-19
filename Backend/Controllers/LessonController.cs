@@ -18,7 +18,7 @@ public class LessonController(ILessonService lessonService) : ApiControllerBase 
     [EndpointDescription("Returns complete information about a specific lesson, including text content, video URLs, and attachments.")]
     [ProducesResponseType<Wrapper<LessonResponseDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<LessonResponseDto>> GetLessonById(uint id, CancellationToken cancellationToken) => Ok(await lessonService.GetByIdAsync(id, cancellationToken));
+    public async Task<ActionResult<LessonResponseDto>> GetLessonById(uint id, CancellationToken cancellationToken) => Ok(await lessonService.GetByIdAsync(id, AuthenticatedUserId, cancellationToken));
 
     [HttpGet("{lessonId:uint}/attachments")]
     [Authorize]
@@ -28,8 +28,8 @@ public class LessonController(ILessonService lessonService) : ApiControllerBase 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<AttachmentResponseDto[]>> GetAttachments([FromRoute] uint lessonId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        var attachments = await lessonService.GetAttachmentsAsync(lessonId, cancellationToken);
-        return OkPaged(attachments, requestQuery);
+        var (attachments, metadata) = await lessonService.GetAttachmentsAsync(lessonId, AuthenticatedUserId, requestQuery, cancellationToken);
+        return Ok(attachments, metadata);
     }
 
     [HttpPost]

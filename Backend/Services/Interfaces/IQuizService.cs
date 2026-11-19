@@ -4,9 +4,9 @@ using Backend.Models.DTOs.Response;
 namespace Backend.Services.Interfaces;
 
 public interface IQuizService {
-    Task<QuizResponseDto> GetByIdAsync(uint quizId, CancellationToken ct);
+    Task<QuizResponseDto> GetByIdAsync(uint quizId, uint userId, CancellationToken ct);
 
-    Task<QuestionResponseDto[]> GetQuestionsAsync(uint quizId, CancellationToken ct);
+    Task<(QuestionResponseDto[] Questions, Metadata Metadata)> GetQuestionsAsync(uint quizId, uint userId, RequestQuery requestQuery, CancellationToken ct);
 
     Task<uint> CreateAsync(uint requestingUserId, CreateQuizRequestDto request, CancellationToken ct);
 
@@ -16,11 +16,11 @@ public interface IQuizService {
 
     Task<QuizResponseDto> GetForEditorAsync(uint requestingUserId, uint quizId, CancellationToken ct);
 
-    Task<QuizAttemptResponseDto[]> GetAttemptsAsync(uint requestingUserId, uint quizId, CancellationToken ct);
+    Task<(QuizAttemptResponseDto[] Attempts, Metadata Metadata)> GetAttemptsAsync(uint requestingUserId, uint quizId, RequestQuery request, CancellationToken ct);
 
-    Task<MyQuizAttemptResponseDto[]> GetMyAttemptsAsync(uint studentId, uint quizId, CancellationToken ct);
+    Task<(MyQuizAttemptResponseDto[] Attempts, Metadata Metadata)> GetMyAttemptsAsync(uint studentId, uint quizId, RequestQuery request, CancellationToken ct);
 
-    Task<QuizAttemptResponseDto> GetAttemptAsync(uint requestingUserId, uint attemptId, CancellationToken ct);
+    Task<QuizAttemptResponseDto> GetAttemptByAttemptIdAsync(uint requestingUserId, uint attemptId, CancellationToken ct);
 
     Task<uint> StartAttemptAsync(uint studentId, StartAttemptRequestDto request, CancellationToken ct);
 

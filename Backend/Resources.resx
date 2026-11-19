@@ -334,7 +334,13 @@
   <data name="ErrorResourceNotFound" xml:space="preserve">
     <value>{0} was not found.</value>
   </data>
-  <data name="Quiz" xml:space="preserve">
-    <value>Quiz</value>
+  <data name="ErrorCourseAccessDenied" xml:space="preserve">
+    <value>Course access is denied.</value>
+  </data>
+  <data name="ErrorAttemptTimeLimitReached" xml:space="preserve">
+    <value>Time limit for submission had been reached.</value>
+  </data>
+  <data name="ErrorAlreadyEnrolledForce" xml:space="preserve">
+    <value>This student is already enrolled.</value>
   </data>
 </root>
