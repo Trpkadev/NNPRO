@@ -1,4 +1,5 @@
 ﻿using Backend.Extensions;
+using Backend.Logging;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
 using Backend.Services.Interfaces;
@@ -11,7 +12,7 @@ namespace Backend.Controllers;
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
 [Route("api/quizzes")]
 [Tags("Quizzes")]
-public class QuizController(IQuizService quizService) : ApiControllerBase {
+public class QuizController(IQuizService quizService, ILogger<QuizController> logger) : ApiControllerBase {
     [HttpGet("{quizId:uint}")]
     [Authorize]
     [EndpointSummary("Get quiz detail")]
@@ -40,6 +41,7 @@ public class QuizController(IQuizService quizService) : ApiControllerBase {
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<uint>> CreateQuiz([FromBody] CreateQuizRequestDto requestDto, CancellationToken cancellationToken)
     {
+        logger.EndpointInvoked(nameof(CreateQuiz), AuthenticatedUserId, HttpContext.TraceIdentifier);
         uint newQuizId = await quizService.CreateAsync(AuthenticatedUserId, requestDto, cancellationToken);
         return CreatedAtAction(nameof(GetQuiz), new { quizId = newQuizId }, newQuizId);
     }
@@ -52,6 +54,7 @@ public class QuizController(IQuizService quizService) : ApiControllerBase {
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateQuiz(uint quizId, [FromBody] CreateQuizRequestDto requestDto, CancellationToken cancellationToken)
     {
+        logger.EndpointInvoked(nameof(UpdateQuiz), AuthenticatedUserId, HttpContext.TraceIdentifier);
         await quizService.UpdateAsync(AuthenticatedUserId, quizId, requestDto, cancellationToken);
         return NoContent();
     }
@@ -63,6 +66,7 @@ public class QuizController(IQuizService quizService) : ApiControllerBase {
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteQuiz(uint quizId, CancellationToken cancellationToken)
     {
+        logger.EndpointInvoked(nameof(DeleteQuiz), AuthenticatedUserId, HttpContext.TraceIdentifier);
         await quizService.DeleteAsync(AuthenticatedUserId, quizId, cancellationToken);
         return NoContent();
     }
@@ -117,6 +121,7 @@ public class QuizController(IQuizService quizService) : ApiControllerBase {
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<uint>> StartAttempt([FromBody] StartAttemptRequestDto requestDto, CancellationToken cancellationToken)
     {
+        logger.EndpointInvoked(nameof(StartAttempt), AuthenticatedUserId, HttpContext.TraceIdentifier);
         uint newAttemptId = await quizService.StartAttemptAsync(AuthenticatedUserId, requestDto, cancellationToken);
         return CreatedAtAction(nameof(GetAttempt), new { attemptId = newAttemptId }, newAttemptId);
     }
@@ -129,5 +134,9 @@ public class QuizController(IQuizService quizService) : ApiControllerBase {
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<QuizAttemptResponseDto>> EndAttempt([FromBody] EndAttemptRequestDto requestDto, CancellationToken cancellationToken) => Ok(await quizService.EndAttemptAsync(AuthenticatedUserId, requestDto, cancellationToken));
+    public async Task<ActionResult<QuizAttemptResponseDto>> EndAttempt([FromBody] EndAttemptRequestDto requestDto, CancellationToken cancellationToken)
+    {
+        logger.EndpointInvoked(nameof(EndAttempt), AuthenticatedUserId, HttpContext.TraceIdentifier);
+        return Ok(await quizService.EndAttemptAsync(AuthenticatedUserId, requestDto, cancellationToken));
+    }
 }

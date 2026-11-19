@@ -248,6 +248,8 @@ builder.Services.AddOpenApi(options => {
 
 builder.Services.AddHealthChecks();
 
+builder.Services.AddScoped(typeof(ServiceContext<>));
+
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<ILessonService, LessonService>();
 builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();

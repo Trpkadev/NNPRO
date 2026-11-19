@@ -1,5 +1,8 @@
+using Backend.Config;
+using Backend.Data;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
+using Microsoft.Extensions.Options;
 
 namespace Backend.Services.Interfaces;
 
@@ -26,3 +29,5 @@ public interface IQuizService {
 
     Task<QuizAttemptResponseDto> EndAttemptAsync(uint studentId, EndAttemptRequestDto request, CancellationToken ct);
 }
+
+public abstract class BaseService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions> dbLimitsOptions, ILogger<BaseService> logger);
