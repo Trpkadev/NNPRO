@@ -56,7 +56,7 @@ public class QuestionService(AppDbContext dbContext, IOptions<DatabaseLimitsOpti
         if (questionInfo.RandomizeAnswers)
             Random.Shared.Shuffle(options);
 
-        return (options, new Metadata { Pagination = metadata });
+        return (options, new Metadata(metadata, requestQuery));
     }
 
     public async Task<(AnswerOptionEditorResponseDto[] Options, Metadata metadata)> GetOptionsForEditorAsync(uint requestingUserId, uint questionId, RequestQuery requestQuery, CancellationToken ct)
@@ -67,7 +67,7 @@ public class QuestionService(AppDbContext dbContext, IOptions<DatabaseLimitsOpti
             .OrderBy(option => option.Id)
             .Select(option => new AnswerOptionEditorResponseDto(option.Id, option.Text, option.ImageUrl, option.IsCorrect, option.QuestionId))
             .ToPagedResultAsync(requestQuery, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
-        return (options, new Metadata { Pagination = metadata });
+        return (options, new Metadata(metadata, requestQuery));
     }
 
     public async Task<uint> CreateAnswerOptionAsync(uint requestingUserId, uint questionId, CreateAnswerOptionRequestDto request, CancellationToken ct)
