@@ -11,12 +11,12 @@ using Microsoft.Extensions.Options;
 
 namespace Backend.Services;
 
-public class EnrollmentService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions> dbLimitsOptions) : IEnrollmentService {
+public class EnrollmentService(ServiceContext<EnrollmentService> ctx) : IEnrollmentService {
     public async Task<(UserResponseDto[] Users, Metadata Metadata)> GetEnrolledUsersAsync(uint courseId, uint requestingUserId, RequestQuery request, CancellationToken ct)
     {
-        await CourseAuthorization.EnsureCanManageCourseAsync(dbContext, requestingUserId, courseId, ct);
+        await CourseAuthorization.EnsureCanManageCourseAsync(ctx.Db, requestingUserId, courseId, ct);
 
-        var (users, metadata) = await dbContext.Enrollments.AsNoTracking()
+        var (users, metadata) = await ctx.Db.Enrollments.AsNoTracking()
             .Where(enrollment => enrollment.CourseId == courseId)
             .OrderBy(enrollment => enrollment.StudentId)
             .Select(enrollment => new UserResponseDto(
@@ -24,14 +24,14 @@ public class EnrollmentService(AppDbContext dbContext, IOptions<DatabaseLimitsOp
                 enrollment.Student.Username,
                 enrollment.Student.Email,
                 enrollment.Student.Role.ToString()))
-            .ToPagedResultAsync(request, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
+            .ToPagedResultAsync(request, ctx.MaxUnpagedItems, ct);
 
         return (users, new Metadata(metadata, request));
     }
 
     public async Task<uint> EnrollIntoCourseAsync(uint studentId, EnrollmentRequestDto request, CancellationToken ct)
     {
-        var course = await dbContext.Courses.FirstOrDefaultAsync(candidate => candidate.Id == request.CourseId, ct);
+        var course = await ctx.Db.Courses.FirstOrDefaultAsync(candidate => candidate.Id == request.CourseId, ct);
         if (course is null)
             throw ServiceException.NotFound(Resources.ErrorCourseNotFound);
 
@@ -39,31 +39,31 @@ public class EnrollmentService(AppDbContext dbContext, IOptions<DatabaseLimitsOp
             throw ServiceException.Forbidden(Resources.ErrorCourseAccessKeyInvalid);
 
         await EnsureStudentAsync(studentId, ct);
-        if (await dbContext.Enrollments.AnyAsync(enrollment => enrollment.StudentId == studentId && enrollment.CourseId == course.Id, ct))
+        if (await ctx.Db.Enrollments.AnyAsync(enrollment => enrollment.StudentId == studentId && enrollment.CourseId == course.Id, ct))
             throw ServiceException.Conflict(Resources.ErrorAlreadyEnrolled);
 
         Enrollment enrollment = new() { StudentId = studentId, CourseId = course.Id };
-        dbContext.Enrollments.Add(enrollment);
-        await dbContext.SaveChangesAsync(ct);
+        ctx.Db.Enrollments.Add(enrollment);
+        await ctx.Db.SaveChangesAsync(ct);
         return enrollment.Id;
     }
 
     public async Task<uint> ForceEnrollIntoCourseAsync(uint requestingUserId, ForceEnrollmentRequestDto request, CancellationToken ct)
     {
-        await CourseAuthorization.EnsureCanManageCourseAsync(dbContext, requestingUserId, request.CourseId, ct);
+        await CourseAuthorization.EnsureCanManageCourseAsync(ctx.Db, requestingUserId, request.CourseId, ct);
         await EnsureStudentAsync(request.StudentId, ct);
-        if (await dbContext.Enrollments.AsNoTracking().AnyAsync(enrollment => enrollment.StudentId == request.StudentId && enrollment.CourseId == request.CourseId, ct))
+        if (await ctx.Db.Enrollments.AsNoTracking().AnyAsync(enrollment => enrollment.StudentId == request.StudentId && enrollment.CourseId == request.CourseId, ct))
             throw ServiceException.Conflict(Resources.ErrorAlreadyEnrolledForce);
 
         Enrollment enrollment = new() { StudentId = request.StudentId, CourseId = request.CourseId };
-        dbContext.Enrollments.Add(enrollment);
-        await dbContext.SaveChangesAsync(ct);
+        ctx.Db.Enrollments.Add(enrollment);
+        await ctx.Db.SaveChangesAsync(ct);
         return enrollment.Id;
     }
 
     public async Task UnenrollAsync(uint studentId, uint courseId, CancellationToken ct)
     {
-        int deleted = await dbContext.Enrollments.Where(enrollment => enrollment.StudentId == studentId && enrollment.CourseId == courseId)
+        int deleted = await ctx.Db.Enrollments.Where(enrollment => enrollment.StudentId == studentId && enrollment.CourseId == courseId)
             .ExecuteDeleteAsync(ct);
         if (deleted == 0)
             throw ServiceException.NotFound(Resources.ErrorEnrollmentNotFound);
@@ -71,8 +71,8 @@ public class EnrollmentService(AppDbContext dbContext, IOptions<DatabaseLimitsOp
 
     public async Task ForceUnenrollAsync(uint requestingUserId, uint courseId, uint studentId, CancellationToken ct)
     {
-        await CourseAuthorization.EnsureCanManageCourseAsync(dbContext, requestingUserId, courseId, ct);
-        int deleted = await dbContext.Enrollments.Where(enrollment => enrollment.StudentId == studentId && enrollment.CourseId == courseId)
+        await CourseAuthorization.EnsureCanManageCourseAsync(ctx.Db, requestingUserId, courseId, ct);
+        int deleted = await ctx.Db.Enrollments.Where(enrollment => enrollment.StudentId == studentId && enrollment.CourseId == courseId)
             .ExecuteDeleteAsync(ct);
         if (deleted == 0)
             throw ServiceException.NotFound(Resources.ErrorEnrollmentNotFound);
@@ -80,7 +80,7 @@ public class EnrollmentService(AppDbContext dbContext, IOptions<DatabaseLimitsOp
 
     private async Task EnsureStudentAsync(uint userId, CancellationToken ct)
     {
-        var role = await dbContext.Users.AsNoTracking()
+        var role = await ctx.Db.Users.AsNoTracking()
             .Where(user => user.Id == userId)
             .Select(user => (UserRole?)user.Role)
             .FirstOrDefaultAsync(ct);

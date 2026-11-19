@@ -11,10 +11,10 @@ using Microsoft.Extensions.Options;
 
 namespace Backend.Services;
 
-public class AdminService(AppDbContext dbContext, IAuthService authService, ITokenBlacklistService tokenBlacklistService, IOptions<JwtOptions> jwtOptions, IOptions<DatabaseLimitsOptions> dbLimitsOptions) : IAdminService {
+public class AdminService(ServiceContext<AdminService> ctx, IAuthService authService) : IAdminService {
     public async Task<AdminUserDetailsDto> GetUserAsync(uint userId, CancellationToken ct)
     {
-        var user = await dbContext.Users.AsNoTracking()
+        var user = await ctx.Db.Users.AsNoTracking()
             .Where(user => user.Id == userId)
             .Select(user => new AdminUserDetailsDto(user.Id, user.Username, user.Email, user.Role.ToString(), user.Enrollments.Count, user.LessonProgresses.Count, user.QuizAttempts.Count, user.RefreshTokens.Count(token => token.RevokedAtUtc == null && token.ExpiresAtUtc > DateTime.UtcNow)))
             .FirstOrDefaultAsync(ct);
@@ -26,7 +26,7 @@ public class AdminService(AppDbContext dbContext, IAuthService authService, ITok
         if (!Enum.IsDefined(role))
             throw ServiceException.BadRequest(Resources.ErrorInvalidUserRole);
 
-        var user = await dbContext.Users.FirstOrDefaultAsync(candidate => candidate.Id == userId, ct);
+        var user = await ctx.Db.Users.FirstOrDefaultAsync(candidate => candidate.Id == userId, ct);
         if (user is null)
             throw ServiceException.NotFound(Resources.ErrorUserNotFound);
 
@@ -34,17 +34,17 @@ public class AdminService(AppDbContext dbContext, IAuthService authService, ITok
             return;
 
         var nowUtc = DateTime.UtcNow;
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(ct);
+        await using var transaction = await ctx.Db.Database.BeginTransactionAsync(ct);
 
         user.Role = role;
-        await dbContext.RefreshTokens.Where(token => token.UserId == userId && token.RevokedAtUtc == null && token.ExpiresAtUtc > nowUtc)
+        await ctx.Db.RefreshTokens.Where(token => token.UserId == userId && token.RevokedAtUtc == null && token.ExpiresAtUtc > nowUtc)
             .ExecuteUpdateAsync(setters => setters
                     .SetProperty(token => token.RevokedAtUtc, nowUtc)
                     .SetProperty(token => token.RevokedByIp, adminIp)
                     .SetProperty(token => token.ReasonRevoked, "User role changed"),
                 ct);
 
-        await dbContext.SaveChangesAsync(ct);
+        await ctx.Db.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
 
         await BlacklistUnexpiredAccessTokensAsync(userId, nowUtc, ct);
@@ -52,7 +52,7 @@ public class AdminService(AppDbContext dbContext, IAuthService authService, ITok
 
     public async Task<(AdminSessionResponseDto[] Sessions, Metadata Metadata)> GetSessionsAsync(uint userId, RequestQuery query, CancellationToken ct)
     {
-        bool userExists = await dbContext.Users.AsNoTracking().AnyAsync(user => user.Id == userId, ct);
+        bool userExists = await ctx.Db.Users.AsNoTracking().AnyAsync(user => user.Id == userId, ct);
         if (!userExists)
             throw ServiceException.NotFound(Resources.ErrorUserNotFound);
 
@@ -70,11 +70,11 @@ public class AdminService(AppDbContext dbContext, IAuthService authService, ITok
             Filters = filters
         };
         string entitySortBy = string.Equals(sortBy, nameof(AdminSessionResponseDto.SessionId), StringComparison.OrdinalIgnoreCase) ? nameof(RefreshToken.TokenFamilyId) : sortBy;
-        var sessionsQuery = dbContext.RefreshTokens.AsNoTracking()
+        var sessionsQuery = ctx.Db.RefreshTokens.AsNoTracking()
             .Where(token => token.UserId == userId && token.RevokedAtUtc == null && token.ExpiresAtUtc > nowUtc)
             .Filter(filters)
             .OrderByProperty(new SortingMetadata { SortBy = entitySortBy, IsDescending = descending });
-        var (sessions, pagination) = await sessionsQuery.ToPagedResultAsync(query, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
+        var (sessions, pagination) = await sessionsQuery.ToPagedResultAsync(query, ctx.MaxUnpagedItems, ct);
 
         AdminSessionResponseDto[] sessionResponses = [.. sessions.Select(token => new AdminSessionResponseDto(token.TokenFamilyId, token.DeviceName, token.UserAgent, token.CreatedByIp, token.CreatedAtUtc, token.ExpiresAtUtc))];
         return (sessionResponses, new Metadata(pagination, query));
@@ -96,22 +96,22 @@ public class AdminService(AppDbContext dbContext, IAuthService authService, ITok
 
     private async Task EnsureUserExistsAsync(uint userId, CancellationToken ct)
     {
-        if (!await dbContext.Users.AsNoTracking().AnyAsync(user => user.Id == userId, ct))
+        if (!await ctx.Db.Users.AsNoTracking().AnyAsync(user => user.Id == userId, ct))
             throw ServiceException.NotFound(Resources.ErrorUserNotFound);
     }
 
     private async Task BlacklistUnexpiredAccessTokensAsync(uint userId, DateTime nowUtc, CancellationToken ct)
     {
-        var accessTokenCutoffUtc = nowUtc.AddMinutes(-jwtOptions.Value.AccessTokenExpirationMinutes);
-        var accessTokens = await dbContext.RefreshTokens.AsNoTracking()
+        var accessTokenCutoffUtc = nowUtc.AddMinutes(-ctx.JwtOptions.Value.AccessTokenExpirationMinutes);
+        var accessTokens = await ctx.Db.RefreshTokens.AsNoTracking()
             .Where(token => token.UserId == userId && (token.AccessTokenExpiresAtUtc > nowUtc || token.AccessTokenExpiresAtUtc == null && token.CreatedAtUtc > accessTokenCutoffUtc))
             .Select(token => new { token.JwtId, token.CreatedAtUtc, token.AccessTokenExpiresAtUtc })
             .ToListAsync(ct);
 
         foreach (var token in accessTokens.DistinctBy(token => token.JwtId))
         {
-            var expiresAtUtc = token.AccessTokenExpiresAtUtc ?? token.CreatedAtUtc.AddMinutes(jwtOptions.Value.AccessTokenExpirationMinutes);
-            await tokenBlacklistService.BlacklistTokenAsync(token.JwtId, expiresAtUtc - nowUtc, ct);
+            var expiresAtUtc = token.AccessTokenExpiresAtUtc ?? token.CreatedAtUtc.AddMinutes(ctx.JwtOptions.Value.AccessTokenExpirationMinutes);
+            await ctx.TokenBlacklistService.BlacklistTokenAsync(token.JwtId, expiresAtUtc - nowUtc, ct);
         }
     }
 }

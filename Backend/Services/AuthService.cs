@@ -11,10 +11,10 @@ using Microsoft.Extensions.Options;
 
 namespace Backend.Services;
 
-public class AuthService(AppDbContext dbContext, IJwtTokenGenerator jwtTokenGenerator, ITokenBlacklistService tokenBlacklistService, IOptions<JwtOptions> jwtOptions) : IAuthService {
+public class AuthService(ServiceContext<AuthService> ctx) : IAuthService {
     public async Task<AuthResponseDto?> RegisterAsync(RegisterRequestDto request, string? clientIp, string? userAgent, CancellationToken ct)
     {
-        bool userExists = await dbContext.Users.AsNoTracking()
+        bool userExists = await ctx.Db.Users.AsNoTracking()
             .AnyAsync(user => user.Username == request.Username || user.Email == request.Email, ct);
         if (userExists)
             return null;
@@ -24,12 +24,12 @@ public class AuthService(AppDbContext dbContext, IJwtTokenGenerator jwtTokenGene
             Email = request.Email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password)
         };
-        dbContext.Users.Add(user);
-        await dbContext.SaveChangesAsync(ct);
+        ctx.Db.Users.Add(user);
+        await ctx.Db.SaveChangesAsync(ct);
 
         var (response, refreshToken) = CreateTokenPair(user, clientIp, userAgent, request.DeviceName, Guid.NewGuid());
-        dbContext.RefreshTokens.Add(refreshToken);
-        await dbContext.SaveChangesAsync(ct);
+        ctx.Db.RefreshTokens.Add(refreshToken);
+        await ctx.Db.SaveChangesAsync(ct);
         return response;
     }
 
@@ -37,15 +37,15 @@ public class AuthService(AppDbContext dbContext, IJwtTokenGenerator jwtTokenGene
     {
         string? username = string.IsNullOrWhiteSpace(request.Username) ? null : request.Username;
         string? email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email;
-        var user = await dbContext.Users.AsNoTracking()
+        var user = await ctx.Db.Users.AsNoTracking()
             .FirstOrDefaultAsync(candidate => username != null && candidate.Username == username || email != null && candidate.Email == email, ct);
 
         if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             return null;
 
         var (response, refreshToken) = CreateTokenPair(user, clientIp, userAgent, request.DeviceName, Guid.NewGuid());
-        dbContext.RefreshTokens.Add(refreshToken);
-        await dbContext.SaveChangesAsync(ct);
+        ctx.Db.RefreshTokens.Add(refreshToken);
+        await ctx.Db.SaveChangesAsync(ct);
 
         if (currentUserId.HasValue && !string.IsNullOrEmpty(currentJwtId))
             await RevokeCurrentSessionAsync(currentUserId.Value, currentJwtId, clientIp, ct);
@@ -56,17 +56,17 @@ public class AuthService(AppDbContext dbContext, IJwtTokenGenerator jwtTokenGene
     public async Task<AuthResponseDto?> RefreshTokenAsync(RefreshTokenRequestDto request, string? clientIp, CancellationToken ct)
     {
         string presentedTokenHash = HashRefreshToken(request.RefreshToken);
-        var currentToken = await dbContext.RefreshTokens.AsNoTracking()
+        var currentToken = await ctx.Db.RefreshTokens.AsNoTracking()
             .FirstOrDefaultAsync(token => token.TokenHash == presentedTokenHash, ct);
 
         if (currentToken is null)
             return null;
 
-        string newRefreshTokenValue = jwtTokenGenerator.GenerateRefreshToken();
+        string newRefreshTokenValue = ctx.JwtTokenGenerator.GenerateRefreshToken();
         string newRefreshTokenHash = HashRefreshToken(newRefreshTokenValue);
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(ct);
+        await using var transaction = await ctx.Db.Database.BeginTransactionAsync(ct);
         var nowUtc = DateTime.UtcNow;
-        int revokedCount = await dbContext.RefreshTokens.AsNoTracking()
+        int revokedCount = await ctx.Db.RefreshTokens.AsNoTracking()
             .Where(token => token.Id == currentToken.Id && token.RevokedAtUtc == null && token.ExpiresAtUtc > nowUtc)
             .ExecuteUpdateAsync(setters => setters
                     .SetProperty(token => token.RevokedAtUtc, nowUtc)
@@ -77,15 +77,15 @@ public class AuthService(AppDbContext dbContext, IJwtTokenGenerator jwtTokenGene
 
         if (revokedCount == 0)
         {
-            var latestToken = await dbContext.RefreshTokens.AsNoTracking()
+            var latestToken = await ctx.Db.RefreshTokens.AsNoTracking()
                 .FirstOrDefaultAsync(token => token.Id == currentToken.Id, ct);
             if (latestToken is null || !latestToken.IsRevoked)
                 return null;
 
-            var familyTokens = await dbContext.RefreshTokens.AsNoTracking()
+            var familyTokens = await ctx.Db.RefreshTokens.AsNoTracking()
                 .Where(token => token.UserId == currentToken.UserId && token.TokenFamilyId == currentToken.TokenFamilyId)
                 .ToListAsync(ct);
-            await dbContext.RefreshTokens.Where(token => token.UserId == currentToken.UserId && token.TokenFamilyId == currentToken.TokenFamilyId && token.RevokedAtUtc == null)
+            await ctx.Db.RefreshTokens.Where(token => token.UserId == currentToken.UserId && token.TokenFamilyId == currentToken.TokenFamilyId && token.RevokedAtUtc == null)
                 .ExecuteUpdateAsync(setters => setters
                         .SetProperty(token => token.RevokedAtUtc, nowUtc)
                         .SetProperty(token => token.RevokedByIp, clientIp)
@@ -96,14 +96,14 @@ public class AuthService(AppDbContext dbContext, IJwtTokenGenerator jwtTokenGene
             return null;
         }
 
-        var user = await dbContext.Users.AsNoTracking()
+        var user = await ctx.Db.Users.AsNoTracking()
             .FirstOrDefaultAsync(candidate => candidate.Id == currentToken.UserId, ct);
         if (user is null)
             return null;
 
-        (string accessToken, string newJwtId, var expiresAtUtc) = jwtTokenGenerator.GenerateAccessToken(user);
-        var refreshTokenExpiresAtUtc = DateTime.UtcNow.AddDays(jwtOptions.Value.RefreshTokenExpirationDays);
-        dbContext.RefreshTokens.Add(new RefreshToken {
+        (string accessToken, string newJwtId, var expiresAtUtc) = ctx.JwtTokenGenerator.GenerateAccessToken(user);
+        var refreshTokenExpiresAtUtc = DateTime.UtcNow.AddDays(ctx.JwtOptions.Value.RefreshTokenExpirationDays);
+        ctx.Db.RefreshTokens.Add(new RefreshToken {
             UserId = user.Id,
             JwtId = newJwtId,
             TokenHash = newRefreshTokenHash,
@@ -114,7 +114,7 @@ public class AuthService(AppDbContext dbContext, IJwtTokenGenerator jwtTokenGene
             UserAgent = currentToken.UserAgent,
             DeviceName = currentToken.DeviceName
         });
-        await dbContext.SaveChangesAsync(ct);
+        await ctx.Db.SaveChangesAsync(ct);
         await transaction.CommitAsync(ct);
 
         await BlacklistAccessTokensAsync([currentToken], ct);
@@ -125,7 +125,7 @@ public class AuthService(AppDbContext dbContext, IJwtTokenGenerator jwtTokenGene
     public async Task<bool> RevokeSessionByRefreshTokenAsync(string refreshToken, string? clientIp, CancellationToken ct)
     {
         string tokenHash = HashRefreshToken(refreshToken);
-        var storedToken = await dbContext.RefreshTokens.AsNoTracking()
+        var storedToken = await ctx.Db.RefreshTokens.AsNoTracking()
             .FirstOrDefaultAsync(token => token.TokenHash == tokenHash, ct);
 
         return storedToken is not null && await RevokeSessionFamilyAsync(storedToken.UserId, storedToken.TokenFamilyId, clientIp, "Session revoked", ct);
@@ -133,28 +133,28 @@ public class AuthService(AppDbContext dbContext, IJwtTokenGenerator jwtTokenGene
 
     public async Task<bool> RevokeCurrentSessionAsync(uint userId, string jwtId, string? clientIp, CancellationToken ct)
     {
-        var refreshToken = await dbContext.RefreshTokens.AsNoTracking()
+        var refreshToken = await ctx.Db.RefreshTokens.AsNoTracking()
             .FirstOrDefaultAsync(token => token.UserId == userId && token.JwtId == jwtId, ct);
 
         if (refreshToken is not null)
             return await RevokeSessionFamilyAsync(userId, refreshToken.TokenFamilyId, clientIp, "Session revoked", ct);
 
-        await tokenBlacklistService.BlacklistTokenAsync(jwtId, TimeSpan.FromMinutes(jwtOptions.Value.AccessTokenExpirationMinutes), ct);
+        await ctx.TokenBlacklistService.BlacklistTokenAsync(jwtId, TimeSpan.FromMinutes(ctx.JwtOptions.Value.AccessTokenExpirationMinutes), ct);
         return true;
 
     }
 
     public async Task<bool> RevokeSessionFamilyAsync(uint userId, Guid tokenFamilyId, string? clientIp, string reason, CancellationToken ct)
     {
-        var familyTokens = await dbContext.RefreshTokens.AsNoTracking()
+        var familyTokens = await ctx.Db.RefreshTokens.AsNoTracking()
             .Where(token => token.UserId == userId && token.TokenFamilyId == tokenFamilyId)
             .ToListAsync(ct);
         if (familyTokens.Count == 0)
             return false;
 
         var nowUtc = DateTime.UtcNow;
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(ct);
-        await dbContext.RefreshTokens
+        await using var transaction = await ctx.Db.Database.BeginTransactionAsync(ct);
+        await ctx.Db.RefreshTokens
             .Where(token => token.UserId == userId && token.TokenFamilyId == tokenFamilyId && token.RevokedAtUtc == null)
             .ExecuteUpdateAsync(setters => setters
                     .SetProperty(token => token.RevokedAtUtc, nowUtc)
@@ -169,16 +169,16 @@ public class AuthService(AppDbContext dbContext, IJwtTokenGenerator jwtTokenGene
 
     public async Task<bool> RevokeAllSessionsAsync(uint userId, string? clientIp, CancellationToken ct)
     {
-        bool userExists = await dbContext.Users.AsNoTracking().AnyAsync(user => user.Id == userId, ct);
+        bool userExists = await ctx.Db.Users.AsNoTracking().AnyAsync(user => user.Id == userId, ct);
         if (!userExists)
             return false;
 
-        var userTokens = await dbContext.RefreshTokens.AsNoTracking()
+        var userTokens = await ctx.Db.RefreshTokens.AsNoTracking()
             .Where(token => token.UserId == userId)
             .ToListAsync(ct);
         var nowUtc = DateTime.UtcNow;
-        await using var transaction = await dbContext.Database.BeginTransactionAsync(ct);
-        await dbContext.RefreshTokens
+        await using var transaction = await ctx.Db.Database.BeginTransactionAsync(ct);
+        await ctx.Db.RefreshTokens
             .Where(token => token.UserId == userId && token.RevokedAtUtc == null)
             .ExecuteUpdateAsync(setters => setters
                     .SetProperty(token => token.RevokedAtUtc, nowUtc)
@@ -193,11 +193,11 @@ public class AuthService(AppDbContext dbContext, IJwtTokenGenerator jwtTokenGene
 
     private (AuthResponseDto Response, RefreshToken RefreshToken) CreateTokenPair(User user, string? clientIp, string? userAgent, string? deviceName, Guid tokenFamilyId)
     {
-        string refreshTokenValue = jwtTokenGenerator.GenerateRefreshToken();
+        string refreshTokenValue = ctx.JwtTokenGenerator.GenerateRefreshToken();
         string tokenHash = HashRefreshToken(refreshTokenValue);
-        (string accessToken, string jwtId, var expiresAtUtc) = jwtTokenGenerator.GenerateAccessToken(user);
+        (string accessToken, string jwtId, var expiresAtUtc) = ctx.JwtTokenGenerator.GenerateAccessToken(user);
 
-        var refreshTokenExpiresAtUtc = DateTime.UtcNow.AddDays(jwtOptions.Value.RefreshTokenExpirationDays);
+        var refreshTokenExpiresAtUtc = DateTime.UtcNow.AddDays(ctx.JwtOptions.Value.RefreshTokenExpirationDays);
         var refreshToken = new RefreshToken {
             UserId = user.Id,
             JwtId = jwtId,
@@ -215,10 +215,10 @@ public class AuthService(AppDbContext dbContext, IJwtTokenGenerator jwtTokenGene
     private async Task BlacklistAccessTokensAsync(IEnumerable<RefreshToken> refreshTokens, CancellationToken ct)
     {
         foreach (var refreshToken in refreshTokens.DistinctBy(token => token.JwtId))
-            await tokenBlacklistService.BlacklistTokenAsync(refreshToken.JwtId, GetAccessTokenRemainingLifetime(refreshToken), ct);
+            await ctx.TokenBlacklistService.BlacklistTokenAsync(refreshToken.JwtId, GetAccessTokenRemainingLifetime(refreshToken), ct);
     }
 
-    private TimeSpan GetAccessTokenRemainingLifetime(RefreshToken refreshToken) => (refreshToken.AccessTokenExpiresAtUtc ?? refreshToken.CreatedAtUtc.AddMinutes(jwtOptions.Value.AccessTokenExpirationMinutes)) - DateTime.UtcNow;
+    private TimeSpan GetAccessTokenRemainingLifetime(RefreshToken refreshToken) => (refreshToken.AccessTokenExpiresAtUtc ?? refreshToken.CreatedAtUtc.AddMinutes(ctx.JwtOptions.Value.AccessTokenExpirationMinutes)) - DateTime.UtcNow;
 
     private static string HashRefreshToken(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
 }
