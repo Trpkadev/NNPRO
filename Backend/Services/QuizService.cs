@@ -1,3 +1,4 @@
+using System.Data;
 using System.Text.Json;
 using Backend.Config;
 using Backend.Data;
@@ -28,10 +29,12 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
 
         await CourseAuthorization.EnsureCanAccessCourseAsync(dbContext, quizInfo.CourseId, userId, ct);
 
-        var (questions, metadata) = await dbContext.Questions.AsNoTracking()
-            .Where(question => question.QuizId == quizId)
-            .OrderBy(question => question.Id)
-            .Select(question => new QuestionResponseDto(
+        var query = dbContext.Questions.AsNoTracking()
+            .Where(question => question.QuizId == quizId);
+
+        query = quizInfo.RandomizeQuestions ? query.OrderBy(q => q.Id * 2654435761u ^ userId) : query.OrderBy(q => q.Id);
+
+        var (questions, metadata) = await query.Select(question => new QuestionResponseDto(
                 question.Id,
                 question.Text,
                 question.ImageUrl,
@@ -39,9 +42,6 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
                 question.Points,
                 question.QuizId))
             .ToPagedResultAsync(requestQuery, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
-
-        if (quizInfo.RandomizeQuestions)
-            Random.Shared.Shuffle(questions);
 
         return (questions, new Metadata { Pagination = metadata });
     }
@@ -170,6 +170,11 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
             if (role != UserRole.Student)
                 throw ServiceException.Forbidden(Resources.ErrorOnlyStudentsCanStartQuiz);
 
+            await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+            bool hasActiveAttempt = await dbContext.QuizAttempts.AnyAsync(a => a.QuizId == quiz.Id && a.StudentId == studentId && a.SubmittedAtUtc == null, ct);
+            if (hasActiveAttempt)
+                throw ServiceException.Conflict(Resources.ErrorActiveAttempt);
+
             bool isEnrolled = await dbContext.Enrollments.AsNoTracking()
                 .AnyAsync(enrollment => enrollment.StudentId == studentId && enrollment.CourseId == quiz.CourseId, ct);
             if (!isEnrolled)
@@ -183,6 +188,8 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
             QuizAttempt attempt = new() { QuizId = quiz.Id, StudentId = studentId };
             dbContext.QuizAttempts.Add(attempt);
             await dbContext.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
+
             return attempt.Id;
         }
         finally
@@ -204,7 +211,7 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
         if (attempt.SubmittedAtUtc.HasValue)
             throw ServiceException.Conflict(Resources.ErrorAttemptAlreadySubmitted);
 
-        if (attempt.Quiz.TimeLimitSeconds.HasValue && attempt.StartedAtUtc.AddSeconds(attempt.Quiz.TimeLimitSeconds.Value) > DateTime.UtcNow)
+        if (attempt.Quiz.TimeLimitSeconds.HasValue && attempt.StartedAtUtc.AddSeconds(attempt.Quiz.TimeLimitSeconds.Value) < DateTime.UtcNow)
             throw ServiceException.Forbidden(Resources.ErrorAttemptTimeLimitReached);
 
         Dictionary<uint, uint[]> submittedAnswers;

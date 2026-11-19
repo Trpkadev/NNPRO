@@ -1,8 +1,9 @@
-using Backend;
 using Backend.Data;
 using Backend.Exceptions;
 using Backend.Models.Entities;
 using Microsoft.EntityFrameworkCore;
+
+namespace Backend.Services;
 
 internal static class CourseAuthorization {
     public async static Task EnsureCanManageCourseAsync(AppDbContext dbContext, uint userId, uint courseId, CancellationToken ct)

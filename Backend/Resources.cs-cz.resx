@@ -331,9 +331,6 @@
   <data name="ErrorAuthenticatedUserIdentityInvalid" xml:space="preserve">
     <value>Identita ověřeného uživatele je neplatná.</value>
   </data>
-  <data name="ErrorResourceNotFound" xml:space="preserve">
-    <value>Zdroj {0} nebyl nalezen.</value>
-  </data>
   <data name="ErrorCourseAccessDenied" xml:space="preserve">
     <value>Přístup ke kurzu je zamítnut.</value>
   </data>
@@ -342,5 +339,8 @@
   </data>
   <data name="ErrorAlreadyEnrolledForce" xml:space="preserve">
     <value>Student je již zapsán.</value>
+  </data>
+  <data name="ErrorActiveAttempt" xml:space="preserve">
+    <value>Pro tento kvíz již máte rozpracovaný pokus.</value>
   </data>
 </root>

@@ -14,19 +14,24 @@ namespace Backend.Services;
 public class QuestionService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions> dbLimitsOptions) : IQuestionService {
     public async Task<QuestionResponseDto> GetByIdAsync(uint questionId, uint userId, CancellationToken ct)
     {
-        var question = await dbContext.Questions.AsNoTracking()
-            .Where(question => question.Id == questionId)
-            .Select(question => new QuestionResponseDto(question.Id, question.Text, question.ImageUrl, question.Type, question.Points, question.QuizId))
-            .FirstOrDefaultAsync(ct);
+        var result = await dbContext.Questions.AsNoTracking()
+                         .Where(question => question.Id == questionId)
+                         .Select(question => new {
+                             Dto = new QuestionResponseDto(
+                                 question.Id,
+                                 question.Text,
+                                 question.ImageUrl,
+                                 question.Type,
+                                 question.Points,
+                                 question.QuizId),
+                             question.Quiz.Section.CourseId
+                         })
+                         .FirstOrDefaultAsync(ct)
+                     ?? throw ServiceException.NotFound(Resources.ErrorQuestionNotFound);
 
-        uint courseId = await dbContext.Questions.AsNoTracking()
-                            .Where(q => q.Id == questionId)
-                            .Select(q => (uint?)q.Quiz.Section.CourseId)
-                            .FirstOrDefaultAsync(ct)
-                        ?? throw ServiceException.NotFound(Resources.ErrorQuestionNotFound);
-        await CourseAuthorization.EnsureCanAccessCourseAsync(dbContext, courseId, userId, ct);
+        await CourseAuthorization.EnsureCanAccessCourseAsync(dbContext, result.CourseId, userId, ct);
 
-        return question ?? throw ServiceException.NotFound(Resources.ErrorQuestionNotFound);
+        return result.Dto;
     }
 
     public async Task<(AnswerOptionResponseDto[] Options, Metadata metadata)> GetOptionsAsync(uint questionId, uint userId, RequestQuery requestQuery, CancellationToken ct)
@@ -148,12 +153,6 @@ public class QuestionService(AppDbContext dbContext, IOptions<DatabaseLimitsOpti
             throw ServiceException.Conflict(Resources.ErrorQuestionHasSubmittedAnswers);
 
         await dbContext.Questions.Where(question => question.Id == questionId).ExecuteDeleteAsync(ct);
-    }
-
-    private async Task EnsureQuestionExistsAsync(uint questionId, CancellationToken ct)
-    {
-        if (!await dbContext.Questions.AnyAsync(question => question.Id == questionId, ct))
-            throw ServiceException.NotFound(Resources.ErrorQuestionNotFound);
     }
 
     private async Task EnsureCanManageQuestionAsync(uint requestingUserId, uint questionId, CancellationToken ct)

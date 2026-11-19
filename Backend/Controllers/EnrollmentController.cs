@@ -14,7 +14,7 @@ namespace Backend.Controllers;
 [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
 public class EnrollmentController(IEnrollmentService enrollmentService) : ApiControllerBase {
     [HttpGet("{courseId:uint}")]
-    [Authorize(Roles = "Admin,Instructor")]
+    [Authorize(Roles = "Admin, Instructor")]
     [RequiresPaging]
     [EndpointSummary("Get list of enrolled users in a course")]
     [EndpointDescription("Returns a paginated list of all students enrolled in a specific course.")]
@@ -37,7 +37,7 @@ public class EnrollmentController(IEnrollmentService enrollmentService) : ApiCon
     public async Task<ActionResult> EnrollIntoCourse([FromBody] EnrollmentRequestDto enrollmentRequest, CancellationToken cancellationToken)
     {
         uint newEnrollmentId = await enrollmentService.EnrollIntoCourseAsync(AuthenticatedUserId, enrollmentRequest, cancellationToken);
-        return CreatedAtAction(nameof(GetEnrolledUsers), new { courseId = enrollmentRequest.CourseId, page = 1, pageSize = 10 }, newEnrollmentId);
+        return CreatedAtAction(nameof(CourseController.GetCourseById), "Course", new { id = enrollmentRequest.CourseId }, newEnrollmentId);
     }
 
     [HttpPost("forceenroll")]

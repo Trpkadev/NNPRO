@@ -1,7 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Reflection;
-using Backend.Config;
 using Backend.Exceptions;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
@@ -74,6 +73,7 @@ public static class QueryableExtensions {
 
         if (totalItems > maxItemsWithoutPagination)
             throw new PaginationNeededException();
+
         var allItems = await query.ToArrayAsync(ct);
         return (allItems, new PaginationMetadata { Page = 1, PageSize = totalItems, TotalItems = totalItems });
     }
