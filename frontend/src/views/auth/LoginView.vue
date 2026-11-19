@@ -91,7 +91,6 @@ const onSubmit = handleSubmit(async (values) => {
           id="identifier"
           v-model="identifier"
           v-bind="identifierAttrs"
-          :placeholder="t('auth.identifierPlaceholder')"
           :invalid="!!errors.identifier"
           autocomplete="username"
           class="w-full"
@@ -109,7 +108,6 @@ const onSubmit = handleSubmit(async (values) => {
           input-id="password"
           v-model="password"
           v-bind="passwordAttrs"
-          :placeholder="t('auth.passwordPlaceholder')"
           :feedback="false"
           toggle-mask
           :invalid="!!errors.password"

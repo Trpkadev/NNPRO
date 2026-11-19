@@ -160,12 +160,10 @@ async function handleLogout() {
             <div
               class="hidden sm:flex items-center gap-2 pl-2 border-l border-surface-200 dark:border-surface-800"
             >
-              <div class="text-right">
-                <p class="text-sm font-semibold leading-tight">
-                  {{ authStore.user?.username }}
-                </p>
-                <Tag :value="roleLabel" :severity="roleSeverity" class="text-xs mt-0.5" />
-              </div>
+              <p class="text-sm font-semibold leading-tight">
+                {{ authStore.user?.username }}
+              </p>
+              <Tag :value="roleLabel" :severity="roleSeverity" class="text-xs mt-0.5" />
               <Button
                 icon="oi oi-sign-out"
                 severity="secondary"
