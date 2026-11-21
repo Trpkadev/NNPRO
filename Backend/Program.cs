@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Backend;
-using Backend.Config;
+using Backend.Configuration;
 using Backend.Data;
 using Backend.Exceptions;
 using Backend.Extensions;
@@ -39,16 +39,13 @@ Console.WriteLine($"[Startup] ASP.NET Core environment: {builder.Environment.Env
 
 string connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException(Resources.ErrorDefaultConnectionStringMissing);
 
-builder.Services.Configure<DatabaseLimitsOptions>(builder.Configuration.GetSection(DatabaseLimitsOptions.SectionName));
+builder.Services.Configure<DatabaseLimitsOptions>(builder.Configuration.GetSection(nameof(DatabaseLimitsOptions)));
+builder.Services.Configure<Config>(builder.Configuration.GetSection(nameof(Config)));
 builder.Services.Configure<RouteOptions>(options => options.ConstraintMap.Add("uint", typeof(UintRouteConstraint)));
 builder.Services.Configure<ForwardedHeadersOptions>(options => options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto);
 builder.Services.ConfigureHttpJsonOptions(options => options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
-builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(nameof(JwtOptions)));
 
-var corsSettings = builder.Configuration.GetSection(CorsSettings.SectionName).Get<CorsSettings>() ?? new CorsSettings();
-if (corsSettings.AllowedOrigins.Length == 0 && builder.Environment.IsDevelopment())
-    corsSettings.AllowedOrigins = ["http://localhost:5173", "https://localhost:5173"];
-builder.Services.Configure<CorsSettings>(options => options.AllowedOrigins = corsSettings.AllowedOrigins);
 
 var serverVersion = await ServerVersion.AutoDetectAsync(connectionString);
 builder.Services.AddDbContextFactory<AppDbContext>(options => options.UseMySql(connectionString, serverVersion));
@@ -74,6 +71,7 @@ builder.Services.AddControllers(options => { options.Filters.Add<ApiResponseWrap
 
 builder.Services.AddResponseCaching();
 
+var corsSettings = builder.Configuration.GetSection(CorsSettings.SectionName).Get<CorsSettings>() ?? new CorsSettings();
 builder.Services.AddCors(options =>
     options.AddPolicy("Frontend",
         policy => {

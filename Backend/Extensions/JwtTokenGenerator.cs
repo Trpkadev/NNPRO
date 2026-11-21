@@ -3,7 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using Backend.Config;
+using Backend.Configuration;
 using Backend.Models.Entities;
 using Backend.Services.Interfaces;
 using Microsoft.Extensions.Options;

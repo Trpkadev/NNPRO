@@ -1,4 +1,4 @@
-using Backend.Config;
+using Backend.Configuration;
 using Backend.Data;
 using Backend.Exceptions;
 using Backend.Extensions;

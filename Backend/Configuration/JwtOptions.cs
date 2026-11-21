@@ -1,6 +1,6 @@
-namespace Backend.Config;
+namespace Backend.Configuration;
 
-public class JwtOptions {
+public sealed record JwtOptions {
     public const string SectionName = "Jwt";
 
     public required string SecretKey { get; init; }

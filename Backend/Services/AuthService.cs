@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
-using Backend.Config;
+using Backend.Configuration;
 using Backend.Data;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;

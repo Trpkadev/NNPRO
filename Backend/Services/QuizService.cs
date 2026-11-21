@@ -1,6 +1,7 @@
+using System.Collections.Concurrent;
 using System.Data;
 using System.Text.Json;
-using Backend.Config;
+using Backend.Configuration;
 using Backend.Data;
 using Backend.Exceptions;
 using Backend.Extensions;
@@ -13,8 +14,8 @@ using Microsoft.Extensions.Options;
 
 namespace Backend.Services;
 
-public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions> dbLimitsOptions) : IQuizService {
-    private static readonly SemaphoreSlim StartAttemptLock = new(1);
+public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions> dbLimitsOptions, IOptions<Config> cfg) : IQuizService {
+    private static readonly ConcurrentDictionary<(uint StudentId, uint QuizId), SemaphoreSlim> AttemptLocks = new();
 
     public async Task<(QuestionResponseDto[] Questions, Metadata Metadata)> GetQuestionsAsync(uint quizId, uint userId, RequestQuery requestQuery, CancellationToken ct)
     {
@@ -147,60 +148,54 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
 
     public async Task<uint> StartAttemptAsync(uint studentId, StartAttemptRequestDto request, CancellationToken ct)
     {
-        await StartAttemptLock.WaitAsync(ct);
+        var quiz = await dbContext.Quizzes.AsNoTracking()
+                       .Where(candidate => candidate.Id == request.QuizId)
+                       .Select(candidate => new {
+                           candidate.Id,
+                           candidate.MaxAttempts,
+                           candidate.TimeLimitSeconds,
+                           candidate.Section.CourseId
+                       })
+                       .FirstOrDefaultAsync(ct)
+                   ?? throw ServiceException.NotFound(Resources.ErrorQuizNotFound);
+
+        var role = await dbContext.Users.AsNoTracking()
+                       .Where(user => user.Id == studentId)
+                       .Select(user => (UserRole?)user.Role)
+                       .FirstOrDefaultAsync(ct)
+                   ?? throw ServiceException.NotFound(Resources.ErrorUserNotFound);
+        if (role != UserRole.Student)
+            throw ServiceException.Forbidden(Resources.ErrorOnlyStudentsCanStartQuiz);
+
+        bool isEnrolled = await dbContext.Enrollments.AsNoTracking()
+            .AnyAsync(enrollment => enrollment.StudentId == studentId && enrollment.CourseId == quiz.CourseId, ct);
+        if (!isEnrolled)
+            throw ServiceException.Forbidden(Resources.ErrorQuizEnrollmentRequired);
+
+        var attemptLock = AttemptLocks.GetOrAdd((studentId, quiz.Id), _ => new SemaphoreSlim(1, 1));
+        await attemptLock.WaitAsync(ct);
         try
         {
-            var quiz = await dbContext.Quizzes.AsNoTracking()
-                .Where(candidate => candidate.Id == request.QuizId)
-                .Select(candidate => new {
-                    candidate.Id,
-                    candidate.MaxAttempts,
-                    candidate.TimeLimitSeconds,
-                    candidate.Section.CourseId
-                })
-                .FirstOrDefaultAsync(ct);
-            if (quiz is null)
-                throw ServiceException.NotFound(Resources.ErrorQuizNotFound);
-
-            var role = await dbContext.Users.AsNoTracking()
-                .Where(user => user.Id == studentId)
-                .Select(user => (UserRole?)user.Role)
-                .FirstOrDefaultAsync(ct);
-            if (!role.HasValue)
-                throw ServiceException.NotFound(Resources.ErrorUserNotFound);
-            if (role != UserRole.Student)
-                throw ServiceException.Forbidden(Resources.ErrorOnlyStudentsCanStartQuiz);
-
             await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
 
             var nowUtc = DateTime.UtcNow;
-            var unsubmittedAttempts = await dbContext.QuizAttempts.Where(a => a.QuizId == quiz.Id && a.StudentId == studentId && a.SubmittedAtUtc == null)
+            var unsubmittedAttempts = await dbContext.QuizAttempts
+                .Where(a => a.QuizId == quiz.Id && a.StudentId == studentId && a.SubmittedAtUtc == null)
                 .ToListAsync(ct);
 
             foreach (var openAttempt in unsubmittedAttempts)
             {
-                bool isExpired = quiz.TimeLimitSeconds.HasValue && openAttempt.StartedAtUtc.AddSeconds(quiz.TimeLimitSeconds.Value) <= nowUtc;
-
-                if (!isExpired)
+                if (!IsAttemptExpired(openAttempt.StartedAtUtc, quiz.TimeLimitSeconds, nowUtc, cfg.Value))
                     throw ServiceException.Conflict(Resources.ErrorActiveAttempt);
 
-                openAttempt.SubmittedAtUtc = nowUtc;
-                openAttempt.ScorePercent = 0m;
-                openAttempt.IsPassed = false;
+                CloseAsExpired(openAttempt, nowUtc);
             }
-
-            bool isEnrolled = await dbContext.Enrollments.AsNoTracking()
-                .AnyAsync(enrollment => enrollment.StudentId == studentId && enrollment.CourseId == quiz.CourseId, ct);
-            if (!isEnrolled)
-                throw ServiceException.Forbidden(Resources.ErrorQuizEnrollmentRequired);
 
             int attemptsCount = await dbContext.QuizAttempts.AsNoTracking()
                 .CountAsync(attempt => attempt.QuizId == quiz.Id && attempt.StudentId == studentId, ct);
+
             if (quiz.MaxAttempts.HasValue && attemptsCount >= quiz.MaxAttempts.Value)
             {
-                if (unsubmittedAttempts.Count <= 0)
-                    throw ServiceException.Conflict(Resources.ErrorQuizMaxAttemptsReached);
-
                 await dbContext.SaveChangesAsync(ct);
                 await transaction.CommitAsync(ct);
 
@@ -216,74 +211,91 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
         }
         finally
         {
-            StartAttemptLock.Release();
+            attemptLock.Release();
         }
     }
 
     public async Task<QuizAttemptResponseDto> EndAttemptAsync(uint studentId, EndAttemptRequestDto request, CancellationToken ct)
     {
-        var attempt = await dbContext.QuizAttempts.Include(attempt => attempt.Quiz)
-                          .ThenInclude(quiz => quiz.Questions)
-                          .ThenInclude(question => question.AnswerOptions)
-                          .FirstOrDefaultAsync(attempt => attempt.Id == request.AttemptId && attempt.StudentId == studentId, ct)
-                      ?? throw ServiceException.NotFound(Resources.ErrorQuizAttemptNotFound);
+        var attemptMeta = await dbContext.QuizAttempts.AsNoTracking()
+                              .Where(a => a.Id == request.AttemptId && a.StudentId == studentId)
+                              .Select(a => new { a.Id, a.QuizId })
+                              .FirstOrDefaultAsync(ct)
+                          ?? throw ServiceException.NotFound(Resources.ErrorQuizAttemptNotFound);
 
-        if (attempt.SubmittedAtUtc.HasValue)
-            throw ServiceException.Conflict(Resources.ErrorAttemptAlreadySubmitted);
-
-        if (attempt.Quiz.TimeLimitSeconds.HasValue && attempt.StartedAtUtc.AddSeconds(attempt.Quiz.TimeLimitSeconds.Value) < DateTime.UtcNow)
-            throw ServiceException.Forbidden(Resources.ErrorAttemptTimeLimitReached);
-
-        Dictionary<uint, uint[]> submittedAnswers;
+        var attemptLock = AttemptLocks.GetOrAdd((studentId, attemptMeta.QuizId), _ => new SemaphoreSlim(1, 1));
+        await attemptLock.WaitAsync(ct);
         try
         {
-            submittedAnswers = JsonSerializer.Deserialize<Dictionary<uint, uint[]>>(request.AnswersJson) ?? throw ServiceException.BadRequest(Resources.ErrorAnswersMustBeJsonObject);
+            var attempt = await dbContext.QuizAttempts.Include(a => a.Quiz)
+                              .FirstOrDefaultAsync(a => a.Id == request.AttemptId && a.StudentId == studentId, ct)
+                          ?? throw ServiceException.NotFound(Resources.ErrorQuizAttemptNotFound);
+
+            if (attempt.SubmittedAtUtc.HasValue)
+                throw ServiceException.Conflict(Resources.ErrorAttemptAlreadySubmitted);
+
+            var nowUtc = DateTime.UtcNow;
+            if (IsAttemptExpired(attempt.StartedAtUtc, attempt.Quiz.TimeLimitSeconds, nowUtc, cfg.Value))
+            {
+                CloseAsExpired(attempt, nowUtc);
+                await dbContext.SaveChangesAsync(ct);
+
+                throw ServiceException.Forbidden(Resources.ErrorAttemptTimeLimitReached);
+            }
+
+            var submittedAnswers = ParseSubmittedAnswers(request.AnswersJson);
+
+            var questions = await dbContext.Questions.AsNoTracking()
+                .Where(q => q.QuizId == attempt.QuizId)
+                .Include(q => q.AnswerOptions)
+                .ToListAsync(ct);
+
+            var questionIds = questions.Select(q => q.Id).ToHashSet();
+            if (submittedAnswers.Any(answer => !questionIds.Contains(answer.Key) || answer.Value is null))
+                throw ServiceException.BadRequest(Resources.ErrorAnswersContainUnknownQuestion);
+
+            int totalPoints = 0;
+            int awardedPoints = 0;
+
+            foreach (var question in questions)
+            {
+                uint[] selectedIds = submittedAnswers.GetValueOrDefault(question.Id, []);
+                if (selectedIds.Distinct().Count() != selectedIds.Length)
+                    throw ServiceException.BadRequest(Resources.ErrorAnswersContainDuplicateOptions);
+
+                var validOptionIds = question.AnswerOptions.Select(o => o.Id).ToHashSet();
+                if (selectedIds.Any(optionId => !validOptionIds.Contains(optionId)))
+                    throw ServiceException.BadRequest(Resources.ErrorAnswerOptionDoesNotBelongToQuestion);
+
+                uint[] correctIds = [.. question.AnswerOptions.Where(o => o.IsCorrect).Select(o => o.Id).Order()];
+                uint[] selectedSorted = [.. selectedIds.Order()];
+
+                bool isCorrect = correctIds.Length > 0 && correctIds.SequenceEqual(selectedSorted);
+                ushort questionAwardedPoints = isCorrect ? question.Points : (ushort)0;
+
+                totalPoints += question.Points;
+                awardedPoints += questionAwardedPoints;
+
+                dbContext.StudentAnswers.Add(new StudentAnswer {
+                    QuizAttemptId = attempt.Id,
+                    QuestionId = question.Id,
+                    SelectedOptionIdsJson = JsonSerializer.Serialize(selectedSorted),
+                    IsFullyCorrect = isCorrect,
+                    AwardedPoints = questionAwardedPoints
+                });
+            }
+
+            attempt.SubmittedAtUtc = nowUtc;
+            attempt.ScorePercent = totalPoints == 0 ? 0m : (decimal)awardedPoints * 100 / totalPoints;
+            attempt.IsPassed = attempt.ScorePercent >= attempt.Quiz.PassingThresholdPercent;
+            await dbContext.SaveChangesAsync(ct);
+
+            return MapToResponseDto(attempt);
         }
-        catch (JsonException)
+        finally
         {
-            throw ServiceException.BadRequest(Resources.ErrorAnswersMustBeValidJsonObject);
+            attemptLock.Release();
         }
-
-        var questionById = attempt.Quiz.Questions.ToDictionary(question => question.Id);
-        if (submittedAnswers.Any(answer => !questionById.ContainsKey(answer.Key) || answer.Value is null))
-            throw ServiceException.BadRequest(Resources.ErrorAnswersContainUnknownQuestion);
-
-        int totalPoints = 0;
-        int awardedPoints = 0;
-        foreach (var question in attempt.Quiz.Questions)
-        {
-            uint[] selectedIds = submittedAnswers.GetValueOrDefault(question.Id, []);
-            if (selectedIds.Distinct().Count() != selectedIds.Length)
-                throw ServiceException.BadRequest(Resources.ErrorAnswersContainDuplicateOptions);
-
-            uint[] correctIds = [
-                .. question.AnswerOptions.Where(option => option.IsCorrect)
-                    .Select(option => option.Id)
-                    .Order()
-            ];
-            uint[] selectedSorted = [.. selectedIds.Order()];
-            if (selectedSorted.Any(optionId => question.AnswerOptions.All(option => option.Id != optionId)))
-                throw ServiceException.BadRequest(Resources.ErrorAnswerOptionDoesNotBelongToQuestion);
-
-            bool isCorrect = correctIds.Length > 0 && correctIds.SequenceEqual(selectedSorted);
-            ushort questionAwardedPoints = isCorrect ? question.Points : (ushort)0;
-            totalPoints += question.Points;
-            awardedPoints += questionAwardedPoints;
-            dbContext.StudentAnswers.Add(new StudentAnswer {
-                QuizAttemptId = attempt.Id,
-                QuestionId = question.Id,
-                SelectedOptionIdsJson = JsonSerializer.Serialize(selectedSorted),
-                IsFullyCorrect = isCorrect,
-                AwardedPoints = questionAwardedPoints
-            });
-        }
-
-        attempt.SubmittedAtUtc = DateTime.UtcNow;
-        attempt.ScorePercent = totalPoints == 0 ? 0 : (decimal)awardedPoints * 100 / totalPoints;
-        attempt.IsPassed = attempt.ScorePercent >= attempt.Quiz.PassingThresholdPercent;
-        await dbContext.SaveChangesAsync(ct);
-
-        return new QuizAttemptResponseDto(attempt.Id, attempt.QuizId, attempt.StudentId, attempt.StartedAtUtc, attempt.SubmittedAtUtc, attempt.ScorePercent, attempt.IsPassed);
     }
 
     public async Task<(QuizAttemptResponseDto[] Attempts, Metadata Metadata)> GetAttemptsAsync(uint requestingUserId, uint quizId, RequestQuery request, CancellationToken ct)
@@ -327,6 +339,30 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
 
         return result.Dto;
     }
+
+    private static Dictionary<uint, uint[]> ParseSubmittedAnswers(string answersJson)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<Dictionary<uint, uint[]>>(answersJson) ?? throw ServiceException.BadRequest(Resources.ErrorAnswersMustBeJsonObject);
+        }
+        catch (JsonException)
+        {
+            throw ServiceException.BadRequest(Resources.ErrorAnswersMustBeValidJsonObject);
+        }
+    }
+
+    private static void CloseAsExpired(QuizAttempt attempt, DateTime closedAtUtc)
+    {
+        attempt.SubmittedAtUtc = closedAtUtc;
+        attempt.ScorePercent = 0m;
+        attempt.IsPassed = false;
+    }
+
+    private static bool IsAttemptExpired(DateTime startedAtUtc, uint? timeLimitSeconds, DateTime nowUtc, Config cfg) => timeLimitSeconds.HasValue && startedAtUtc.AddSeconds(timeLimitSeconds.Value + cfg.NetworkDelayToleranceSeconds) <= nowUtc;
+
+    private static QuizAttemptResponseDto MapToResponseDto(QuizAttempt attempt) => new(attempt.Id, attempt.QuizId, attempt.StudentId, attempt.StartedAtUtc, attempt.SubmittedAtUtc, attempt.ScorePercent, attempt.IsPassed);
+
 
     private async Task EnsureCanManageQuizAsync(uint requestingUserId, uint quizId, CancellationToken ct)
     {

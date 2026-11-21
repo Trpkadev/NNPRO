@@ -1,4 +1,4 @@
-using Backend.Config;
+using Backend.Configuration;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
 using Backend.Services.Interfaces;
