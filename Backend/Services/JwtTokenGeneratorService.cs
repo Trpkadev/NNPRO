@@ -9,7 +9,7 @@ using Backend.Services.Interfaces;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
-namespace Backend.Extensions;
+namespace Backend.Services;
 
 public class JwtTokenGenerator(IOptions<JwtOptions> jwtOptions) : IJwtTokenGenerator {
     public (string AccessToken, string JwtId, DateTime ExpiresAtUtc) GenerateAccessToken(User user)
@@ -34,41 +34,6 @@ public class JwtTokenGenerator(IOptions<JwtOptions> jwtOptions) : IJwtTokenGener
     }
 
     public string GenerateRefreshToken() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)).Replace('+', '-').Replace('/', '_').TrimEnd('=');
-
-    public ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
-    {
-        if (string.IsNullOrWhiteSpace(token))
-            return null;
-
-        var options = jwtOptions.Value;
-        var validationParameters = new TokenValidationParameters {
-            ValidateIssuer = true,
-            ValidIssuer = options.Issuer,
-            ValidateAudience = true,
-            ValidAudience = options.Audience,
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(GetSigningKey(options)),
-            ValidateLifetime = false,
-            RequireExpirationTime = true,
-            ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
-            NameClaimType = "name",
-            RoleClaimType = "role",
-            ClockSkew = TimeSpan.Zero
-        };
-
-        try
-        {
-            return new JwtSecurityTokenHandler { MapInboundClaims = false }.ValidateToken(token, validationParameters, out _);
-        }
-        catch (SecurityTokenException)
-        {
-            return null;
-        }
-        catch (ArgumentException)
-        {
-            return null;
-        }
-    }
 
     private static byte[] GetSigningKey(JwtOptions options)
     {

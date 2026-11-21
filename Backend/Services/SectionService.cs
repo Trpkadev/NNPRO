@@ -30,7 +30,7 @@ public class SectionService(AppDbContext dbContext, IOptions<DatabaseLimitsOptio
         return new SectionResponseDto(section.Id, section.Title, section.Order, section.CourseId);
     }
 
-    public async Task<(LessonResponseDto[] Lessons, Metadata Metadata)> GetLessonsAsync(uint sectionId, uint userId, RequestQuery request, CancellationToken ct)
+    public async Task<(LessonResponseWrapperDto Lessons, Metadata Metadata)> GetLessonsAsync(uint sectionId, uint userId, RequestQuery request, CancellationToken ct)
     {
         uint courseId = await dbContext.Sections.AsNoTracking()
                             .Where(s => s.Id == sectionId)
@@ -46,8 +46,11 @@ public class SectionService(AppDbContext dbContext, IOptions<DatabaseLimitsOptio
             .ThenBy(lesson => lesson.Id)
             .Select(lesson => new LessonResponseDto(lesson.Id, lesson.Title, lesson.Content, lesson.VideoUrl, lesson.Order, lesson.SectionId))
             .ToPagedResultAsync(request, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
+        uint completedLessons = (uint)await dbContext.StudentLessonProgresses.AsNoTracking()
+            .Where(lesson => lesson.StudentId == userId && lesson.Lesson.SectionId == sectionId)
+            .CountAsync(ct);
 
-        return (lessons, new Metadata(metadata, request));
+        return (new LessonResponseWrapperDto(lessons, (uint)lessons.Length, completedLessons), new Metadata(metadata, request));
     }
 
     public async Task<(QuizResponseDto[] Quizzes, Metadata Metadata)> GetQuizzesAsync(uint sectionId, uint userId, RequestQuery request, CancellationToken ct)

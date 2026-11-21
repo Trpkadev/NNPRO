@@ -92,7 +92,7 @@ builder.Services.AddRateLimiter(options => {
         });
 });
 
-var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? throw new InvalidOperationException(Resources.ErrorJwtConfigurationMissing);
+var jwtOptions = builder.Configuration.GetSection(nameof(JwtOptions)).Get<JwtOptions>() ?? throw new InvalidOperationException(Resources.ErrorJwtConfigurationMissing);
 if (Encoding.UTF8.GetByteCount(jwtOptions.SecretKey) < 32)
     throw new InvalidOperationException(Resources.ErrorJwtSigningKeyTooShort);
 if (jwtOptions.AccessTokenExpirationMinutes <= 0 || jwtOptions.RefreshTokenExpirationDays <= 0)

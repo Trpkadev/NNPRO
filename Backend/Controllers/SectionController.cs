@@ -24,9 +24,9 @@ public class SectionController(ISectionService sectionService) : ApiControllerBa
     [Authorize]
     [RequiresPaging]
     [EndpointSummary("Get section lessons")]
-    [ProducesResponseType<Wrapper<LessonResponseDto[]>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Wrapper<LessonResponseWrapperDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<LessonResponseDto[]>> GetSectionLessons([FromRoute] uint sectionId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
+    public async Task<ActionResult<LessonResponseWrapperDto>> GetSectionLessons([FromRoute] uint sectionId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
         var (lessons, metadata) = await sectionService.GetLessonsAsync(sectionId, AuthenticatedUserId, requestQuery, cancellationToken);
         return Ok(lessons, metadata);

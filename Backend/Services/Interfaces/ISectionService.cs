@@ -6,7 +6,7 @@ namespace Backend.Services.Interfaces;
 public interface ISectionService {
     Task<SectionResponseDto> GetByIdAsync(uint requestingUserId, uint sectionId, CancellationToken ct);
 
-    Task<(LessonResponseDto[] Lessons, Metadata Metadata)> GetLessonsAsync(uint sectionId, uint userId, RequestQuery request, CancellationToken ct);
+    Task<(LessonResponseWrapperDto Lessons, Metadata Metadata)> GetLessonsAsync(uint sectionId, uint userId, RequestQuery request, CancellationToken ct);
 
     Task<(QuizResponseDto[] Quizzes, Metadata Metadata)> GetQuizzesAsync(uint sectionId, uint userId, RequestQuery request, CancellationToken ct);
 

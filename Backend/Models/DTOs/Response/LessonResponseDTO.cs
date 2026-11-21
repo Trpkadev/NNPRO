@@ -8,6 +8,11 @@ public record LessonResponseDto(
     ushort Order,
     uint SectionId);
 
+public record LessonResponseWrapperDto(
+    LessonResponseDto[] LessonResponseDto,
+    uint TotalLessons,
+    uint CompletedLessons);
+
 public record AttachmentResponseDto(
     uint Id,
     string FileName,
