@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { SectionResponseDto } from '@/types/api'
+import { getApiErrorMessage } from '@/services/api'
 
 const props = defineProps<{
   section: SectionResponseDto
@@ -16,14 +17,24 @@ const { t } = useI18n()
 
 const isExpanded = ref(props.initiallyExpanded ?? true)
 
-// Lekce načítáme pro všechny sekce kurzu, aby byl výpočet celkového postupu kurzem vždy přesný
-const { data: lessonsResponse, isLoading: lessonsLoading } = useSectionLessonsQuery(
+// Lekce načítáme pro všechny sekce kurzu
+const {
+  data: lessonsResponse,
+  isLoading: lessonsLoading,
+  isError: lessonsError,
+  error: lessonsErrorObj,
+} = useSectionLessonsQuery(
   computed(() => props.section.id),
   { Page: 1, PageSize: 50, SortBy: 'Order', Descending: false },
 )
 
-// Kvízy sekce načítáme líně (lazy loading) až při rozbalení sekce
-const { data: quizzesResponse, isLoading: quizzesLoading } = useSectionQuizzesQuery(
+// Kvízy načítáme až při rozbalení sekce
+const {
+  data: quizzesResponse,
+  isLoading: quizzesLoading,
+  isError: quizzesError,
+  error: quizzesErrorObj,
+} = useSectionQuizzesQuery(
   computed(() => props.section.id),
   { Page: 1, PageSize: 50 },
   isExpanded,
@@ -43,7 +54,7 @@ const quizzes = computed(() => quizzesResponse.value?.data ?? [])
 watch(
   [lessonsResponse, lessons],
   ([res, list]) => {
-    if (res) {
+    if (res && !lessonsError.value) {
       emit(
         'lessonsLoaded',
         props.section.id,
@@ -79,7 +90,7 @@ watch(
 
       <div class="flex items-center gap-3 shrink-0">
         <span
-          v-if="!lessonsLoading && lessons.length > 0"
+          v-if="!lessonsLoading && !lessonsError && lessons.length > 0"
           class="text-xs font-medium text-surface-500"
         >
           {{ completedInSectionCount }} / {{ lessons.length }}
@@ -105,6 +116,10 @@ watch(
         <div v-if="lessonsLoading" class="space-y-2">
           <Skeleton v-for="n in 2" :key="n" height="2.75rem" class="rounded-xl" />
         </div>
+
+        <Message v-else-if="lessonsError" severity="error" :closable="false">
+          {{ getApiErrorMessage(lessonsErrorObj, t('courses.loadError')) }}
+        </Message>
 
         <p v-else-if="lessons.length === 0" class="text-xs text-surface-500 italic py-1">
           {{ t('lessons.noLessons') }}
@@ -157,6 +172,10 @@ watch(
         <div v-if="quizzesLoading" class="space-y-2">
           <Skeleton height="2.75rem" class="rounded-xl" />
         </div>
+
+        <Message v-else-if="quizzesError" severity="error" :closable="false">
+          {{ getApiErrorMessage(quizzesErrorObj, t('courses.loadError')) }}
+        </Message>
 
         <p v-else-if="quizzes.length === 0" class="text-xs text-surface-500 italic py-1">
           {{ t('quizzes.noQuizzes') }}

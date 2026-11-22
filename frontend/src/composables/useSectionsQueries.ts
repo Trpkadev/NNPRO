@@ -26,6 +26,45 @@ export function useSectionLessonsQuery(
   })
 }
 
+// Všechny lekce sekce pro navigaci Předchozí / Další
+export function useAllSectionLessonsQuery(sectionId: MaybeRefOrGetter<number>) {
+  return useQuery({
+    queryKey: computed(() => queryKeys.sections.allLessons(toValue(sectionId))),
+    enabled: computed(() => Number(toValue(sectionId)) > 0),
+    staleTime: 60_000,
+    queryFn: async () => {
+      const allLessons: Awaited<ReturnType<typeof sectionsService.getLessons>>['data'] = []
+      const maxPages = 100
+
+      for (let page = 1; page <= maxPages; page++) {
+        const response = await sectionsService.getLessons(toValue(sectionId), {
+          Page: page,
+          PageSize: 50,
+          SortBy: 'Order',
+          Descending: false,
+        })
+
+        const pagination = response.metadata?.pagination
+        if (!pagination || typeof pagination.hasNextPage !== 'boolean') {
+          throw new Error('Missing lesson pagination metadata')
+        }
+
+        allLessons.push(...response.data)
+
+        if (!pagination.hasNextPage) {
+          return allLessons
+        }
+
+        if (pagination.totalPages != null && page >= pagination.totalPages) {
+          throw new Error('Invalid lesson pagination')
+        }
+      }
+
+      throw new Error('Lesson pagination limit exceeded')
+    },
+  })
+}
+
 export function useSectionQuizzesQuery(
   sectionId: MaybeRefOrGetter<number>,
   params?: MaybeRefOrGetter<QueryParameters | undefined>,

@@ -140,6 +140,7 @@ const messages = {
       completedLessonsCount: '{completed} z {total} lekcí dokončeno ({percent} %)',
       manageInStudio: 'Spravovat kurz v lektorském studiu',
       backToCatalog: 'Zpět na přehled kurzů',
+      courseNotFound: 'Kurz nebyl nalezen.',
     },
     lessons: {
       lesson: 'Lekce',
@@ -163,6 +164,7 @@ const messages = {
       quiz: 'Kvíz',
       quizzes: 'Kvízy',
       noQuizzes: 'V této sekci zatím nejsou žádné kvízy.',
+      quizNotFound: 'Kvíz nebyl nalezen.',
       passingThreshold: 'Hranice úspěšnosti: {percent} %',
       maxAttempts: 'Max. pokusů: {count}',
       unlimitedAttempts: 'Neomezený počet pokusů',
@@ -436,6 +438,7 @@ const messages = {
       completedLessonsCount: '{completed} of {total} lessons completed ({percent}%)',
       manageInStudio: 'Manage course in Instructor Studio',
       backToCatalog: 'Back to Course Catalog',
+      courseNotFound: 'Course was not found.',
     },
     lessons: {
       lesson: 'Lesson',
@@ -458,6 +461,7 @@ const messages = {
     quizzes: {
       quiz: 'Quiz',
       quizzes: 'Quizzes',
+      quizNotFound: 'Quiz was not found.',
       noQuizzes: 'No quizzes in this section yet.',
       passingThreshold: 'Passing threshold: {percent}%',
       maxAttempts: 'Max attempts: {count}',

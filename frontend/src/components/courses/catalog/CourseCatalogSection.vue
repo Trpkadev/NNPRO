@@ -26,19 +26,44 @@ const queryParams = computed(() => ({
   Filters: debouncedSearch.value.trim() ? { title: debouncedSearch.value.trim() } : undefined,
 }))
 
-const { data, isLoading, isError, error, hasNextPage, isFetchingNextPage, fetchNextPage } =
-  useInfiniteCourseThumbnailsQuery(queryParams)
+const {
+  data,
+  isLoading,
+  isError,
+  error,
+  hasNextPage,
+  isFetchingNextPage,
+  isFetchNextPageError,
+  fetchNextPage,
+} = useInfiniteCourseThumbnailsQuery(queryParams)
 
-const courses = computed(() => data.value?.pages.flatMap((page) => page.data ?? []) ?? [])
+// Spojíme stránky a odstraníme případné duplicitní kurzy.
+const courses = computed(() => {
+  const allCourses = data.value?.pages.flatMap((page) => page.data ?? []) ?? []
+  const seenIds = new Set<number>()
+
+  return allCourses.filter((course) => {
+    if (seenIds.has(course.id)) return false
+    seenIds.add(course.id)
+    return true
+  })
+})
+
 const totalItems = computed(
   () => data.value?.pages[0]?.metadata?.pagination?.totalItems ?? courses.value.length,
 )
+
 const errorMessage = computed(() => getApiErrorMessage(error.value, t('courses.loadError')))
 
 const loadMoreTrigger = useTemplateRef<HTMLElement>('loadMoreTrigger')
 
 useIntersectionObserver(loadMoreTrigger, ([entry]) => {
-  if (entry?.isIntersecting && hasNextPage.value && !isFetchingNextPage.value) {
+  if (
+    entry?.isIntersecting &&
+    hasNextPage.value &&
+    !isFetchingNextPage.value &&
+    !isFetchNextPageError.value
+  ) {
     fetchNextPage()
   }
 })
@@ -107,11 +132,15 @@ function clearFilters() {
     </div>
 
     <!-- Načítání první stránky -->
-    <div v-if="isLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div
+      v-if="isLoading && courses.length === 0"
+      class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+    >
       <Skeleton v-for="n in 6" :key="n" height="11rem" class="rounded-2xl" />
     </div>
 
-    <Message v-else-if="isError" severity="error" :closable="false">
+    <!-- Chyba prvního načítání -->
+    <Message v-else-if="isError && courses.length === 0" severity="error" :closable="false">
       {{ errorMessage }}
     </Message>
 
@@ -171,6 +200,11 @@ function clearFilters() {
           </div>
         </div>
       </div>
+
+      <!-- Chyba další stránky: kurzy zůstanou zobrazené -->
+      <Message v-if="isFetchNextPageError" severity="error" :closable="false">
+        {{ errorMessage }}
+      </Message>
 
       <!-- Sentinel pro Infinite Scroll a tlačítko Načíst další -->
       <div ref="loadMoreTrigger" class="flex justify-center py-2">

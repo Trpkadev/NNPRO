@@ -34,7 +34,7 @@ async function handleEnroll() {
   try {
     await enrollMutation.mutateAsync({
       courseId: props.courseId,
-      accessKey: accessKey.value.trim() ? accessKey.value.trim() : null,
+      accessKey: accessKey.value.trim() || null,
     })
 
     toast.add({
@@ -55,13 +55,28 @@ async function handleEnroll() {
   <Dialog
     v-model:visible="visible"
     modal
-    :header="
-      courseTitle
-        ? `${t('courses.enrollDialogTitle')}: ${courseTitle}`
-        : t('courses.enrollDialogTitle')
-    "
-    :style="{ width: '28rem', maxWidth: '95vw' }"
+    :closable="true"
+    :show-header="true"
+    :style="{ width: '34rem', maxWidth: '95vw' }"
   >
+    <template #header>
+      <h2 class="min-w-0 text-lg font-semibold leading-snug">
+        {{ t('courses.enrollDialogTitle') }}
+        <span v-if="courseTitle">: {{ courseTitle }}</span>
+      </h2>
+    </template>
+
+    <template #closebutton="{ closeCallback }">
+      <button
+        type="button"
+        class="shrink-0 flex items-center justify-center w-9 h-9 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800"
+        :aria-label="t('common.close')"
+        @click="closeCallback"
+      >
+        <span class="text-2xl leading-none" aria-hidden="true">×</span>
+      </button>
+    </template>
+
     <form class="space-y-4" @submit.prevent="handleEnroll">
       <p class="text-sm text-surface-600 dark:text-surface-400">
         {{ t('courses.enrollDialogDesc') }}
@@ -75,6 +90,7 @@ async function handleEnroll() {
         <label for="enroll-access-key" class="block text-sm font-medium">
           {{ t('courses.accessKeyLabel') }}
         </label>
+
         <Password
           input-id="enroll-access-key"
           v-model="accessKey"
@@ -93,6 +109,7 @@ async function handleEnroll() {
           text
           @click="visible = false"
         />
+
         <Button
           type="submit"
           :label="t('courses.enrollBtn')"
