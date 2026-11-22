@@ -306,6 +306,9 @@ export interface QuizAttemptResponseDto {
   scorePercent: number
   isPassed: boolean
 }
+export interface QuizAttemptDetailResponseDto extends QuizAttemptResponseDto {
+  answerIdsByQuestionId: Record<string, number[] | null>
+}
 
 export interface MyQuizAttemptResponseDto {
   id: number
@@ -394,6 +397,7 @@ export type WrapperOfMyQuizAttemptResponseDtoList = ApiWrapper<MyQuizAttemptResp
 export type WrapperOfQuestionResponseDto = ApiWrapper<QuestionResponseDto>
 export type WrapperOfQuestionResponseDtoList = ApiWrapper<QuestionResponseDto[]>
 export type WrapperOfQuizAttemptResponseDto = ApiWrapper<QuizAttemptResponseDto>
+export type WrapperOfQuizAttemptDetailResponseDto = ApiWrapper<QuizAttemptDetailResponseDto>
 export type WrapperOfQuizAttemptResponseDtoList = ApiWrapper<QuizAttemptResponseDto[]>
 export type WrapperOfQuizResponseDto = ApiWrapper<QuizResponseDto>
 export type WrapperOfQuizResponseDtoList = ApiWrapper<QuizResponseDto[]>

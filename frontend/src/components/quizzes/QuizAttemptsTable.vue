@@ -10,6 +10,7 @@ defineProps<{
 
 const emit = defineEmits<{
   'update:page': [page: number]
+  'view-attempt': [attemptId: number]
 }>()
 
 const { t } = useI18n()
@@ -32,30 +33,55 @@ const { t } = useI18n()
     <DataTable v-else :value="attempts" striped-rows responsive-layout="scroll">
       <Column field="id" header="#">
         <template #body="{ data }">
-          <span class="font-semibold">{{ t('quizzes.attemptNumber', { id: data.id }) }}</span>
+          <span class="font-semibold">
+            {{ t('quizzes.attemptNumber', { id: data.id }) }}
+          </span>
         </template>
       </Column>
+
       <Column :header="t('quizzes.startedAt')">
         <template #body="{ data }">
           {{ formatDateTime(data.startedAtUtc) }}
         </template>
       </Column>
+
       <Column :header="t('quizzes.submittedAt')">
         <template #body="{ data }">
           {{ data.submittedAtUtc ? formatDateTime(data.submittedAtUtc) : t('quizzes.inProgress') }}
         </template>
       </Column>
+
       <Column :header="t('quizzes.score')">
         <template #body="{ data }">
-          <span class="font-bold">{{ Math.round(data.scorePercent * 10) / 10 }} %</span>
+          <span v-if="data.submittedAtUtc" class="font-bold">
+            {{ Math.round(data.scorePercent * 10) / 10 }} %
+          </span>
+          <span v-else class="text-surface-500">—</span>
         </template>
       </Column>
+
       <Column :header="t('common.actions')">
         <template #body="{ data }">
-          <Tag
-            :value="data.isPassed ? t('quizzes.passed') : t('quizzes.failed')"
-            :severity="data.isPassed ? 'success' : 'danger'"
-          />
+          <div class="flex items-center gap-3">
+            <Tag
+              v-if="data.submittedAtUtc"
+              :value="data.isPassed ? t('quizzes.passed') : t('quizzes.failed')"
+              :severity="data.isPassed ? 'success' : 'danger'"
+            />
+
+            <Tag v-else :value="t('quizzes.inProgress')" severity="info" />
+
+            <Button
+              v-if="data.submittedAtUtc"
+              type="button"
+              :label="t('quizzes.viewAttempt')"
+              icon="oi oi-eye"
+              severity="secondary"
+              outlined
+              size="small"
+              @click="emit('view-attempt', data.id)"
+            />
+          </div>
         </template>
       </Column>
     </DataTable>

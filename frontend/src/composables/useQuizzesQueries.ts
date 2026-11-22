@@ -1,7 +1,9 @@
 import type { MaybeRefOrGetter } from 'vue'
 import { quizzesService } from '@/services/quizzes.service'
+import { questionsService } from '@/services/questions.service'
 import { queryKeys } from './queryKeys'
 import type {
+  AnswerOptionResponseDto,
   CreateQuizRequestDto,
   EndAttemptRequestDto,
   QueryParameters,
@@ -119,6 +121,49 @@ export function useQuizAttemptDetailQuery(
   })
 }
 
+// Načtení možností odpovědí pro historický pokus
+export function useQuizAnswerOptionsQuery(
+  quizId: MaybeRefOrGetter<number>,
+  questionIds: MaybeRefOrGetter<number[]>,
+  enabled: MaybeRefOrGetter<boolean> = true,
+) {
+  return useQuery({
+    queryKey: computed(() =>
+      queryKeys.quizzes.answerOptions(toValue(quizId), toValue(questionIds)),
+    ),
+    enabled: computed(
+      () => toValue(enabled) && toValue(quizId) > 0 && toValue(questionIds).length > 0,
+    ),
+    queryFn: async () => {
+      const entries = await Promise.all(
+        toValue(questionIds).map(async (questionId) => {
+          const options: AnswerOptionResponseDto[] = []
+
+          for (let page = 1; page <= 20; page++) {
+            const response = await questionsService.getOptions(questionId, {
+              Page: page,
+              PageSize: 100,
+            })
+
+            options.push(...response.data)
+
+            const pagination = response.metadata?.pagination
+
+            if (!pagination?.hasNextPage) {
+              return [questionId, options] as const
+            }
+          }
+
+          throw new Error('Answer options pagination limit exceeded')
+        }),
+      )
+
+      return Object.fromEntries(entries) as Record<number, AnswerOptionResponseDto[]>
+    },
+    staleTime: 60_000,
+  })
+}
+
 export function useStartQuizAttemptMutation() {
   const queryClient = useQueryClient()
 
@@ -141,7 +186,9 @@ export function useEndQuizAttemptMutation() {
   return useMutation({
     mutationFn: (payload: EndAttemptRequestDto) => quizzesService.endAttempt(payload),
     onSuccess: (result) => {
-      queryClient.setQueryData(queryKeys.quizzes.attemptDetail(result.id), result)
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.quizzes.attemptDetail(result.id),
+      })
       queryClient.invalidateQueries({
         queryKey: [...queryKeys.quizzes.all, result.quizId, 'attempts'],
       })

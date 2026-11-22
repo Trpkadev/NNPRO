@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import 'quill/dist/quill.core.css'
 import { useToast } from 'openvue/usetoast'
 import { getApiErrorMessage } from '@/services/api'
 import { getYoutubeEmbedUrl, sanitizeHtml } from '@/utils/html'
@@ -201,7 +202,7 @@ async function handleToggleComplete() {
 
       <!-- Formátovaný obsah lekce -->
       <article
-        class="p-6 rounded-2xl bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 prose dark:prose-invert max-w-none leading-relaxed text-surface-800 dark:text-surface-100"
+        class="lesson-content ql-editor p-6 rounded-2xl bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 text-surface-800 dark:text-surface-100"
         v-html="sanitizeHtml(lesson.content)"
       />
 
@@ -253,3 +254,37 @@ async function handleToggleComplete() {
     </template>
   </div>
 </template>
+
+<style scoped>
+.lesson-content {
+  height: auto;
+  overflow: visible;
+  line-height: 1.7;
+}
+
+.lesson-content :deep(h1) {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.lesson-content :deep(h2) {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.lesson-content :deep(p) {
+  margin-bottom: 0.75rem;
+}
+
+.lesson-content :deep(ol),
+.lesson-content :deep(ul) {
+  margin-bottom: 1rem;
+}
+
+.lesson-content :deep(a) {
+  color: var(--p-primary-color);
+  text-decoration: underline;
+}
+</style>

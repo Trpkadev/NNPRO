@@ -17,7 +17,7 @@ const updateQuizMutation = useUpdateQuizMutation()
 const quizTitle = ref('')
 const quizPassingThreshold = ref<number | null>(75)
 const quizMaxAttempts = ref<number | null>(null)
-const quizTimeLimit = ref<number | null>(null)
+const quizTimeLimitMinutes = ref<number | null>(null)
 const quizRandomizeQuestions = ref(false)
 const quizRandomizeAnswers = ref(false)
 const quizError = ref<string | null>(null)
@@ -31,7 +31,8 @@ watch(visible, (isOpen) => {
     quizTitle.value = props.quiz?.title ?? ''
     quizPassingThreshold.value = props.quiz?.passingThresholdPercent ?? 75
     quizMaxAttempts.value = props.quiz?.maxAttempts ?? null
-    quizTimeLimit.value = props.quiz?.timeLimitSeconds ?? null
+    quizTimeLimitMinutes.value =
+      props.quiz?.timeLimitSeconds != null ? props.quiz.timeLimitSeconds / 60 : null
     quizRandomizeQuestions.value = props.quiz?.randomizeQuestions ?? false
     quizRandomizeAnswers.value = props.quiz?.randomizeAnswers ?? false
     quizError.value = null
@@ -40,6 +41,7 @@ watch(visible, (isOpen) => {
 
 async function handleSaveQuiz() {
   quizError.value = null
+
   if (!quizTitle.value.trim()) {
     quizError.value = t('validation.required')
     return
@@ -67,13 +69,14 @@ async function handleSaveQuiz() {
     return
   }
 
+  const timeLimitSeconds =
+    quizTimeLimitMinutes.value !== null ? Math.round(quizTimeLimitMinutes.value * 60) : null
+
   if (
-    quizTimeLimit.value !== null &&
-    (!Number.isInteger(quizTimeLimit.value) ||
-      quizTimeLimit.value < 1 ||
-      quizTimeLimit.value > 86400)
+    timeLimitSeconds !== null &&
+    (!Number.isFinite(timeLimitSeconds) || timeLimitSeconds < 1 || timeLimitSeconds > 86400)
   ) {
-    quizError.value = t('validation.invalidNumberRange', { min: 1, max: 86400 })
+    quizError.value = t('validation.invalidNumberRange', { min: 1, max: 1440 })
     return
   }
 
@@ -81,7 +84,7 @@ async function handleSaveQuiz() {
     title: quizTitle.value.trim(),
     sectionId: props.sectionId,
     maxAttempts: quizMaxAttempts.value,
-    timeLimitSeconds: quizTimeLimit.value,
+    timeLimitSeconds,
     passingThresholdPercent: threshold,
     randomizeQuestions: quizRandomizeQuestions.value,
     randomizeAnswers: quizRandomizeAnswers.value,
@@ -96,6 +99,7 @@ async function handleSaveQuiz() {
     } else {
       await createQuizMutation.mutateAsync(payload)
     }
+
     visible.value = false
   } catch (err) {
     quizError.value = getApiErrorMessage(err)
@@ -135,6 +139,7 @@ async function handleSaveQuiz() {
             class="w-full"
           />
         </div>
+
         <div class="space-y-1">
           <label for="quiz-max-attempts-input" class="block text-xs font-medium">
             {{ t('instructor.quizMaxAttemptsLabel') }}
@@ -147,14 +152,18 @@ async function handleSaveQuiz() {
             class="w-full"
           />
         </div>
+
         <div class="space-y-1">
           <label for="quiz-time-limit-input" class="block text-xs font-medium">
-            {{ t('instructor.quizTimeLimitLabel') }}
+            {{ t('instructor.quizTimeLimitLabel') }} (min)
           </label>
           <InputNumber
             input-id="quiz-time-limit-input"
-            v-model="quizTimeLimit"
-            :min="1"
+            v-model="quizTimeLimitMinutes"
+            :min="0"
+            :max="1440"
+            :min-fraction-digits="0"
+            :max-fraction-digits="4"
             class="w-full"
           />
         </div>

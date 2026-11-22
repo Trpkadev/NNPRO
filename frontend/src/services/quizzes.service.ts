@@ -3,12 +3,14 @@ import type {
   CreateQuizRequestDto,
   EndAttemptRequestDto,
   QueryParameters,
+  QuizAttemptDetailResponseDto,
   QuizAttemptResponseDto,
   QuizResponseDto,
   StartAttemptRequestDto,
   UpdateQuizRequestDto,
   WrapperOfMyQuizAttemptResponseDtoList,
   WrapperOfQuestionResponseDtoList,
+  WrapperOfQuizAttemptDetailResponseDto,
   WrapperOfQuizAttemptResponseDto,
   WrapperOfQuizAttemptResponseDtoList,
   WrapperOfQuizResponseDto,
@@ -103,10 +105,10 @@ export const quizzesService = {
   },
 
   /**
-   * Detail konkrétního pokusu o kvíz (GET /api/quizzes/attempt/{attemptId})
+   * Detail pokusu včetně historických odpovědí
    */
-  async getAttemptById(attemptId: number): Promise<QuizAttemptResponseDto> {
-    const { data } = await api.get<WrapperOfQuizAttemptResponseDto>(
+  async getAttemptById(attemptId: number): Promise<QuizAttemptDetailResponseDto> {
+    const { data } = await api.get<WrapperOfQuizAttemptDetailResponseDto>(
       `/api/quizzes/attempt/${attemptId}`,
     )
     return data.data

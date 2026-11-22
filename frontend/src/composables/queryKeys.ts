@@ -62,6 +62,8 @@ export const queryKeys = {
     myAttempts: (quizId: number, params?: QueryParameters) =>
       [...queryKeys.quizzes.all, quizId, 'my-attempts', params ?? {}] as const,
     attemptDetail: (attemptId: number) => [...queryKeys.quizzes.all, 'attempt', attemptId] as const,
+    answerOptions: (quizId: number, questionIds: number[]) =>
+      [...queryKeys.quizzes.detail(quizId), 'answer-options', questionIds] as const,
   },
   questions: {
     all: ['questions'] as const,
