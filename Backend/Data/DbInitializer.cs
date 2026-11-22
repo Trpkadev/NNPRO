@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Backend.Models.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -337,19 +336,19 @@ public static class DbInitializer {
                 StudentAnswers = [
                     new StudentAnswer {
                         QuestionId = q1.Id,
-                        SelectedOptionIdsJson = JsonSerializer.Serialize(new[] { q1Opt1.Id }),
+                        SelectedOptionIds = [q1Opt1.Id],
                         IsFullyCorrect = true,
                         AwardedPoints = 2
                     },
                     new StudentAnswer {
                         QuestionId = q2.Id,
-                        SelectedOptionIdsJson = JsonSerializer.Serialize(new[] { q2Opt1.Id, q2Opt2.Id }),
+                        SelectedOptionIds = [q2Opt1.Id, q2Opt2.Id],
                         IsFullyCorrect = true,
                         AwardedPoints = 3
                     },
                     new StudentAnswer {
                         QuestionId = q3.Id,
-                        SelectedOptionIdsJson = JsonSerializer.Serialize(new[] { q3Opt1.Id }),
+                        SelectedOptionIds = [q3Opt1.Id],
                         IsFullyCorrect = true,
                         AwardedPoints = 1
                     }
@@ -396,19 +395,19 @@ public static class DbInitializer {
                 StudentAnswers = [
                     new StudentAnswer {
                         QuestionId = q1.Id,
-                        SelectedOptionIdsJson = JsonSerializer.Serialize(new[] { q1Opt2.Id }),
+                        SelectedOptionIds = [q1Opt2.Id],
                         IsFullyCorrect = false,
                         AwardedPoints = 0
                     },
                     new StudentAnswer {
                         QuestionId = q2.Id,
-                        SelectedOptionIdsJson = JsonSerializer.Serialize(new[] { q2Opt1.Id }),
+                        SelectedOptionIds = [q2Opt1.Id],
                         IsFullyCorrect = false,
                         AwardedPoints = 0
                     },
                     new StudentAnswer {
                         QuestionId = q3.Id,
-                        SelectedOptionIdsJson = JsonSerializer.Serialize(new[] { q3Opt1.Id }),
+                        SelectedOptionIds = [q3Opt1.Id],
                         IsFullyCorrect = true,
                         AwardedPoints = 1
                     }

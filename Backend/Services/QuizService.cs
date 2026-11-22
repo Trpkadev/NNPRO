@@ -115,7 +115,7 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
         return (attempts, new Metadata(metadata, request));
     }
 
-    public async Task<QuizAttemptResponseDto> GetAttemptByAttemptIdAsync(uint requestingUserId, uint attemptId, CancellationToken ct)
+    public async Task<QuizAttemptDetailResponseDto> GetAttemptByAttemptIdAsync(uint requestingUserId, uint attemptId, CancellationToken ct)
     {
         var attempt = await dbContext.QuizAttempts.AsNoTracking()
             .Where(candidate => candidate.Id == attemptId)
@@ -130,20 +130,31 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
                 candidate.Quiz.Section.CourseId
             })
             .FirstOrDefaultAsync(ct);
+
+        var answers = (await dbContext.StudentAnswers.AsNoTracking()
+                .Where(candidate => candidate.QuizAttemptId == attemptId)
+                .Select(candidate => new {
+                    candidate.QuestionId,
+                    candidate.SelectedOptionIds
+                })
+                .ToListAsync(ct))
+            .ToDictionary(x => x.QuestionId, x => x.SelectedOptionIds);
+
         if (attempt is null)
             throw ServiceException.NotFound(Resources.ErrorQuizAttemptNotFound);
 
         if (attempt.StudentId != requestingUserId)
             await CourseAuthorization.EnsureCanManageCourseAsync(dbContext, requestingUserId, attempt.CourseId, ct);
 
-        return new QuizAttemptResponseDto(
+        return new QuizAttemptDetailResponseDto(
             attempt.Id,
             attempt.QuizId,
             attempt.StudentId,
             attempt.StartedAtUtc,
             attempt.SubmittedAtUtc,
             attempt.ScorePercent,
-            attempt.IsPassed);
+            attempt.IsPassed,
+            answers);
     }
 
     public async Task<uint> StartAttemptAsync(uint studentId, StartAttemptRequestDto request, CancellationToken ct)
@@ -279,7 +290,7 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
                 dbContext.StudentAnswers.Add(new StudentAnswer {
                     QuizAttemptId = attempt.Id,
                     QuestionId = question.Id,
-                    SelectedOptionIdsJson = JsonSerializer.Serialize(selectedSorted),
+                    SelectedOptionIds = selectedSorted,
                     IsFullyCorrect = isCorrect,
                     AwardedPoints = questionAwardedPoints
                 });

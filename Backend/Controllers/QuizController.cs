@@ -103,9 +103,9 @@ public class QuizController(IQuizService quizService) : ApiControllerBase {
     [HttpGet("attempt/{attemptId:uint}")]
     [Authorize]
     [EndpointSummary("Get specific quiz attempt")]
-    [ProducesResponseType<Wrapper<QuizAttemptResponseDto>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<Wrapper<QuizAttemptDetailResponseDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<QuizAttemptResponseDto>> GetAttempt(uint attemptId, CancellationToken cancellationToken) => Ok(await quizService.GetAttemptByAttemptIdAsync(AuthenticatedUserId, attemptId, cancellationToken));
+    public async Task<ActionResult<QuizAttemptDetailResponseDto>> GetAttempt(uint attemptId, CancellationToken cancellationToken) => Ok(await quizService.GetAttemptByAttemptIdAsync(AuthenticatedUserId, attemptId, cancellationToken));
 
     [HttpPost("attempt/start")]
     [Authorize(Roles = "Student")]

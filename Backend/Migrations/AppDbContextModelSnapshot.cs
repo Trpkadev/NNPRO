@@ -49,7 +49,7 @@ namespace Backend.Migrations
 
                     b.HasIndex("QuestionId");
 
-                    b.ToTable("AnswerOptions", (string)null);
+                    b.ToTable("AnswerOptions");
                 });
 
             modelBuilder.Entity("Backend.Models.Entities.Course", b =>
@@ -76,7 +76,7 @@ namespace Backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Courses", (string)null);
+                    b.ToTable("Courses");
                 });
 
             modelBuilder.Entity("Backend.Models.Entities.Enrollment", b =>
@@ -103,7 +103,7 @@ namespace Backend.Migrations
                     b.HasIndex("StudentId", "CourseId")
                         .IsUnique();
 
-                    b.ToTable("Enrollments", (string)null);
+                    b.ToTable("Enrollments");
                 });
 
             modelBuilder.Entity("Backend.Models.Entities.Lesson", b =>
@@ -138,7 +138,7 @@ namespace Backend.Migrations
 
                     b.HasIndex("SectionId", "Order");
 
-                    b.ToTable("Lessons", (string)null);
+                    b.ToTable("Lessons");
                 });
 
             modelBuilder.Entity("Backend.Models.Entities.LessonAttachment", b =>
@@ -173,7 +173,7 @@ namespace Backend.Migrations
 
                     b.HasIndex("LessonId");
 
-                    b.ToTable("LessonAttachments", (string)null);
+                    b.ToTable("LessonAttachments");
                 });
 
             modelBuilder.Entity("Backend.Models.Entities.Question", b =>
@@ -206,7 +206,7 @@ namespace Backend.Migrations
 
                     b.HasIndex("QuizId");
 
-                    b.ToTable("Questions", (string)null);
+                    b.ToTable("Questions");
                 });
 
             modelBuilder.Entity("Backend.Models.Entities.Quiz", b =>
@@ -245,7 +245,7 @@ namespace Backend.Migrations
 
                     b.HasIndex("SectionId");
 
-                    b.ToTable("Quizzes", (string)null);
+                    b.ToTable("Quizzes");
                 });
 
             modelBuilder.Entity("Backend.Models.Entities.QuizAttempt", b =>
@@ -281,7 +281,7 @@ namespace Backend.Migrations
 
                     b.HasIndex("StudentId", "QuizId");
 
-                    b.ToTable("QuizAttempts", (string)null);
+                    b.ToTable("QuizAttempts");
                 });
 
             modelBuilder.Entity("Backend.Models.Entities.RefreshToken", b =>
@@ -355,7 +355,7 @@ namespace Backend.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("RefreshTokens", (string)null);
+                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("Backend.Models.Entities.Section", b =>
@@ -381,7 +381,7 @@ namespace Backend.Migrations
 
                     b.HasIndex("CourseId", "Order");
 
-                    b.ToTable("Sections", (string)null);
+                    b.ToTable("Sections");
                 });
 
             modelBuilder.Entity("Backend.Models.Entities.StudentAnswer", b =>
@@ -404,10 +404,8 @@ namespace Backend.Migrations
                     b.Property<uint>("QuizAttemptId")
                         .HasColumnType("int unsigned");
 
-                    b.Property<string>("SelectedOptionIdsJson")
-                        .IsRequired()
-                        .HasMaxLength(1024)
-                        .HasColumnType("varchar(1024)");
+                    b.PrimitiveCollection<string>("SelectedOptionIds")
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
@@ -416,7 +414,7 @@ namespace Backend.Migrations
                     b.HasIndex("QuizAttemptId", "QuestionId")
                         .IsUnique();
 
-                    b.ToTable("StudentAnswers", (string)null);
+                    b.ToTable("StudentAnswers");
                 });
 
             modelBuilder.Entity("Backend.Models.Entities.StudentLessonProgress", b =>
@@ -446,7 +444,7 @@ namespace Backend.Migrations
                     b.HasIndex("StudentId", "LessonId")
                         .IsUnique();
 
-                    b.ToTable("StudentLessonProgresses", (string)null);
+                    b.ToTable("StudentLessonProgresses");
                 });
 
             modelBuilder.Entity("Backend.Models.Entities.User", b =>
@@ -483,7 +481,7 @@ namespace Backend.Migrations
                     b.HasIndex("Username")
                         .IsUnique();
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("CourseInstructors", b =>
@@ -498,7 +496,7 @@ namespace Backend.Migrations
 
                     b.HasIndex("TeachingCoursesId");
 
-                    b.ToTable("CourseInstructors", (string)null);
+                    b.ToTable("CourseInstructors");
                 });
 
             modelBuilder.Entity("Backend.Models.Entities.AnswerOption", b =>

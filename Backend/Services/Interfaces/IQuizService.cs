@@ -20,7 +20,7 @@ public interface IQuizService {
 
     Task<(MyQuizAttemptResponseDto[] Attempts, Metadata Metadata)> GetMyAttemptsAsync(uint studentId, uint quizId, RequestQuery request, CancellationToken ct);
 
-    Task<QuizAttemptResponseDto> GetAttemptByAttemptIdAsync(uint requestingUserId, uint attemptId, CancellationToken ct);
+    Task<QuizAttemptDetailResponseDto> GetAttemptByAttemptIdAsync(uint requestingUserId, uint attemptId, CancellationToken ct);
 
     Task<uint> StartAttemptAsync(uint studentId, StartAttemptRequestDto request, CancellationToken ct);
 
