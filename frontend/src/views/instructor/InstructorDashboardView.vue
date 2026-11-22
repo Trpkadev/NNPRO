@@ -159,7 +159,6 @@ function confirmDeleteCourse(course: CourseResponseDto) {
               <h3 class="font-bold text-base text-surface-900 dark:text-surface-0 line-clamp-1">
                 {{ course.title }}
               </h3>
-              <span class="text-xs font-mono text-surface-400">#{{ course.id }}</span>
             </div>
 
             <p class="text-sm text-surface-600 dark:text-surface-400 line-clamp-3">
