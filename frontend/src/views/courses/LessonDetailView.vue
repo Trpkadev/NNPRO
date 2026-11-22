@@ -1,23 +1,22 @@
 <script setup lang="ts">
 import { useToast } from 'openvue/usetoast'
 import { getApiErrorMessage } from '@/services/api'
-import { usersService } from '@/services/users.service'
-import { sectionsService } from '@/services/sections.service'
 import { getYoutubeEmbedUrl, sanitizeHtml } from '@/utils/html'
-import type { LessonResponseDto } from '@/types/api'
+import { useAllSectionLessonsQuery } from '@/composables/useSectionsQueries'
+import { useAllMyProgressQuery } from '@/composables/useUsersQueries'
+import { parsePositiveId } from '@/utils/route'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
-const queryClient = useQueryClient()
 
-const courseId = computed(() => Number(route.params.courseId))
-const lessonId = computed(() => Number(route.params.lessonId))
+const courseId = computed(() => parsePositiveId(route.params.courseId))
+const lessonId = computed(() => parsePositiveId(route.params.lessonId))
 
 const { data: lesson, isLoading, isError, error } = useLessonDetailQuery(lessonId)
 
-// Pro navigaci načteme všechny lekce aktuální sekce.
+// Navigace mezi lekcemi aktuální sekce.
 const sectionId = computed(() => lesson.value?.sectionId ?? 0)
 
 const {
@@ -25,75 +24,15 @@ const {
   isLoading: sectionLessonsLoading,
   isError: sectionLessonsError,
   error: sectionLessonsErrorObj,
-} = useQuery({
-  queryKey: computed(() => ['lesson-navigation', sectionId.value]),
-  enabled: computed(() => sectionId.value > 0),
-  queryFn: async () => {
-    const allLessons: LessonResponseDto[] = []
-    let page = 1
+} = useAllSectionLessonsQuery(sectionId)
 
-    while (true) {
-      const response = await sectionsService.getLessons(sectionId.value, {
-        Page: page,
-        PageSize: 50,
-        SortBy: 'Order',
-        Descending: false,
-      })
-
-      const pagination = response.metadata?.pagination
-
-      if (!pagination) {
-        throw new Error('Missing lesson pagination metadata')
-      }
-
-      allLessons.push(...response.data)
-
-      if (!pagination.hasNextPage) break
-      page++
-    }
-
-    return allLessons
-  },
-})
-
-// Načteme všechny stránky uživatelského progressu.
+// Progress uživatele načítáme přes sdílené composable.
 const {
   data: myProgress,
   isPending: progressPending,
   isFetching: progressFetching,
   isError: progressError,
-} = useQuery({
-  queryKey: ['lesson-detail', 'all-progress'],
-  queryFn: async () => {
-    const allProgress: Array<{
-      lessonId: number
-      isCompleted: boolean
-    }> = []
-
-    let page = 1
-
-    while (true) {
-      const response = await usersService.getMyProgress({
-        Page: page,
-        PageSize: 100,
-      })
-
-      const pagination = response.metadata?.pagination
-
-      if (!pagination) {
-        throw new Error('Missing progress pagination metadata')
-      }
-
-      allProgress.push(...response.data)
-
-      if (!pagination.hasNextPage) break
-      page++
-    }
-
-    return allProgress
-  },
-  refetchOnMount: 'always',
-})
+} = useAllMyProgressQuery()
 
 const updateProgressMutation = useUpdateLessonProgressMutation()
 
@@ -108,7 +47,7 @@ const progressReady = computed(
 const isCompleted = computed(() => {
   if (!progressReady.value) return false
 
-  return myProgress.value.some((p) => p.lessonId === lessonId.value && p.isCompleted)
+  return myProgress.value?.some((p) => p.lessonId === lessonId.value && p.isCompleted) ?? false
 })
 
 const orderedSiblingLessons = computed(() =>
@@ -138,11 +77,6 @@ async function handleToggleComplete() {
     await updateProgressMutation.mutateAsync({
       lessonId: lesson.value.id,
       payload: { isCompleted: !isCompleted.value },
-    })
-
-    // Po uložení znovu načteme aktuální progress.
-    await queryClient.invalidateQueries({
-      queryKey: ['lesson-detail', 'all-progress'],
     })
 
     toast.add({

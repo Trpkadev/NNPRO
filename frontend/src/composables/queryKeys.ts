@@ -38,6 +38,8 @@ export const queryKeys = {
     detail: (sectionId: number) => [...queryKeys.sections.details(), sectionId] as const,
     lessons: (sectionId: number, params?: QueryParameters) =>
       [...queryKeys.sections.detail(sectionId), 'lessons', params ?? {}] as const,
+    allLessons: (sectionId: number) =>
+      [...queryKeys.sections.detail(sectionId), 'all-lessons'] as const,
     quizzes: (sectionId: number, params?: QueryParameters) =>
       [...queryKeys.sections.detail(sectionId), 'quizzes', params ?? {}] as const,
   },
@@ -76,5 +78,6 @@ export const queryKeys = {
       [...queryKeys.users.all, 'me', 'courses', params ?? {}] as const,
     myProgress: (params?: QueryParameters) =>
       [...queryKeys.users.all, 'me', 'progress', params ?? {}] as const,
+    allMyProgress: () => [...queryKeys.users.all, 'me', 'progress', 'all'] as const,
   },
 }

@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { useToast } from 'openvue/usetoast'
 import { getApiErrorMessage } from '@/services/api'
@@ -71,7 +70,7 @@ async function handleEnroll() {
       <button
         type="button"
         class="shrink-0 flex items-center justify-center w-9 h-9 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800"
-        :aria-label="t('common.cancel')"
+        :aria-label="t('common.close')"
         @click="closeCallback"
       >
         <span class="text-2xl leading-none" aria-hidden="true">×</span>

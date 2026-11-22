@@ -40,7 +40,7 @@ export const sectionsService = {
 
     return {
       ...data,
-      data: data.data.lessonResponseDto,
+      data: data.data?.lessonResponseDto ?? [],
     }
   },
 

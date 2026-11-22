@@ -2,6 +2,7 @@
 import { useConfirm } from 'openvue/useconfirm'
 import { useToast } from 'openvue/usetoast'
 import { getApiErrorMessage } from '@/services/api'
+import { parsePositiveId } from '@/utils/route'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -11,13 +12,7 @@ const toast = useToast()
 const authStore = useAuthStore()
 const { canManageCourses } = usePermissions()
 
-const courseId = computed(() => {
-  const value = route.params.id
-  if (typeof value !== 'string' || !/^[1-9]\d*$/.test(value)) return 0
-
-  const id = Number(value)
-  return Number.isSafeInteger(id) ? id : 0
-})
+const courseId = computed(() => parsePositiveId(route.params.id))
 
 const {
   data: course,

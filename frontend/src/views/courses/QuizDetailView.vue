@@ -1,19 +1,12 @@
 <script setup lang="ts">
 import { getApiErrorMessage } from '@/services/api'
+import { parsePositiveId } from '@/utils/route'
 import type { AnswerOptionResponseDto, QuizAttemptResponseDto } from '@/types/api'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
-
-// Validace ID z URL
-function parsePositiveId(value: unknown): number {
-  if (typeof value !== 'string' || !/^[1-9]\d*$/.test(value)) return 0
-
-  const id = Number(value)
-  return Number.isSafeInteger(id) ? id : 0
-}
 
 const courseId = computed(() => parsePositiveId(route.params.courseId))
 const quizId = computed(() => parsePositiveId(route.params.quizId))
