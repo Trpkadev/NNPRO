@@ -1,37 +1,118 @@
 <script setup lang="ts">
 import { useToast } from 'openvue/usetoast'
 import { getApiErrorMessage } from '@/services/api'
+import { usersService } from '@/services/users.service'
+import { sectionsService } from '@/services/sections.service'
 import { getYoutubeEmbedUrl, sanitizeHtml } from '@/utils/html'
+import type { LessonResponseDto } from '@/types/api'
 
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
+const queryClient = useQueryClient()
 
 const courseId = computed(() => Number(route.params.courseId))
 const lessonId = computed(() => Number(route.params.lessonId))
 
 const { data: lesson, isLoading, isError, error } = useLessonDetailQuery(lessonId)
 
-const { data: sectionLessonsResponse } = useSectionLessonsQuery(
-  computed(() => lesson.value?.sectionId ?? 0),
-  { Page: 1, PageSize: 50, SortBy: 'Order', Descending: false },
-  computed(() => !!lesson.value?.sectionId),
-)
+// Pro navigaci načteme všechny lekce aktuální sekce.
+const sectionId = computed(() => lesson.value?.sectionId ?? 0)
 
-const { data: myProgressResponse } = useMyProgressQuery({ Page: 1, PageSize: 100 })
+const {
+  data: sectionLessons,
+  isLoading: sectionLessonsLoading,
+  isError: sectionLessonsError,
+  error: sectionLessonsErrorObj,
+} = useQuery({
+  queryKey: computed(() => ['lesson-navigation', sectionId.value]),
+  enabled: computed(() => sectionId.value > 0),
+  queryFn: async () => {
+    const allLessons: LessonResponseDto[] = []
+    let page = 1
+
+    while (true) {
+      const response = await sectionsService.getLessons(sectionId.value, {
+        Page: page,
+        PageSize: 50,
+        SortBy: 'Order',
+        Descending: false,
+      })
+
+      const pagination = response.metadata?.pagination
+
+      if (!pagination) {
+        throw new Error('Missing lesson pagination metadata')
+      }
+
+      allLessons.push(...response.data)
+
+      if (!pagination.hasNextPage) break
+      page++
+    }
+
+    return allLessons
+  },
+})
+
+// Načteme všechny stránky uživatelského progressu.
+const {
+  data: myProgress,
+  isPending: progressPending,
+  isFetching: progressFetching,
+  isError: progressError,
+} = useQuery({
+  queryKey: ['lesson-detail', 'all-progress'],
+  queryFn: async () => {
+    const allProgress: Array<{
+      lessonId: number
+      isCompleted: boolean
+    }> = []
+
+    let page = 1
+
+    while (true) {
+      const response = await usersService.getMyProgress({
+        Page: page,
+        PageSize: 100,
+      })
+
+      const pagination = response.metadata?.pagination
+
+      if (!pagination) {
+        throw new Error('Missing progress pagination metadata')
+      }
+
+      allProgress.push(...response.data)
+
+      if (!pagination.hasNextPage) break
+      page++
+    }
+
+    return allProgress
+  },
+  refetchOnMount: 'always',
+})
+
 const updateProgressMutation = useUpdateLessonProgressMutation()
 
 const youtubeEmbedUrl = computed(() => getYoutubeEmbedUrl(lesson.value?.videoUrl))
 
-const isCompleted = computed(() =>
-  (myProgressResponse.value?.data ?? []).some(
-    (p) => p.lessonId === lessonId.value && p.isCompleted,
-  ),
+// Dokončení lze měnit pouze při známém aktuálním stavu.
+const progressReady = computed(
+  () =>
+    !progressPending.value && !progressFetching.value && !progressError.value && !!myProgress.value,
 )
 
+const isCompleted = computed(() => {
+  if (!progressReady.value) return false
+
+  return myProgress.value.some((p) => p.lessonId === lessonId.value && p.isCompleted)
+})
+
 const orderedSiblingLessons = computed(() =>
-  [...(sectionLessonsResponse.value?.data ?? [])].sort((a, b) => a.order - b.order),
+  [...(sectionLessons.value ?? [])].sort((a, b) => a.order - b.order),
 )
 
 const currentIndex = computed(() =>
@@ -41,6 +122,7 @@ const currentIndex = computed(() =>
 const prevLesson = computed(() =>
   currentIndex.value > 0 ? orderedSiblingLessons.value[currentIndex.value - 1] : null,
 )
+
 const nextLesson = computed(() =>
   currentIndex.value >= 0 && currentIndex.value < orderedSiblingLessons.value.length - 1
     ? orderedSiblingLessons.value[currentIndex.value + 1]
@@ -48,12 +130,21 @@ const nextLesson = computed(() =>
 )
 
 async function handleToggleComplete() {
-  if (!lesson.value) return
+  if (!lesson.value || !progressReady.value || updateProgressMutation.isPending.value) {
+    return
+  }
+
   try {
     await updateProgressMutation.mutateAsync({
       lessonId: lesson.value.id,
       payload: { isCompleted: !isCompleted.value },
     })
+
+    // Po uložení znovu načteme aktuální progress.
+    await queryClient.invalidateQueries({
+      queryKey: ['lesson-detail', 'all-progress'],
+    })
+
     toast.add({
       severity: 'success',
       summary: t('lessons.progressUpdated'),
@@ -101,11 +192,14 @@ async function handleToggleComplete() {
             <span class="text-xs font-bold text-primary uppercase">
               {{ t('lessons.lesson') }} #{{ lesson.order }}
             </span>
+
             <Tag
+              v-if="progressReady"
               :value="isCompleted ? t('lessons.completed') : t('lessons.incomplete')"
               :severity="isCompleted ? 'success' : 'secondary'"
             />
           </div>
+
           <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-0">
             {{ lesson.title }}
           </h1>
@@ -117,10 +211,16 @@ async function handleToggleComplete() {
           :severity="isCompleted ? 'success' : 'primary'"
           :outlined="isCompleted"
           size="small"
-          :loading="updateProgressMutation.isPending.value"
+          :loading="updateProgressMutation.isPending.value || progressPending || progressFetching"
+          :disabled="!progressReady || updateProgressMutation.isPending.value"
           @click="handleToggleComplete"
         />
       </div>
+
+      <!-- Chyba načítání progressu -->
+      <Message v-if="progressError" severity="error" :closable="false">
+        {{ t('courses.loadError') }}
+      </Message>
 
       <!-- Výukové video -->
       <div
@@ -132,6 +232,7 @@ async function handleToggleComplete() {
             <i class="oi oi-video text-primary" />
             <span>{{ t('lessons.videoSection') }}</span>
           </h2>
+
           <a
             :href="lesson.videoUrl"
             target="_blank"
@@ -174,7 +275,16 @@ async function handleToggleComplete() {
       <LessonAttachmentsCard :lesson-id="lesson.id" />
 
       <!-- Navigace mezi lekcemi v sekci -->
-      <div class="flex items-center justify-between gap-3 pt-2">
+      <Message v-if="sectionLessonsError" severity="error" :closable="false">
+        {{ getApiErrorMessage(sectionLessonsErrorObj, t('courses.loadError')) }}
+      </Message>
+
+      <div v-if="sectionLessonsLoading" class="flex justify-between gap-3 pt-2">
+        <Skeleton height="2.5rem" width="10rem" />
+        <Skeleton height="2.5rem" width="10rem" />
+      </div>
+
+      <div v-else-if="!sectionLessonsError" class="flex items-center justify-between gap-3 pt-2">
         <Button
           v-if="prevLesson"
           :label="`${t('lessons.prevLesson')}: ${prevLesson.title}`"
@@ -189,6 +299,7 @@ async function handleToggleComplete() {
             })
           "
         />
+
         <div v-else />
 
         <Button

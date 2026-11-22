@@ -7,28 +7,45 @@ const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
-const courseId = computed(() => Number(route.params.courseId))
-const quizId = computed(() => Number(route.params.quizId))
+// Validace ID z URL
+function parsePositiveId(value: unknown): number {
+  if (typeof value !== 'string' || !/^[1-9]\d*$/.test(value)) return 0
+
+  const id = Number(value)
+  return Number.isSafeInteger(id) ? id : 0
+}
+
+const courseId = computed(() => parsePositiveId(route.params.courseId))
+const quizId = computed(() => parsePositiveId(route.params.quizId))
+const validIds = computed(() => courseId.value > 0 && quizId.value > 0)
 
 const {
   data: quiz,
   isLoading: quizLoading,
   isError: quizError,
   error: quizErrorObj,
-} = useQuizDetailQuery(quizId)
+} = useQuizDetailQuery(quizId, validIds)
 
-const { data: questionsResponse, isLoading: questionsLoading } = useQuizQuestionsQuery(quizId, {
-  Page: 1,
-  PageSize: 100,
-})
+const {
+  data: questionsResponse,
+  isLoading: questionsLoading,
+  isError: questionsError,
+  error: questionsErrorObj,
+} = useQuizQuestionsQuery(quizId, { Page: 1, PageSize: 100 }, validIds)
 
 const attemptsPage = ref(1)
-const { data: myAttemptsResponse, isLoading: attemptsLoading } = useMyQuizAttemptsQuery(
+const {
+  data: myAttemptsResponse,
+  isLoading: attemptsLoading,
+  isError: attemptsError,
+  error: attemptsErrorObj,
+} = useMyQuizAttemptsQuery(
   quizId,
   computed(() => ({
     Page: attemptsPage.value,
     PageSize: 10,
   })),
+  validIds,
 )
 
 const startAttemptMutation = useStartQuizAttemptMutation()
@@ -36,6 +53,7 @@ const startAttemptMutation = useStartQuizAttemptMutation()
 const questions = computed(() => questionsResponse.value?.data ?? [])
 const myAttempts = computed(() => myAttemptsResponse.value?.data ?? [])
 const attemptsPagination = computed(() => myAttemptsResponse.value?.metadata?.pagination ?? null)
+
 const totalMyAttempts = computed(
   () => attemptsPagination.value?.totalItems ?? myAttempts.value.length,
 )
@@ -45,17 +63,37 @@ const hasReachedMaxAttempts = computed(() => {
   return totalMyAttempts.value >= quiz.value.maxAttempts
 })
 
+const canStartQuiz = computed(
+  () =>
+    validIds.value &&
+    !!quiz.value &&
+    !quizLoading.value &&
+    !quizError.value &&
+    !questionsLoading.value &&
+    !questionsError.value &&
+    questions.value.length > 0 &&
+    !attemptsLoading.value &&
+    !attemptsError.value &&
+    !!myAttemptsResponse.value &&
+    !hasReachedMaxAttempts.value,
+)
+
 const activeAttemptId = ref<number | null>(null)
+
 const lastResult = ref<{
   attempt: QuizAttemptResponseDto
   selectedAnswers: Record<number, number[]>
   optionsByQuestion: Record<number, AnswerOptionResponseDto[]>
 } | null>(null)
+
 const startError = ref<string | null>(null)
 
 async function handleStartQuiz() {
+  if (!canStartQuiz.value || startAttemptMutation.isPending.value) return
+
   startError.value = null
   lastResult.value = null
+
   try {
     const attemptId = await startAttemptMutation.mutateAsync({
       quizId: quizId.value,
@@ -85,17 +123,33 @@ function handleAttemptCompleted(payload: {
         severity="secondary"
         text
         size="small"
+        :disabled="courseId === 0"
         @click="router.push({ name: 'course-detail', params: { id: courseId } })"
       />
     </div>
 
-    <div v-if="quizLoading || questionsLoading" class="space-y-4">
+    <!-- Neplatné ID kurzu -->
+    <Message v-if="courseId === 0" severity="error" :closable="false">
+      {{ t('courses.courseNotFound') }}
+    </Message>
+
+    <!-- Neplatné ID kvízu -->
+    <Message v-else-if="quizId === 0" severity="error" :closable="false">
+      {{ t('quizzes.quizNotFound') }}
+    </Message>
+
+    <div v-else-if="quizLoading || questionsLoading" class="space-y-4">
       <Skeleton height="8rem" class="rounded-2xl" />
       <Skeleton height="14rem" class="rounded-2xl" />
     </div>
 
     <Message v-else-if="quizError" severity="error" :closable="false">
       {{ getApiErrorMessage(quizErrorObj) }}
+    </Message>
+
+    <!-- Chyba načítání otázek -->
+    <Message v-else-if="questionsError" severity="error" :closable="false">
+      {{ getApiErrorMessage(questionsErrorObj) }}
     </Message>
 
     <template v-else-if="quiz">
@@ -153,8 +207,8 @@ function handleAttemptCompleted(payload: {
             <Button
               :label="t('quizzes.startQuiz')"
               icon="oi oi-play"
-              :disabled="hasReachedMaxAttempts || questions.length === 0"
-              :loading="startAttemptMutation.isPending.value"
+              :disabled="!canStartQuiz"
+              :loading="startAttemptMutation.isPending.value || attemptsLoading"
               @click="handleStartQuiz"
             />
           </div>
@@ -162,6 +216,11 @@ function handleAttemptCompleted(payload: {
 
         <Message v-if="hasReachedMaxAttempts" severity="warn" :closable="false">
           {{ t('quizzes.maxAttemptsReached') }}
+        </Message>
+
+        <!-- Chyba načítání pokusů -->
+        <Message v-if="attemptsError" severity="error" :closable="false">
+          {{ getApiErrorMessage(attemptsErrorObj) }}
         </Message>
 
         <Message v-if="startError" severity="error" :closable="false">
@@ -176,5 +235,10 @@ function handleAttemptCompleted(payload: {
         />
       </template>
     </template>
+
+    <!-- Kvíz nebyl nalezen -->
+    <Message v-else severity="error" :closable="false">
+      {{ t('quizzes.quizNotFound') }}
+    </Message>
   </div>
 </template>

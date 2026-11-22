@@ -1,6 +1,8 @@
 import { api, serializeQueryParams } from './api'
 import type {
+  ApiWrapper,
   CreateSectionRequestDto,
+  LessonResponseDto,
   QueryParameters,
   SectionResponseDto,
   UpdateSectionRequestDto,
@@ -26,13 +28,20 @@ export const sectionsService = {
     sectionId: number,
     params?: QueryParameters,
   ): Promise<WrapperOfLessonResponseDtoList> {
-    const { data } = await api.get<WrapperOfLessonResponseDtoList>(
-      `/api/sections/${sectionId}/lessons`,
-      {
-        params: serializeQueryParams(params),
-      },
-    )
-    return data
+    const { data } = await api.get<
+      ApiWrapper<{
+        lessonResponseDto: LessonResponseDto[]
+        totalLessons: number
+        completedLessons: number
+      }>
+    >(`/api/sections/${sectionId}/lessons`, {
+      params: serializeQueryParams(params),
+    })
+
+    return {
+      ...data,
+      data: data.data.lessonResponseDto,
+    }
   },
 
   /**

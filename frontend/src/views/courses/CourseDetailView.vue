@@ -11,7 +11,13 @@ const toast = useToast()
 const authStore = useAuthStore()
 const { canManageCourses } = usePermissions()
 
-const courseId = computed(() => Number(route.params.id))
+const courseId = computed(() => {
+  const value = route.params.id
+  if (typeof value !== 'string' || !/^[1-9]\d*$/.test(value)) return 0
+
+  const id = Number(value)
+  return Number.isSafeInteger(id) ? id : 0
+})
 
 const {
   data: course,
@@ -38,7 +44,6 @@ const { data: sectionsResponse, isLoading: sectionsLoading } = useCourseSections
 
 const { data: myCoursesResponse } = useMyCoursesQuery({ Page: 1, PageSize: 100 })
 const { data: myProgressResponse } = useMyProgressQuery({ Page: 1, PageSize: 100 })
-
 const unenrollMutation = useUnenrollCourseMutation()
 
 const instructors = computed(() => instructorsResponse.value?.data ?? [])
@@ -75,8 +80,8 @@ const areAllSectionsLoaded = computed(
 
 const courseLessonIds = computed(() => {
   const allIds = new Set<number>()
-  for (const s of sections.value) {
-    for (const id of sectionLessonIdsMap[s.id] ?? []) {
+  for (const section of sections.value) {
+    for (const id of sectionLessonIdsMap[section.id] ?? []) {
       allIds.add(id)
     }
   }
@@ -140,7 +145,7 @@ function handleUnenroll() {
       />
 
       <Button
-        v-if="canManageCourses"
+        v-if="canManageCourses && courseId > 0 && course"
         :label="t('courses.manageInStudio')"
         icon="oi oi-cog"
         severity="warn"
@@ -150,7 +155,11 @@ function handleUnenroll() {
       />
     </div>
 
-    <div v-if="courseLoading" class="space-y-4">
+    <Message v-if="courseId === 0" severity="error" :closable="false">
+      {{ t('courses.courseNotFound') }}
+    </Message>
+
+    <div v-else-if="courseLoading" class="space-y-4">
       <Skeleton height="10rem" class="rounded-2xl" />
       <Skeleton height="14rem" class="rounded-2xl" />
     </div>
@@ -213,5 +222,9 @@ function handleUnenroll() {
         :course-title="course.title"
       />
     </template>
+
+    <Message v-else severity="error" :closable="false">
+      {{ t('courses.courseNotFound') }}
+    </Message>
   </div>
 </template>
