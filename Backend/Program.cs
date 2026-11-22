@@ -71,7 +71,7 @@ builder.Services.AddControllers(options => { options.Filters.Add<ApiResponseWrap
 
 builder.Services.AddResponseCaching();
 
-var corsSettings = builder.Configuration.GetSection(CorsSettings.SectionName).Get<CorsSettings>() ?? new CorsSettings();
+var corsSettings = builder.Configuration.GetSection(nameof(CorsSettings)).Get<CorsSettings>() ?? new CorsSettings();
 builder.Services.AddCors(options =>
     options.AddPolicy("Frontend",
         policy => {
