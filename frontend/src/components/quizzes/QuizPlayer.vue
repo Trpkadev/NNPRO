@@ -54,9 +54,8 @@ async function submitAttempt() {
   errorMessage.value = null
 
   // answer payload = { "questionId": [selectedOptionIds], "questionId": [selectedOptionIds] ... }
-  const answersPayload: Record<QuestionResponseDto['id'], AnswerOptionResponseDto['id'][]> = Object.fromEntries(
-    props.questions.map((q) => [q.id, selectedAnswers[q.id] ?? []]),
-  )
+  const answersPayload: Record<QuestionResponseDto['id'], AnswerOptionResponseDto['id'][]> =
+    Object.fromEntries(props.questions.map((q) => [q.id, selectedAnswers[q.id] ?? []]))
 
   try {
     const result = await endAttemptMutation.mutateAsync({

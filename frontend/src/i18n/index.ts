@@ -548,6 +548,7 @@ const messages = {
       quizRandomizeAnswersLabel: 'Randomize answers order',
       manageQuestions: 'Questions & Answers',
       viewAllAttempts: 'Student Attempts',
+      questionsDialogTitle: 'Quiz Questions Editor: {title}',
       quizTimeLimitLabel: 'Time limit',
       quizTimeLimitHours: 'Hours',
       quizTimeLimitMinutes: 'Minutes',
