@@ -31,14 +31,6 @@ const { t } = useI18n()
     </p>
 
     <DataTable v-else :value="attempts" striped-rows responsive-layout="scroll">
-      <Column field="id" header="#">
-        <template #body="{ data }">
-          <span class="font-semibold">
-            {{ t('quizzes.attemptNumber', { id: data.id }) }}
-          </span>
-        </template>
-      </Column>
-
       <Column :header="t('quizzes.startedAt')">
         <template #body="{ data }">
           {{ formatDateTime(data.startedAtUtc) }}
