@@ -1,4 +1,3 @@
-
 <script setup lang="ts">
 import { getApiErrorMessage } from '@/services/api'
 import type { QuizResponseDto } from '@/types/api'
@@ -38,8 +37,7 @@ watch(visible, (isOpen) => {
     const seconds = props.quiz?.timeLimitSeconds
 
     quizTimeLimitHours.value = seconds != null ? Math.floor(seconds / 3600) : null
-    quizTimeLimitMinutes.value =
-      seconds != null ? Math.floor((seconds % 3600) / 60) : null
+    quizTimeLimitMinutes.value = seconds != null ? Math.floor((seconds % 3600) / 60) : null
     quizTimeLimitSeconds.value = seconds != null ? seconds % 60 : null
 
     quizRandomizeQuestions.value = props.quiz?.randomizeQuestions ?? false
@@ -58,12 +56,7 @@ async function handleSaveQuiz() {
 
   const threshold = quizPassingThreshold.value
 
-  if (
-    threshold === null ||
-    !Number.isFinite(threshold) ||
-    threshold < 0 ||
-    threshold > 100
-  ) {
+  if (threshold === null || !Number.isFinite(threshold) || threshold < 0 || threshold > 100) {
     quizError.value = t('validation.invalidNumberRange', { min: 0, max: 100 })
     return
   }
@@ -96,10 +89,7 @@ async function handleSaveQuiz() {
       ? null
       : (hours ?? 0) * 3600 + (minutes ?? 0) * 60 + (seconds ?? 0)
 
-  if (
-    timeLimitSeconds !== null &&
-    (timeLimitSeconds < 1 || timeLimitSeconds > 86400)
-  ) {
+  if (timeLimitSeconds !== null && (timeLimitSeconds < 1 || timeLimitSeconds > 86400)) {
     quizError.value = t('instructor.quizTimeLimitInvalid')
     return
   }
@@ -148,12 +138,7 @@ async function handleSaveQuiz() {
           {{ t('instructor.quizTitleLabel') }}
         </label>
 
-        <InputText
-          id="quiz-title-input"
-          v-model="quizTitle"
-          class="w-full"
-          required
-        />
+        <InputText id="quiz-title-input" v-model="quizTitle" class="w-full" required />
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -269,12 +254,7 @@ async function handleSaveQuiz() {
           @click="visible = false"
         />
 
-        <Button
-          type="submit"
-          :label="t('common.save')"
-          icon="oi oi-check"
-          :loading="isSaving"
-        />
+        <Button type="submit" :label="t('common.save')" icon="oi oi-check" :loading="isSaving" />
       </div>
     </form>
   </Dialog>
