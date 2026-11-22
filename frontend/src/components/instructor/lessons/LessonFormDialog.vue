@@ -109,7 +109,7 @@ async function handleSaveLesson() {
     v-model:visible="visible"
     modal
     :header="lesson ? t('instructor.editLesson') : t('instructor.addLesson')"
-    :style="{ width: '48rem', maxWidth: '95vw' }"
+    :style="{ width: '56rem', maxWidth: '95vw' }"
   >
     <form class="space-y-4" @submit.prevent="handleSaveLesson">
       <Message v-if="lessonError" severity="error" :closable="false">
