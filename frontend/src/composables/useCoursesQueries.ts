@@ -16,6 +16,13 @@ export function useCoursesQuery(params?: MaybeRefOrGetter<QueryParameters | unde
   })
 }
 
+export function useManageableCoursesQuery(params?: MaybeRefOrGetter<QueryParameters | undefined>) {
+  return useQuery({
+    queryKey: computed(() => queryKeys.courses.manageable(toValue(params))),
+    queryFn: () => coursesService.getManageable(toValue(params)),
+  })
+}
+
 export function useCourseThumbnailsQuery(
   params?: MaybeRefOrGetter<CourseThumbnailQueryParameters | undefined>,
 ) {
@@ -39,16 +46,21 @@ export function useInfiniteCourseThumbnailsQuery(
       }),
     getNextPageParam: (lastPage, allPages) => {
       const pagination = lastPage.metadata?.pagination
+
       if (pagination?.hasNextPage) {
         return pagination.page + 1
       }
+
       if (pagination && pagination.page < pagination.totalPages) {
         return pagination.page + 1
       }
+
       const pageSize = toValue(params)?.PageSize ?? 9
+
       if (pagination && pagination.totalItems > allPages.length * pageSize) {
         return allPages.length + 1
       }
+
       return undefined
     },
   })
@@ -110,6 +122,7 @@ export function useUpdateCourseMutation() {
       queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(variables.id) })
       queryClient.invalidateQueries({ queryKey: queryKeys.courses.lists() })
       queryClient.invalidateQueries({ queryKey: queryKeys.courses.thumbnails() })
+      queryClient.invalidateQueries({ queryKey: queryKeys.courses.manageable() })
     },
   })
 }

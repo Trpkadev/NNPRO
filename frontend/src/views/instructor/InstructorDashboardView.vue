@@ -3,6 +3,7 @@ import { useConfirm } from 'openvue/useconfirm'
 import { useToast } from 'openvue/usetoast'
 import { getApiErrorMessage } from '@/services/api'
 import type { CourseResponseDto } from '@/types/api'
+import { useManageableCoursesQuery } from '@/composables/useCoursesQueries'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -24,7 +25,7 @@ const {
   isLoading,
   isError,
   error,
-} = useCoursesQuery(
+} = useManageableCoursesQuery(
   computed(() => ({
     Page: page.value,
     PageSize: 12,

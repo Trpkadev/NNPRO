@@ -16,6 +16,9 @@ const courseId = computed(() => parsePositiveId(route.params.courseId))
 const quizId = computed(() => parsePositiveId(route.params.quizId))
 const validIds = computed(() => courseId.value > 0 && quizId.value > 0)
 
+// Studentská data načítáme jen pro studenta.
+const studentEnabled = computed(() => validIds.value && authStore.isStudent)
+
 const {
   data: quiz,
   isLoading: quizLoading,
@@ -28,7 +31,7 @@ const {
   isLoading: questionsLoading,
   isError: questionsError,
   error: questionsErrorObj,
-} = useQuizQuestionsQuery(quizId, { Page: 1, PageSize: 100 }, validIds)
+} = useQuizQuestionsQuery(quizId, { Page: 1, PageSize: 100 }, studentEnabled)
 
 const attemptsPage = ref(1)
 
@@ -43,7 +46,7 @@ const {
     Page: attemptsPage.value,
     PageSize: 10,
   })),
-  validIds,
+  studentEnabled,
 )
 
 const startAttemptMutation = useStartQuizAttemptMutation()
@@ -57,13 +60,13 @@ const totalMyAttempts = computed(
 )
 
 const hasReachedMaxAttempts = computed(() => {
-  if (!quiz.value?.maxAttempts) return false
+  if (!authStore.isStudent || !quiz.value?.maxAttempts) return false
   return totalMyAttempts.value >= quiz.value.maxAttempts
 })
 
 const canStartQuiz = computed(
   () =>
-    validIds.value &&
+    studentEnabled.value &&
     !!quiz.value &&
     !quizLoading.value &&
     !quizError.value &&
@@ -86,10 +89,10 @@ const {
   error: viewedAttemptErrorObj,
 } = useQuizAttemptDetailQuery(
   computed(() => viewedAttemptId.value ?? 0),
-  computed(() => validIds.value && viewedAttemptId.value !== null),
+  computed(() => studentEnabled.value && viewedAttemptId.value !== null),
 )
 
-// Načtení textů odpovědí historického pokusu.
+// Texty odpovědí historického pokusu.
 const questionIds = computed(() => questions.value.map((question) => question.id))
 
 const {
@@ -102,13 +105,13 @@ const {
   questionIds,
   computed(
     () =>
+      studentEnabled.value &&
       viewedAttemptId.value !== null &&
       viewedAttempt.value?.quizId === quizId.value &&
       !!viewedAttempt.value?.submittedAtUtc,
   ),
 )
 
-// Převod odpovědí z backendu na formát QuizResultSummary.
 const historicalSelectedAnswers = computed<Record<number, number[]>>(() => {
   const result: Record<number, number[]> = {}
 
@@ -157,7 +160,7 @@ function handleAttemptCompleted(payload: {
 }
 
 function handleViewAttempt(attemptId: number) {
-  if (!Number.isSafeInteger(attemptId) || attemptId <= 0) return
+  if (!authStore.isStudent || !Number.isSafeInteger(attemptId) || attemptId <= 0) return
 
   lastResult.value = null
   viewedAttemptId.value = attemptId
@@ -191,7 +194,7 @@ function handleBackToOverview() {
       {{ t('quizzes.quizNotFound') }}
     </Message>
 
-    <div v-else-if="quizLoading || questionsLoading" class="space-y-4">
+    <div v-else-if="quizLoading || (authStore.isStudent && questionsLoading)" class="space-y-4">
       <Skeleton height="8rem" class="rounded-2xl" />
       <Skeleton height="14rem" class="rounded-2xl" />
     </div>
@@ -200,14 +203,14 @@ function handleBackToOverview() {
       {{ getApiErrorMessage(quizErrorObj) }}
     </Message>
 
-    <Message v-else-if="questionsError" severity="error" :closable="false">
+    <Message v-else-if="authStore.isStudent && questionsError" severity="error" :closable="false">
       {{ getApiErrorMessage(questionsErrorObj) }}
     </Message>
 
     <template v-else-if="quiz">
-      <!-- Právě spuštěný kvíz -->
+      <!-- Aktivní pokus studenta -->
       <QuizPlayer
-        v-if="activeAttemptId !== null"
+        v-if="authStore.isStudent && activeAttemptId !== null"
         :quiz="quiz"
         :attempt-id="activeAttemptId"
         :questions="questions"
@@ -215,9 +218,9 @@ function handleBackToOverview() {
         @cancel="activeAttemptId = null"
       />
 
-      <!-- Výsledek právě dokončeného kvízu -->
+      <!-- Výsledek právě dokončeného pokusu -->
       <QuizResultSummary
-        v-else-if="lastResult"
+        v-else-if="authStore.isStudent && lastResult"
         :quiz="quiz"
         :attempt="lastResult.attempt"
         :questions="questions"
@@ -226,8 +229,8 @@ function handleBackToOverview() {
         @back="handleBackToOverview"
       />
 
-      <!-- Detail historického pokusu -->
-      <div v-else-if="viewedAttemptId !== null" class="space-y-4">
+      <!-- Detail historického pokusu studenta -->
+      <div v-else-if="authStore.isStudent && viewedAttemptId !== null" class="space-y-4">
         <div
           v-if="viewedAttemptLoading || (viewedAttempt?.submittedAtUtc && historicalOptionsLoading)"
           class="space-y-3"
@@ -252,7 +255,6 @@ function handleBackToOverview() {
           {{ t('quizzes.quizNotFound') }}
         </Message>
 
-        <!-- Historický výsledek včetně odpovědí -->
         <QuizResultSummary
           v-else-if="viewedAttempt.submittedAtUtc && historicalOptions"
           :quiz="quiz"
@@ -283,7 +285,7 @@ function handleBackToOverview() {
         />
       </div>
 
-      <!-- Přehled kvízu a historie pokusů -->
+      <!-- Přehled kvízu -->
       <template v-else>
         <div
           class="p-6 rounded-2xl bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs"
@@ -294,6 +296,7 @@ function handleBackToOverview() {
                 :value="t('quizzes.passingThreshold', { percent: quiz.passingThresholdPercent })"
                 severity="warn"
               />
+
               <Tag
                 :value="
                   quiz.maxAttempts
@@ -302,6 +305,7 @@ function handleBackToOverview() {
                 "
                 severity="secondary"
               />
+
               <Tag
                 :value="
                   quiz.timeLimitSeconds
@@ -326,25 +330,46 @@ function handleBackToOverview() {
           </div>
         </div>
 
-        <Message v-if="hasReachedMaxAttempts" severity="warn" :closable="false">
-          {{ t('quizzes.maxAttemptsReached') }}
-        </Message>
+        <!-- Studentská část -->
+        <template v-if="authStore.isStudent">
+          <Message v-if="hasReachedMaxAttempts" severity="warn" :closable="false">
+            {{ t('quizzes.maxAttemptsReached') }}
+          </Message>
 
-        <Message v-if="attemptsError" severity="error" :closable="false">
-          {{ getApiErrorMessage(attemptsErrorObj) }}
-        </Message>
+          <Message v-if="attemptsError" severity="error" :closable="false">
+            {{ getApiErrorMessage(attemptsErrorObj) }}
+          </Message>
 
-        <Message v-if="startError" severity="error" :closable="false">
-          {{ startError }}
-        </Message>
+          <Message v-if="startError" severity="error" :closable="false">
+            {{ startError }}
+          </Message>
 
-        <QuizAttemptsTable
-          :attempts="myAttempts"
-          :pagination="attemptsPagination"
-          :loading="attemptsLoading"
-          @update:page="attemptsPage = $event"
-          @view-attempt="handleViewAttempt"
-        />
+          <QuizAttemptsTable
+            :attempts="myAttempts"
+            :pagination="attemptsPagination"
+            :loading="attemptsLoading"
+            @update:page="attemptsPage = $event"
+            @view-attempt="handleViewAttempt"
+          />
+        </template>
+
+        <!-- Nestudentská část -->
+        <div
+          v-else
+          class="p-5 rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-0 dark:bg-surface-900 space-y-3"
+        >
+          <p class="text-sm text-surface-500">
+            {{ t('quizzes.instructorManagementHint') }}
+          </p>
+
+          <Button
+            :label="t('nav.instructorZone')"
+            icon="oi oi-arrow-right"
+            severity="secondary"
+            outlined
+            @click="router.push('/instructor')"
+          />
+        </div>
       </template>
     </template>
 

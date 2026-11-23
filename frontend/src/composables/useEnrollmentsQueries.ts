@@ -36,6 +36,7 @@ export function useForceEnrollMutation() {
     mutationFn: (payload: ForceEnrollmentRequestDto) => enrollmentsService.forceEnroll(payload),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.enrollments.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(variables.courseId) })
       queryClient.invalidateQueries({ queryKey: queryKeys.admin.userDetail(variables.studentId) })
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all })
     },
@@ -63,6 +64,7 @@ export function useRemoveStudentEnrollmentMutation() {
       enrollmentsService.removeStudent(courseId, studentId),
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.enrollments.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.courses.detail(variables.courseId) })
       queryClient.invalidateQueries({ queryKey: queryKeys.admin.userDetail(variables.studentId) })
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all })
     },

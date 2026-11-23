@@ -26,6 +26,8 @@ export const queryKeys = {
       [...queryKeys.courses.detail(courseId), 'instructors', params ?? {}] as const,
     sections: (courseId: number, params?: QueryParameters) =>
       [...queryKeys.courses.detail(courseId), 'sections', params ?? {}] as const,
+    manageable: (params?: QueryParameters) =>
+      [...queryKeys.courses.all, 'manageable', params ?? {}] as const,
   },
   enrollments: {
     all: ['enrollments'] as const,
