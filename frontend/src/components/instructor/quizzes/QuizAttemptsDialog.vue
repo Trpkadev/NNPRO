@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { formatDateTime } from '@/utils/formatters'
 import type { QuizResponseDto } from '@/types/api'
 
 const visible = defineModel<boolean>('visible', { default: false })
@@ -50,8 +51,19 @@ const { data: quizAttemptsResponse, isLoading: attemptsLoading } = useQuizAttemp
         striped-rows
         responsive-layout="scroll"
       >
-        <Column field="id" header="ID" />
-        <Column field="studentId" :header="t('instructor.studentIdColumn')" />
+        <Column :header="t('quizzes.startedAt')">
+          <template #body="{ data }">
+            {{ formatDateTime(data.startedAtUtc) }}
+          </template>
+        </Column>
+
+        <Column :header="t('quizzes.submittedAt')">
+          <template #body="{ data }">
+            {{
+              data.submittedAtUtc ? formatDateTime(data.submittedAtUtc) : t('quizzes.inProgress')
+            }}
+          </template>
+        </Column>
         <Column :header="t('quizzes.score')">
           <template #body="{ data }">
             <span class="font-bold">{{ Math.round(data.scorePercent * 10) / 10 }} %</span>

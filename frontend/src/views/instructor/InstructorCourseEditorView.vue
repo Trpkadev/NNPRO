@@ -113,9 +113,6 @@ function confirmDeleteSection(section: SectionResponseDto) {
         class="p-6 rounded-2xl bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 space-y-4"
       >
         <div>
-          <span class="text-xs font-mono text-surface-400">
-            {{ t('instructor.courseBadge', { id: course.id }) }}
-          </span>
           <h2 class="text-2xl font-bold">{{ course.title }}</h2>
           <p class="text-sm text-surface-600 dark:text-surface-400 mt-1">
             {{ course.description }}

@@ -45,9 +45,6 @@ function getSelectedOptionTexts(questionId: number): string[] {
             :value="attempt.isPassed ? t('quizzes.passed') : t('quizzes.failed')"
             :severity="attempt.isPassed ? 'success' : 'danger'"
           />
-          <span class="text-xs text-surface-500">
-            {{ t('quizzes.attemptNumber', { id: attempt.id }) }}
-          </span>
         </div>
         <h2 class="text-xl font-bold">{{ t('quizzes.feedbackTitle') }}</h2>
         <p class="text-sm text-surface-600 dark:text-surface-300">

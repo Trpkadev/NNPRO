@@ -128,7 +128,6 @@ function confirmRemoveStudent(student: UserResponseDto) {
       </p>
 
       <DataTable v-else :value="students" striped-rows responsive-layout="scroll">
-        <Column field="id" header="ID" />
         <Column field="username" :header="t('admin.username')" />
         <Column field="email" :header="t('admin.email')" />
         <Column field="role" :header="t('admin.role')">
