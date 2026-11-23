@@ -309,19 +309,37 @@ const messages = {
       expiresAt: 'Vyprší',
     },
     profile: {
-      title: 'Můj profil a studijní postup',
-      subtitle: 'Spravujte své přihlašovací údaje a sledujte dokončené lekce',
+      title: 'Můj profil',
+      subtitle: 'Spravujte své přihlašovací údaje',
       accountSettings: 'Nastavení účtu',
       newPasswordLabel: 'Nové heslo (volitelné, min. 8 znaků)',
       updateProfileBtn: 'Uložit změny profilu',
       profileUpdated: 'Váš profil byl úspěšně aktualizován',
+
+      studentSubtitle: 'Spravujte své údaje a sledujte svůj studijní postup',
+      instructorSubtitle: 'Spravujte své kurzy a nastavení účtu',
+      adminSubtitle: 'Spravujte systém a nastavení svého účtu',
+
+      adminManagementDescription: 'Správa uživatelů a systému',
+      adminCoursesDescription: 'Správa všech kurzů',
+
+      managedCourses: 'Spravované kurzy',
+      manageCoursesDescription: 'Přejít ke správě kurzů',
+      myManagedCourses: 'Moje kurzy',
+      noManagedCourses: 'Zatím nemáte přiřazené žádné kurzy',
+
+      totalProgressRecords: 'Záznamy studijního postupu',
+      completedOnPage: 'Dokončené na této stránce',
+      learningProgressTitle: 'Přehled mého studijního postupu',
+      learningProgressDescription: 'Vaše lekce a jejich aktuální stav',
+      noProgressYet: 'Zatím nemáte žádné záznamy o průchodu lekcemi.',
+      completedAt: 'Dokončeno dne',
+
+      accountSettingsDescription: 'Správa osobních údajů a hesla',
       dangerZone: 'Nebezpečná zóna',
       deleteAccountDesc: 'Smazání účtu je nevratné a odstraní všechna vaše studijní data.',
       deleteAccountBtn: 'Smazat můj účet',
       deleteAccountConfirm: 'Opravdu chcete trvale smazat svůj účet?',
-      learningProgressTitle: 'Přehled mého studijního postupu',
-      noProgressYet: 'Zatím nemáte žádné záznamy o průchodu lekcemi.',
-      completedAt: 'Dokončeno dne',
     },
   },
   en: {
@@ -621,21 +639,40 @@ const messages = {
       ipAddress: 'IP Address',
       expiresAt: 'Expires at',
     },
+
     profile: {
-      title: 'My Profile & Learning Progress',
-      subtitle: 'Manage your account credentials and track completed lessons',
+      title: 'My Profile',
+      subtitle: 'Manage your account credentials',
       accountSettings: 'Account Settings',
       newPasswordLabel: 'New password (optional, min. 8 characters)',
       updateProfileBtn: 'Save Profile Changes',
       profileUpdated: 'Your profile has been updated',
+
+      studentSubtitle: 'Manage your account and track your learning progress',
+      instructorSubtitle: 'Manage your courses and account settings',
+      adminSubtitle: 'Manage the system and your account settings',
+
+      adminManagementDescription: 'Manage users and the system',
+      adminCoursesDescription: 'Manage all courses',
+
+      managedCourses: 'Managed courses',
+      manageCoursesDescription: 'Go to course management',
+      myManagedCourses: 'My courses',
+      noManagedCourses: 'You have no assigned courses yet',
+
+      totalProgressRecords: 'Learning progress records',
+      completedOnPage: 'Completed on this page',
+      learningProgressTitle: 'My Learning Progress Overview',
+      learningProgressDescription: 'Your lessons and their current status',
+      noProgressYet: 'You do not have any lesson progress records yet.',
+      completedAt: 'Completed at',
+
+      accountSettingsDescription: 'Manage your personal details and password',
       dangerZone: 'Danger Zone',
       deleteAccountDesc:
         'Deleting your account is permanent and will remove all your learning progress.',
       deleteAccountBtn: 'Delete My Account',
       deleteAccountConfirm: 'Are you sure you want to permanently delete your account?',
-      learningProgressTitle: 'My Learning Progress Overview',
-      noProgressYet: 'You do not have any lesson progress records yet.',
-      completedAt: 'Completed at',
     },
   },
 }

@@ -28,7 +28,10 @@ watch(
 )
 
 async function handleUpdateProfile() {
+  if (updateCurrentUserMutation.isPending.value) return
+
   errorMessage.value = null
+
   const trimmedUser = username.value.trim()
   const trimmedEmail = email.value.trim()
 
@@ -36,14 +39,17 @@ async function handleUpdateProfile() {
     errorMessage.value = t('validation.minLength', { min: 3 })
     return
   }
+
   if (trimmedUser.includes('@')) {
     errorMessage.value = t('validation.usernameNoAt')
     return
   }
+
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
     errorMessage.value = t('validation.email')
     return
   }
+
   if (password.value.length > 0 && password.value.length < 8) {
     errorMessage.value = t('validation.minLength', { min: 8 })
     return
@@ -55,8 +61,10 @@ async function handleUpdateProfile() {
       email: trimmedEmail,
       ...(password.value ? { password: password.value } : {}),
     })
+
     authStore.setKnownEmail(trimmedEmail)
     password.value = ''
+
     toast.add({
       severity: 'success',
       summary: t('profile.profileUpdated'),
@@ -74,6 +82,7 @@ function confirmDeleteAccount() {
     acceptLabel: t('common.delete'),
     rejectLabel: t('common.cancel'),
     acceptProps: { severity: 'danger' },
+
     accept: async () => {
       try {
         await deleteCurrentUserMutation.mutateAsync()
@@ -87,48 +96,77 @@ function confirmDeleteAccount() {
 </script>
 
 <template>
-  <div class="space-y-6">
+  <div class="space-y-4">
+    <!-- Nastavení účtu -->
     <form
-      class="p-5 rounded-2xl bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 space-y-4"
+      class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-0 dark:bg-surface-900 p-5 sm:p-6 space-y-5"
       @submit.prevent="handleUpdateProfile"
     >
-      <h2 class="text-base font-bold">{{ t('profile.accountSettings') }}</h2>
+      <div class="flex items-center gap-3">
+        <div
+          class="w-10 h-10 rounded-xl bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-300 flex items-center justify-center"
+        >
+          <i class="oi oi-cog text-lg" />
+        </div>
+
+        <div>
+          <h2 class="text-lg font-bold">
+            {{ t('profile.accountSettings') }}
+          </h2>
+
+          <p class="text-xs text-surface-500">
+            {{ t('profile.accountSettingsDescription') }}
+          </p>
+        </div>
+      </div>
 
       <Message v-if="errorMessage" severity="error" :closable="false">
         {{ errorMessage }}
       </Message>
 
-      <div class="space-y-1">
-        <label for="profile-username" class="block text-xs font-medium">
+      <div class="space-y-2">
+        <label for="profile-username" class="block text-sm font-medium">
           {{ t('auth.usernameLabel') }}
         </label>
-        <InputText id="profile-username" v-model="username" size="small" class="w-full" required />
+
+        <InputText
+          id="profile-username"
+          v-model="username"
+          size="small"
+          class="w-full"
+          autocomplete="username"
+          required
+        />
       </div>
 
-      <div class="space-y-1">
-        <label for="profile-email" class="block text-xs font-medium">
+      <div class="space-y-2">
+        <label for="profile-email" class="block text-sm font-medium">
           {{ t('auth.emailLabel') }}
         </label>
+
         <InputText
           id="profile-email"
           v-model="email"
           type="email"
           size="small"
           class="w-full"
+          autocomplete="email"
           required
         />
       </div>
 
-      <div class="space-y-1">
-        <label for="profile-password" class="block text-xs font-medium">
+      <div class="space-y-2">
+        <label for="profile-password" class="block text-sm font-medium">
           {{ t('profile.newPasswordLabel') }}
         </label>
+
         <Password
           input-id="profile-password"
           v-model="password"
           :feedback="false"
           toggle-mask
           fluid
+          autocomplete="new-password"
         />
       </div>
 
@@ -139,25 +177,41 @@ function confirmDeleteAccount() {
         size="small"
         class="w-full"
         :loading="updateCurrentUserMutation.isPending.value"
+        :disabled="updateCurrentUserMutation.isPending.value"
       />
     </form>
 
-    <div class="p-5 rounded-2xl border border-red-500/30 bg-red-500/5 space-y-3">
-      <h3 class="text-sm font-bold text-red-600 dark:text-red-400">
-        {{ t('profile.dangerZone') }}
-      </h3>
-      <p class="text-xs text-surface-600 dark:text-surface-400">
-        {{ t('profile.deleteAccountDesc') }}
-      </p>
-      <Button
-        :label="t('profile.deleteAccountBtn')"
-        icon="oi oi-trash"
-        severity="danger"
-        outlined
-        size="small"
-        :loading="deleteCurrentUserMutation.isPending.value"
-        @click="confirmDeleteAccount"
-      />
-    </div>
+    <!-- Kompaktní nebezpečná zóna -->
+    <details
+      class="group rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-0 dark:bg-surface-900 overflow-hidden"
+    >
+      <summary
+        class="flex items-center gap-3 p-4 cursor-pointer list-none text-sm font-medium text-surface-600 dark:text-surface-400 hover:bg-surface-50 dark:hover:bg-surface-800/50"
+      >
+        <i class="oi oi-shield text-red-500" />
+
+        <span class="flex-1">
+          {{ t('profile.dangerZone') }}
+        </span>
+
+        <i class="oi oi-chevron-down group-open:rotate-180 transition-transform" />
+      </summary>
+
+      <div class="p-4 pt-3 border-t border-surface-200 dark:border-surface-800 space-y-3">
+        <p class="text-xs text-surface-500">
+          {{ t('profile.deleteAccountDesc') }}
+        </p>
+
+        <Button
+          :label="t('profile.deleteAccountBtn')"
+          icon="oi oi-trash"
+          severity="danger"
+          outlined
+          size="small"
+          :loading="deleteCurrentUserMutation.isPending.value"
+          @click="confirmDeleteAccount"
+        />
+      </div>
+    </details>
   </div>
 </template>
