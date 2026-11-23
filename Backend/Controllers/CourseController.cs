@@ -23,7 +23,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [HttpGet]
     [RequiresPaging]
     [ResponseCache(Duration = 60, VaryByQueryKeys = ["*"])]
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [EndpointSummary("Get all courses")]
     [EndpointDescription("Returns a list of courses including their details and assigned instructors.")]
     [ProducesResponseType<Wrapper<CourseResponseDto[]>>(StatusCodes.Status200OK)]
@@ -56,6 +56,18 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     public async Task<ActionResult<SectionResponseDto[]>> GetCourseSections(uint courseId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
         var (sections, metadata) = await courseService.GetSectionsAsync(courseId, AuthenticatedUserId, requestQuery, cancellationToken);
+        return Ok(sections, metadata);
+    }
+
+    [HttpGet("manageable")]
+    [Authorize]
+    [RequiresPaging]
+    [EndpointSummary("Get course sections")]
+    [ProducesResponseType<Wrapper<SectionResponseDto[]>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<SectionResponseDto[]>> GetManageableCourses([FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
+    {
+        var (sections, metadata) = await courseService.GetManageableCoursesAsync(AuthenticatedUserId, requestQuery, cancellationToken);
         return Ok(sections, metadata);
     }
 
@@ -106,7 +118,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<CourseThumbnailResponseDto[]>> GetCourseThumbnails([FromQuery] CourseThumbnailRequestDto requestDto, CancellationToken cancellationToken)
     {
-        var (thumbnails, metadata) = await courseService.GetCourseThumbnailsAsync(requestDto, cancellationToken);
+        var (thumbnails, metadata) = await courseService.GetCourseThumbnailsAsync(AuthenticatedUserId, requestDto, cancellationToken);
 
         return Ok(thumbnails, metadata);
     }

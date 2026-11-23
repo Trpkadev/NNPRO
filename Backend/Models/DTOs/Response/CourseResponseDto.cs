@@ -5,14 +5,14 @@ namespace Backend.Models.DTOs.Response;
 public record CourseResponseDto(
     uint Id,
     string Title,
-    string Description);
+    string Description,
+    bool HasAccess);
 
 public record CourseThumbnailResponseDto(
     uint Id,
     string Title,
-    string ShortDescription) {
-    public static implicit operator CourseThumbnailResponseDto(Course c) => new(c.Id, c.Title, c.Description);
-}
+    string ShortDescription,
+    bool HasAccess);
 
 public sealed record CourseInstructorResponseDto(
     uint Id,
