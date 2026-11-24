@@ -13,6 +13,8 @@ public sealed record CourseUpdateRequestDto(
     [Required] [MaxLength(1024)] string Description,
     [MaxLength(128)] string? AccessKey);
 
+public sealed record CourseUpdateInstructorsRequestDto(uint[] InstructorIds);
+
 public sealed record CourseThumbnailRequestDto(
     [Range(10, 500)] ushort? MaxDescriptionLength) : RequestQuery {
     private static readonly HashSet<string> AllowedSortProperties = typeof(CourseThumbnailResponseDto).GetProperties().Select(p => p.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);

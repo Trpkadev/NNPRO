@@ -106,6 +106,19 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     {
         await courseService.UpdateAsync(AuthenticatedUserId, id, courseUpdateRequestDto, cancellationToken);
         return NoContent();
+    }    
+    
+    [HttpPut("{id:uint}/instructors")]
+    [Authorize(Roles = "Admin, Instructor")]
+    [EndpointSummary("Change course instructors")]
+    [EndpointDescription("Updates instructor list on an existing course.")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateCourseInstructors(uint id, [FromBody] CourseUpdateInstructorsRequestDto courseUpdateRequestDto, CancellationToken cancellationToken)
+    {
+        await courseService.UpdateInstructorsAsync(AuthenticatedUserId, id, courseUpdateRequestDto, cancellationToken);
+        return NoContent();
     }
 
     [HttpGet("thumbnails")]

@@ -14,6 +14,8 @@ public interface ICourseService {
 
     Task UpdateAsync(uint userId, uint id, CourseUpdateRequestDto requestDto, CancellationToken ct);
 
+    Task UpdateInstructorsAsync(uint userId, uint id, CourseUpdateInstructorsRequestDto requestDto, CancellationToken ct);
+
     Task<(CourseThumbnailResponseDto[]Courses, Metadata Metadata)> GetCourseThumbnailsAsync(uint userId, CourseThumbnailRequestDto requestDto, CancellationToken ct);
 
     Task<(CourseInstructorResponseDto[] Instructors, Metadata Metadata)> GetInstructorsAsync(uint courseId, RequestQuery request, CancellationToken ct);
@@ -21,4 +23,5 @@ public interface ICourseService {
     Task<(SectionResponseDto[] Sections, Metadata Metadata)> GetSectionsAsync(uint courseId, uint userId, RequestQuery request, CancellationToken ct);
 
     Task<(CourseResponseDto[] Courses, Metadata Metadata)> GetManageableCoursesAsync(uint userId, RequestQuery request, CancellationToken ct);
+
 }

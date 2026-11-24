@@ -4,9 +4,11 @@ using Backend.Exceptions;
 using Backend.Extensions;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
+using Backend.Models.Entities;
 using Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using StackExchange.Redis;
 
 namespace Backend.Services;
 
@@ -15,18 +17,42 @@ public class UserService(AppDbContext dbContext, IAuthService authService, IOpti
     {
         var (courses, metadata) = await dbContext.Enrollments.AsNoTracking()
             .Where(enrollment => enrollment.StudentId == userId)
-            .OrderBy(enrollment => enrollment.CourseId)
+            .Filter(request.Filters)
+            .OrderByProperty(request.Sorting)
             .Select(enrollment => new UserCourseResponseDto(enrollment.Course.Id, enrollment.Course.Title, enrollment.Course.Description))
             .ToPagedResultAsync(request, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
 
         return (courses, new Metadata(metadata, request));
     }
 
+    public async Task<(UserResponseDto[] Users, Metadata Metadata)> GetUsersAsync(uint userId, RequestQuery request, CancellationToken ct)
+    {
+        var role = await dbContext.Users.AsNoTracking()
+                       .Where(user => user.Id == userId)
+                       .Select(user => (UserRole?)user.Role)
+                       .FirstOrDefaultAsync(ct)
+                   ?? throw ServiceException.NotFound(Resources.ErrorUserNotFound);
+
+        var query = dbContext.Users.AsNoTracking();
+
+        if (role == UserRole.Instructor)
+            query = query.Where(user => user.Role != UserRole.Admin);
+
+        var (users, pagination) = await query
+            .Filter(request.Filters)
+            .OrderByProperty(request.Sorting)
+            .Select(user => new UserResponseDto(user.Id, user.Username, user.Email, user.Role.ToString()))
+            .ToPagedResultAsync(request, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
+
+        return (users, new Metadata(pagination, request));
+    }
+
     public async Task<(UserLessonProgressResponseDto[] Progress, Metadata Metadata)> GetMyProgressAsync(uint userId, RequestQuery request, CancellationToken ct)
     {
         var (progress, metadata) = await dbContext.StudentLessonProgresses.AsNoTracking()
             .Where(progress => progress.StudentId == userId)
-            .OrderBy(progress => progress.LessonId)
+            .Filter(request.Filters)
+            .OrderByProperty(request.Sorting)
             .Select(progress => new UserLessonProgressResponseDto(
                 progress.LessonId,
                 progress.Lesson.Title,
@@ -46,8 +72,7 @@ public class UserService(AppDbContext dbContext, IAuthService authService, IOpti
             throw ServiceException.NotFound(Resources.ErrorUserNotFound);
 
         bool duplicateIdentity = await dbContext.Users.AsNoTracking()
-            .AnyAsync(candidate => candidate.Id != userId
-                                   && (candidate.Username == request.Username || candidate.Email == request.Email),
+            .AnyAsync(candidate => candidate.Id != userId && (candidate.Username == request.Username || candidate.Email == request.Email),
                 ct);
         if (duplicateIdentity)
             throw ServiceException.Conflict(Resources.ErrorUserIdentityAlreadyInUse);
