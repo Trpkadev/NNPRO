@@ -1,5 +1,6 @@
 /.idea/
 /.env
+/.env.prod
 
 # Default ignored files
 /shelf/
@@ -21,4 +22,3 @@
 /Backend/.idea
 /Backend/bin
 /Backend/Backend.sln.DotSettings.user
-*.pfx

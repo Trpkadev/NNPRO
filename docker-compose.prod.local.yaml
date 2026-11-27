@@ -1,0 +1,113 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: localhost
+      ACME_EMAIL: local@localhost
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_local_data:/data
+      - caddy_local_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+    networks:
+      - app_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: runner
+    container_name: frontend
+    restart: unless-stopped
+    networks:
+      - app_net
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+      target: production
+    restart: unless-stopped
+    deploy:
+      replicas: 2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ConnectionStrings__DefaultConnection: ${DOCKER_DB_CONNECTION_STRING:?Set DOCKER_DB_CONNECTION_STRING in .env}
+      ConnectionStrings__Redis: ${REDIS_DOCKER_CONNECTION:?Set REDIS_DOCKER_CONNECTION in .env}
+      JwtOptions__SecretKey: ${JwtOptions__SecretKey:?Set JwtOptions__SecretKey in .env}
+      JwtOptions__Issuer: ${JwtOptions__Issuer:?Set JwtOptions__Issuer in .env}
+      JwtOptions__Audience: ${JwtOptions__Audience:?Set JwtOptions__Audience in .env}
+      CorsSettings__AllowedOrigins__0: https://localhost
+    volumes:
+      - dp_keys:/home/app/dp_keys
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app_net
+
+  db:
+    image: mariadb:12.3
+    container_name: db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in .env}
+      MARIADB_DATABASE: ${DB_NAME:?Set DB_NAME in .env}
+      MARIADB_USER: ${DB_USER:?Set DB_USER in .env}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      MARIADB_AUTO_UPGRADE: "1"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    command: ["redis-server", "--appendonly", "yes"]
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - app_net
+
+networks:
+  app_net:
+    driver: bridge
+
+volumes:
+  mariadb_data:
+  redis_data:
+  dp_keys:
+  caddy_local_data:
+  caddy_local_config:

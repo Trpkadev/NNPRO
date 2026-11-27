@@ -1,0 +1,83 @@
+services:
+  db:
+    image: mariadb:12.3
+    container_name: db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in .env}
+      MARIADB_DATABASE: ${DB_NAME:?Set DB_NAME in .env}
+      MARIADB_USER: ${DB_USER:?Set DB_USER in .env}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      MARIADB_AUTO_UPGRADE: "1"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - app_net
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ASPNETCORE_HTTPS_PORTS: ""
+      DataProtection__KeyDirectory: /home/app/dp_keys
+      ConnectionStrings__DefaultConnection: ${DOCKER_DB_CONNECTION_STRING:?Set DOCKER_DB_CONNECTION_STRING in .env}
+      ConnectionStrings__Redis: ${REDIS_DOCKER_CONNECTION:?Set REDIS_DOCKER_CONNECTION in .env}
+      JwtOptions__SecretKey: ${JwtOptions__SecretKey:?Set JwtOptions__SecretKey in .env}
+      JwtOptions__Issuer: ${JwtOptions__Issuer:?Set JwtOptions__Issuer in .env}
+      JwtOptions__Audience: ${JwtOptions__Audience:?Set JwtOptions__Audience in .env}
+    volumes:
+      - dp_keys:/home/app/dp_keys
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app_net
+
+networks:
+  app_net:
+    driver: bridge
+
+volumes:
+  mariadb_data:
+  redis_data:
+  dp_keys:
