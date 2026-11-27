@@ -26,6 +26,7 @@ app.UseForwardedHeaders();
 // Apply CORS before rate limiting and authentication so rejected requests retain CORS headers.
 app.UseCors("Frontend");
 app.UseRateLimiter();
+app.UseResponseCompression();
 app.UseResponseCaching();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -35,6 +36,7 @@ if (app.Environment.IsDevelopment())
     await app.Services.InitializeDevelopmentDatabaseAsync(app.Lifetime.ApplicationStopping);
     app.MapOpenApi();
     app.MapScalarApiReference();
+    app.MapGet("/", () => Results.Redirect("/scalar")).ExcludeFromDescription();
 }
 
 app.MapControllers();
