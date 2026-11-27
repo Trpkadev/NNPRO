@@ -30,7 +30,7 @@ cp .env.example .env
 > **Poznámka k `.env` a `.env.prod`:** Soubory `.env` nepodporují interpolaci proměnných — pokud změníš `DB_PASSWORD`, nezapomeň stejné heslo aktualizovat také uvnitř `DOCKER_DB_CONNECTION_STRING` (`Password=...`). Podpisový klíč `JwtOptions__SecretKey` musí mít alespoň 64 znaků.
 
 * **Vývoj v Dockeru bez certifikátů:** Pro spuštění `docker-compose.yaml` ani žádného ze souborů `docker-compose.*.yaml` není nutné vytvářet žádné SSL certifikáty.
-* **Vývoj přímo na hostiteli (mimo Docker):** Pokud spouštíš backend přímo z IDE (Rider / Visual Studio) přes HTTPS profil nebo frontend přes `npm run dev` se zapnutým lokálním HTTPS, vygeneruj si vývojový certifikát příkazem:
+* **Vývoj přímo na hostiteli (mimo Docker):** Frontend (`npm run dev`) běží lokálně čistě přes HTTP (`http://localhost:5173`) a nevyžaduje žádný certifikát. Kořenový `.env` obsahuje jak proměnné pro Docker (`DOCKER_DB_CONNECTION_STRING`, `REDIS_DOCKER_CONNECTION`), tak lokální `ConnectionStrings__*` na `127.0.0.1` pro běh backendu z IDE. Pokud spouštíš backend přímo z IDE přes HTTPS profil, vygeneruj si vývojový certifikát příkazem:
   ```bash
   dotnet dev-certs https --trust
   ```
@@ -41,7 +41,7 @@ cp .env.example .env
 
 ### A) Lokální vývoj s backendem v Dockeru (`docker-compose.dev.backend.yaml`)
 
-Spustí databázi, Redis a vývojový backend na HTTP portu `8080` (vhodné při lokálním spuštění frontendu přes `npm run dev` na `https://localhost:5173`):
+Spustí databázi, Redis a vývojový backend na HTTP portu `8080` (vhodné při lokálním spuštění frontendu přes `npm run dev` na `http://localhost:5173`):
 
 ```bash
 docker compose -f docker-compose.dev.backend.yaml up -d --build
@@ -52,6 +52,42 @@ docker compose -f docker-compose.dev.backend.yaml up -d --build
 > docker compose -f docker-compose.dev.backend.yaml up -d db redis
 > ```
 
+```mermaid
+flowchart LR
+    vite("<b>Frontend (Vite na hostiteli)</b><br/>http://localhost:5173<br/>npm run dev (HTTP)"):::frontend
+    ide("<b>Vývojář / IDE</b><br/>Rider / Visual Studio<br/>Přímý přístup k DB, Redis a API"):::client
+
+    subgraph app_net["Docker Host — interní síť: app_net (bridge)"]
+        direction LR
+        backend("<b>backend</b><br/>.NET 10 (Development)<br/>Kestrel HTTP :8080<br/>Port hostitele: 8080:8080"):::backend
+        db("<b>db</b><br/>mariadb:12.3<br/>Port hostitele: 3306:3306"):::db
+        redis("<b>redis</b><br/>redis:7-alpine<br/>Port hostitele: 127.0.0.1:6379"):::redis
+
+        dp_keys[("<b>dp_keys</b><br/>/home/app/dp_keys")]:::vol
+        mariadb_data[("<b>mariadb_data</b><br/>/var/lib/mysql<br/>+ ./database/init (ro)")]:::vol
+        redis_data[("<b>redis_data</b><br/>/data")]:::vol
+
+        backend -->|"TCP :3306"| db
+        backend -->|"TCP :6379"| redis
+        backend -.- dp_keys
+        mariadb_data -.- db
+        redis -.- redis_data
+    end
+
+    vite -->|"HTTP :8080 (/api/*)"| backend
+    ide -.->|"HTTP :8080 (/scalar)"| backend
+    ide -.->|"TCP :3306"| db
+    ide -.->|"TCP :6379"| redis
+
+    style app_net fill:#f8f9fa,stroke:#666666,stroke-dasharray: 5 5,color:#1f2328
+    classDef client fill:#dae8fc,stroke:#6c8ebf,color:#1f2328
+    classDef frontend fill:#fff2cc,stroke:#d6b656,color:#1f2328
+    classDef backend fill:#e1d5e7,stroke:#9673a6,color:#1f2328
+    classDef db fill:#f8cecc,stroke:#b85450,color:#1f2328
+    classDef redis fill:#ffe6cc,stroke:#d79b00,color:#1f2328
+    classDef vol fill:#f5f5f5,stroke:#666666,color:#1f2328
+```
+
 ### B) Kompletní vývojový stack (`docker-compose.yaml`)
 
 Spustí celý stack včetně reverzní proxy Caddy (`https://localhost/`), Nginx frontendu a backendu v režimu `Development`:
@@ -60,12 +96,94 @@ Spustí celý stack včetně reverzní proxy Caddy (`https://localhost/`), Nginx
 docker compose up -d --build
 ```
 
+```mermaid
+flowchart LR
+    client("<b>Klient / Prohlížeč</b><br/>https://localhost<br/>JWT + HttpOnly Secure Cookie"):::client
+    ide("<b>Vývojář / IDE</b><br/>Přímý přístup na hostiteli<br/>Scalar :8080 | DB :3306 | Redis :6379"):::client
+
+    subgraph app_net["Docker Host — interní síť: app_net (bridge)"]
+        direction LR
+        caddy("<b>caddy</b><br/>caddy:2-alpine<br/>TLS (Interní CA) + Reverse Proxy<br/>Porty: 80, 443, 443/udp"):::caddy
+        frontend("<b>frontend</b><br/>Vue.js SPA (nginx)<br/>Interní port: 8080 (HTTP)"):::frontend
+        backend("<b>backend</b><br/>.NET 10 (Development)<br/>Kestrel HTTP :8080 (host :8080)<br/>ForwardedHeaders + JWT"):::backend
+        db("<b>db</b><br/>mariadb:12.3<br/>Interní :3306 (host :3306)"):::db
+        redis("<b>redis</b><br/>redis:7-alpine<br/>Interní :6379 (host 127.0.0.1:6379)"):::redis
+
+        caddy_vol[("<b>Volumes & Config</b><br/>caddy_dev_data (/data)<br/>caddy_dev_config (/config)<br/>./Caddyfile (ro)")]:::vol
+        dp_keys[("<b>dp_keys</b><br/>/home/app/dp_keys")]:::vol
+        mariadb_data[("<b>mariadb_data</b><br/>/var/lib/mysql<br/>+ ./database/init (ro)")]:::vol
+        redis_data[("<b>redis_data</b><br/>/data")]:::vol
+
+        caddy -->|"HTTP :8080 (/*)"| frontend
+        caddy -->|"HTTP :8080 (/api/*)<br/>X-Forwarded-Proto: https"| backend
+        backend -->|"TCP :3306"| db
+        backend -->|"TCP :6379"| redis
+
+        caddy -.- caddy_vol
+        backend -.- dp_keys
+        mariadb_data -.- db
+        redis -.- redis_data
+    end
+
+    client -->|"HTTPS :443<br/>HTTP :80"| caddy
+    ide -.->|"HTTP :8080 / TCP :3306, :6379"| backend
+
+    style app_net fill:#f8f9fa,stroke:#666666,stroke-dasharray: 5 5,color:#1f2328
+    classDef client fill:#dae8fc,stroke:#6c8ebf,color:#1f2328
+    classDef caddy fill:#d5e8d4,stroke:#82b366,color:#1f2328
+    classDef frontend fill:#fff2cc,stroke:#d6b656,color:#1f2328
+    classDef backend fill:#e1d5e7,stroke:#9673a6,color:#1f2328
+    classDef db fill:#f8cecc,stroke:#b85450,color:#1f2328
+    classDef redis fill:#ffe6cc,stroke:#d79b00,color:#1f2328
+    classDef vol fill:#f5f5f5,stroke:#666666,color:#1f2328
+```
+
 ### C) Lokální test produkčního stacku (`docker-compose.prod.local.yaml`)
 
 Spustí kompletní produkční architekturu včetně Caddy, Nginx frontendu a 2 replik backendu v režimu `Production` na `https://localhost` (využívá lokální `.env`):
 
 ```bash
 docker compose -f docker-compose.prod.local.yaml up -d --build
+```
+
+```mermaid
+flowchart LR
+    client("<b>Klient / Prohlížeč</b><br/>https://localhost<br/>JWT + HttpOnly Secure Cookie"):::client
+
+    subgraph app_net["Docker Host — interní síť: app_net (bridge)"]
+        direction LR
+        caddy("<b>caddy</b><br/>caddy:2-alpine<br/>TLS (Interní CA) + Load Balancer<br/>Porty: 80, 443, 443/udp"):::caddy
+        frontend("<b>frontend</b><br/>Vue.js SPA (nginx)<br/>Interní port: 8080 (HTTP)"):::frontend
+        backend("<b>backend (2× repliky)</b><br/>.NET 10 (Production)<br/>Kestrel HTTP :8080 (Round-Robin)<br/>ForwardedHeaders + JWT"):::backend
+        db("<b>db</b><br/>mariadb:12.3<br/>Interní port: 3306"):::db
+        redis("<b>redis</b><br/>redis:7-alpine (AOF)<br/>Interní port: 6379"):::redis
+
+        caddy_vol[("<b>Volumes & Config</b><br/>caddy_local_data (/data)<br/>caddy_local_config (/config)<br/>./Caddyfile (ro)")]:::vol
+        dp_keys[("<b>dp_keys (sdílený)</b><br/>/home/app/dp_keys")]:::vol
+        mariadb_data[("<b>mariadb_data</b><br/>/var/lib/mysql<br/>+ ./database/init (ro)")]:::vol
+        redis_data[("<b>redis_data</b><br/>/data")]:::vol
+
+        caddy -->|"HTTP :8080 (/*)"| frontend
+        caddy -->|"HTTP :8080 (/api/*)<br/>X-Forwarded-Proto: https"| backend
+        backend -->|"TCP :3306"| db
+        backend -->|"TCP :6379"| redis
+
+        caddy -.- caddy_vol
+        backend -.- dp_keys
+        mariadb_data -.- db
+        redis -.- redis_data
+    end
+
+    client -->|"HTTPS :443<br/>HTTP :80"| caddy
+
+    style app_net fill:#f8f9fa,stroke:#666666,stroke-dasharray: 5 5,color:#1f2328
+    classDef client fill:#dae8fc,stroke:#6c8ebf,color:#1f2328
+    classDef caddy fill:#d5e8d4,stroke:#82b366,color:#1f2328
+    classDef frontend fill:#fff2cc,stroke:#d6b656,color:#1f2328
+    classDef backend fill:#e1d5e7,stroke:#9673a6,color:#1f2328
+    classDef db fill:#f8cecc,stroke:#b85450,color:#1f2328
+    classDef redis fill:#ffe6cc,stroke:#d79b00,color:#1f2328
+    classDef vol fill:#f5f5f5,stroke:#666666,color:#1f2328
 ```
 
 ### D) Ostré produkční nasazení (`docker-compose.prod.yaml`)
@@ -79,6 +197,46 @@ docker compose -f docker-compose.prod.local.yaml up -d --build
    ```bash
    docker compose -f docker-compose.prod.yaml --env-file .env.prod up -d --build
    ```
+
+```mermaid
+flowchart LR
+    client("<b>Klient / Prohlížeč</b><br/>https://${DOMAIN}<br/>JWT + HttpOnly Secure Cookie"):::client
+
+    subgraph app_net["Docker Host — interní síť: app_net (bridge)"]
+        direction LR
+        caddy("<b>caddy</b><br/>caddy:2-alpine<br/>TLS (Let's Encrypt) + Load Balancer<br/>Porty: 80, 443, 443/udp"):::caddy
+        frontend("<b>frontend</b><br/>Vue.js SPA (nginx)<br/>Interní port: 8080 (HTTP)"):::frontend
+        backend("<b>backend (2× repliky)</b><br/>.NET 10 (Production)<br/>Kestrel HTTP :8080 (Round-Robin)<br/>ForwardedHeaders + JWT"):::backend
+        db("<b>db</b><br/>mariadb:12.3<br/>Interní port: 3306"):::db
+        redis("<b>redis</b><br/>redis:7-alpine (AOF)<br/>Interní port: 6379"):::redis
+
+        caddy_vol[("<b>Volumes & Config</b><br/>caddy_data (/data)<br/>caddy_config (/config)<br/>./Caddyfile (ro)")]:::vol
+        dp_keys[("<b>dp_keys (sdílený)</b><br/>/home/app/dp_keys")]:::vol
+        mariadb_data[("<b>mariadb_data</b><br/>/var/lib/mysql<br/>+ ./database/init (ro)")]:::vol
+        redis_data[("<b>redis_data</b><br/>/data")]:::vol
+
+        caddy -->|"HTTP :8080 (/*)"| frontend
+        caddy -->|"HTTP :8080 (/api/*)<br/>X-Forwarded-Proto: https"| backend
+        backend -->|"TCP :3306"| db
+        backend -->|"TCP :6379"| redis
+
+        caddy -.- caddy_vol
+        backend -.- dp_keys
+        mariadb_data -.- db
+        redis -.- redis_data
+    end
+
+    client -->|"HTTPS :443<br/>HTTP :80"| caddy
+
+    style app_net fill:#f8f9fa,stroke:#666666,stroke-dasharray: 5 5,color:#1f2328
+    classDef client fill:#dae8fc,stroke:#6c8ebf,color:#1f2328
+    classDef caddy fill:#d5e8d4,stroke:#82b366,color:#1f2328
+    classDef frontend fill:#fff2cc,stroke:#d6b656,color:#1f2328
+    classDef backend fill:#e1d5e7,stroke:#9673a6,color:#1f2328
+    classDef db fill:#f8cecc,stroke:#b85450,color:#1f2328
+    classDef redis fill:#ffe6cc,stroke:#d79b00,color:#1f2328
+    classDef vol fill:#f5f5f5,stroke:#666666,color:#1f2328
+```
 
 ## 4. Dostupné služby a endpointy
 
@@ -125,7 +283,7 @@ Po obnovení stránky frontend zavolá `/api/auth/refresh` a access token ulož�
 
 Refresh tokeny se při obnově rotují. Opětovné použití spotřebovaného tokenu zneplatní jeho tokenovou rodinu (konkrétní relaci), ne ostatní relace uživatele. Access tokeny se při revokaci blokují v Redis do konce jejich platnosti.
 
-Cookie s `SameSite=Lax` funguje pro frontend a API na stejné doméně/`site` (v produkci i v `docker-compose.yaml` běží obojí pod jednou originou `https://<DOMAIN>` / `https://localhost` přes Caddy; při lokálním vývoji přes Vite na `https://localhost:5173` proti portu `8080` jde stále o stejný `site` `localhost`). Pro *cross-origin* vývoj je potřeba povolit přesný origin frontendu v `CorsSettings:AllowedOrigins`.
+Cookie s `SameSite=Lax` funguje pro frontend a API na stejné doméně/`site` (v produkci i v `docker-compose.yaml` běží obojí pod jednou originou `https://<DOMAIN>` / `https://localhost` přes Caddy; při lokálním vývoji přes Vite na `http://localhost:5173` proti portu `8080` jde stále o stejný `site` `localhost` a moderní prohlížeče považují `localhost` za důvěryhodný kontext i pro `Secure` cookies). Pro *cross-origin* vývoj je potřeba povolit přesný origin frontendu v `CorsSettings:AllowedOrigins`.
 
 ### Administrátorské funkce (Role: Admin)
 
