@@ -12,9 +12,7 @@ import fs from 'node:fs'
 
 // https://vite.dev/config/
 export default defineConfig(({ command }) => {
-const isServe = command === 'serve'
-const hasLocalCerts = isServe && fs.existsSync('./certs/localhost.key') && fs.existsSync('./certs/localhost.pem')
- return { plugins: [
+return { plugins: [
     vue(),
     vueDevTools(),
     tailwindcss(),
@@ -67,5 +65,4 @@ const hasLocalCerts = isServe && fs.existsSync('./certs/localhost.key') && fs.ex
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   }
-}
-})
+}})
