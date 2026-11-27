@@ -23,5 +23,4 @@ public interface ICourseService {
     Task<(SectionResponseDto[] Sections, Metadata Metadata)> GetSectionsAsync(uint courseId, uint userId, RequestQuery request, CancellationToken ct);
 
     Task<(CourseResponseDto[] Courses, Metadata Metadata)> GetManageableCoursesAsync(uint userId, RequestQuery request, CancellationToken ct);
-
 }

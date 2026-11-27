@@ -106,8 +106,8 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     {
         await courseService.UpdateAsync(AuthenticatedUserId, id, courseUpdateRequestDto, cancellationToken);
         return NoContent();
-    }    
-    
+    }
+
     [HttpPut("{id:uint}/instructors")]
     [Authorize(Roles = "Admin, Instructor")]
     [EndpointSummary("Change course instructors")]

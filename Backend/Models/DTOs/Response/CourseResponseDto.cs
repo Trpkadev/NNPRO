@@ -1,5 +1,3 @@
-using Backend.Models.Entities;
-
 namespace Backend.Models.DTOs.Response;
 
 public record CourseResponseDto(

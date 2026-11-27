@@ -12,7 +12,7 @@ namespace Backend.Controllers;
 [Route("api/admin")]
 [Tags("Administration")]
 public class AdminController(IAdminService adminService) : ApiControllerBase {
-   [HttpGet("users/{userId:uint}")]
+    [HttpGet("users/{userId:uint}")]
     [EndpointSummary("Get user details")]
     [ProducesResponseType<Wrapper<AdminUserDetailsDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
