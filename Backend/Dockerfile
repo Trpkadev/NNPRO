@@ -19,7 +19,6 @@ RUN dotnet publish "Backend.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:U
 FROM base AS final
 WORKDIR /app
 
-# Prepare writable directories as root.
 USER root
 RUN mkdir -p /https /home/app/dp_keys && \
     chown -R $APP_UID:$APP_UID /https /home/app
@@ -28,14 +27,15 @@ COPY --from=publish /app/publish .
 
 USER $APP_UID
 
-ENV ASPNETCORE_HTTP_PORTS=""
-ENV ASPNETCORE_HTTPS_PORTS=""
-ENV ASPNETCORE_Kestrel__Certificates__Default__Path="/https/aspnetapp.pfx"
-
 ENTRYPOINT ["dotnet", "Backend.dll"]
 
 FROM final AS development
 ENV ASPNETCORE_ENVIRONMENT="Development"
+ENV ASPNETCORE_HTTP_PORTS="8080"
+ENV ASPNETCORE_HTTPS_PORTS="8081"
+ENV ASPNETCORE_Kestrel__Certificates__Default__Path="/https/aspnetapp.pfx"
 
 FROM final AS production
 ENV ASPNETCORE_ENVIRONMENT="Production"
+ENV ASPNETCORE_HTTP_PORTS="8080"
+ENV ASPNETCORE_HTTPS_PORTS=""

@@ -11,8 +11,10 @@ import { VitePWA } from 'vite-plugin-pwa'
 import fs from 'node:fs'
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [
+export default defineConfig(({ command }) => {
+const isServe = command === 'serve'
+const hasLocalCerts = isServe && fs.existsSync('./certs/localhost.key') && fs.existsSync('./certs/localhost.pem')
+ return { plugins: [
     vue(),
     vueDevTools(),
     tailwindcss(),
@@ -66,9 +68,12 @@ export default defineConfig({
     },
   },
   server: {
-    https: {
-      key: fs.readFileSync('./certs/localhost.key'),
-      cert: fs.readFileSync('./certs/localhost.pem'),
-    }
-  },
+    https: hasLocalCerts
+            ? {
+                key: fs.readFileSync('./certs/localhost.key'),
+                cert: fs.readFileSync('./certs/localhost.pem'),
+              }
+            : undefined
+  }
+}
 })
