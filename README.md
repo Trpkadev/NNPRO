@@ -2,29 +2,26 @@
 
 E-learningová platforma postavená na **ASP.NET Core (.NET 10)**, **Vue.js (SPA)**, **MariaDB**, **Redis** a reverzní proxy **Caddy** běžící v Dockeru.
 
----
-
 ## 1. Architektura a přehled prostředí
 
 Projekt je rozdělen do čtyř samostatných Docker Compose konfigurací podle účelu použití:
 
 | Soubor | Účel | Spuštěné služby |
 | :--- | :--- | :--- |
-| `docker-compose.dev.backend.yaml` | Vývoj a ladění backendu přímo v IDE (Rider / VS) | `db`, `redis` |
-| `docker-compose.dev.yaml` | Lokální vývoj (zejména práce na frontendu) | `db`, `redis`, `backend` (Development) |
+| `docker-compose.dev.backend.yaml` | Lokální vývoj frontendu (nebo jen DB + Redis pro IDE) | `db`, `redis`, `backend` (Development) |
+| `docker-compose.dev.yaml` | Kompletní vývojový stack v Dockeru | `db`, `redis`, `backend` (Development), `frontend` |
 | `docker-compose.prod.local.yaml` | Lokální test kompletní produkční architektury | `caddy`, `frontend`, `backend` (2× Production), `db`, `redis` |
 | `docker-compose.prod.yaml` | Ostré produkční nasazení na serveru (Azure) | `caddy`, `frontend`, `backend` (2× Production), `db`, `redis` |
 
 ### Produkční síťová architektura
+
 * Jediným vstupním bodem z internetu je **Caddy** (`80/tcp`, `443/tcp`, `443/udp`), který automaticky zajišťuje HTTPS certifikáty přes **Let's Encrypt** (v lokálním produkčním režimu přes vlastní interní CA).
 * Uvnitř privátní Docker sítě `app_net` komunikují všechny kontejnery čistě po HTTP bez interních certifikátů.
 * Požadavky na `/api/*` Caddy rozkládá (**round-robin load balancing**) mezi **2 repliky backendu**, ostatní cesty (`/*`) směruje na **Nginx** kontejner s Vue.js aplikací.
 
----
-
 ## 2. Prerekvizity pro lokální vývoj (HTTPS certifikát)
 
-Vývojový certifikát `./Backend/aspnetapp.pfx` je vyžadován **pouze** při spouštění `docker-compose.dev.yaml` (nebo při běhu backendu lokálně v IDE). Pro frontend ani pro produkční sestavení (`prod` / `prod.local`) není potřeba.
+Vývojový certifikát `./Backend/aspnetapp.pfx` je vyžadován při spouštění kontejneru `backend` v souborech `docker-compose.dev.backend.yaml` a `docker-compose.dev.yaml` (nebo při běhu backendu lokálně v IDE). Pro produkční sestavení (`prod` / `prod.local`) ani pro frontend není potřeba.
 
 V kořenovém adresáři projektu vygeneruj lokální certifikát (soubor je v `.gitignore`):
 
@@ -33,10 +30,13 @@ dotnet dev-certs https --trust -ep ./Backend/aspnetapp.pfx -p nnpro
 ```
 
 ### Windows
+
 * Dvojklikem otevři vygenerovaný certifikát a potvrď systémové okno pro přidání mezi důvěryhodné certifikáty (případně restartuj prohlížeč/systém).
 
 ### Linux (Mint / Ubuntu)
+
 V kořenovém adresáři projektu:
+
 ```bash
 sudo install -m 0644 "$HOME"/.aspnet/dev-certs/trust/aspnetcore-localhost-*.pem /usr/local/share/ca-certificates/aspnetcore-localhost.crt
 sudo update-ca-certificates
@@ -55,57 +55,69 @@ cp .env.example .env
 
 > **Poznámka:** Při přepínání mezi různými režimy vždy nejprve ukonči předchozí stack (`docker compose -f <predchozi-soubor> down`), aby nedošlo ke kolizi portů nebo názvů kontejnerů.
 
-### A) Vývoj backendu v IDE (Rider / Visual Studio)
-Spustí pouze databázi a Redis s vystavenými porty na `localhost`, backend spouštíš přímo z IDE:
+### A) Lokální vývoj s backendem v Dockeru (`docker-compose.dev.backend.yaml`)
+
+Spustí databázi, Redis a vývojový backend s lokálním `.pfx` certifikátem (vhodné při lokálním spuštění frontendu přes `npm run dev`):
 
 ```bash
-docker compose -f docker-compose.dev.backend.yaml up -d
+docker compose -f docker-compose.dev.backend.yaml up -d --build
 ```
 
-### B) Lokální vývoj s backendem v Dockeru
-Spustí databázi, Redis a vývojový backend s lokálním `.pfx` certifikátem (vhodné při spuštění frontendu přes `npm run dev`):
+> **Tip pro vývoj backendu v IDE (Rider / Visual Studio):** Pokud chceš spouštět a ladit samotný backend přímo z IDE, spusť jen databázi a Redis, aby nebyly obsazené porty `8080` a `8081`:
+> ```bash
+> docker compose -f docker-compose.dev.backend.yaml up -d db redis
+> ```
+
+### B) Kompletní vývojový stack (`docker-compose.dev.yaml`)
+
+Spustí databázi, Redis, backend i kontejnerizovaný frontend (Nginx):
 
 ```bash
 docker compose -f docker-compose.dev.yaml up -d --build
 ```
 
-### C) Lokální test produkčního stacku
+### C) Lokální test produkčního stacku (`docker-compose.prod.local.yaml`)
+
 Spustí kompletní produkční architekturu včetně Caddy, Nginx frontendu a 2 replik backendu v režimu `Production` na `https://localhost` (využívá lokální `.env`):
 
 ```bash
 docker compose -f docker-compose.prod.local.yaml up -d --build
 ```
 
-### D) Ostré produkční nasazení (Server)
+### D) Ostré produkční nasazení (`docker-compose.prod.yaml`)
+
 1. Vytvoř produkční konfiguraci na serveru a vyplň reálnou doménu, e-mail pro Let's Encrypt a silná hesla/klíče:
+
    ```bash
    cp .env.prod.example .env.prod
    ```
+
 2. Ověř, že ve firewallu / Azure Network Security Group jsou otevřené příchozí porty **`80/tcp`**, **`443/tcp`** a **`443/udp`** a DNS záznam `DOMAIN` směřuje na IP adresu serveru.
+
 3. Spusť produkční stack:
+
    ```bash
    docker compose -f docker-compose.prod.yaml --env-file .env.prod up -d --build
    ```
 
----
-
 ## 4. Dostupné služby a endpointy
 
-### Vývojové prostředí (`docker-compose.dev.yaml`)
-* **MariaDB:** `localhost:3306`
-* **Redis:** `127.0.0.1:6379`
+### Vývojové prostředí (`dev` / `dev.backend`)
+
+* **Frontend (pouze `docker-compose.dev.yaml`):** `http://localhost:5173`
 * **Backend HTTP:** `http://localhost:8080`
 * **Backend HTTPS:** `https://localhost:8081`
 * **OpenAPI JSON:** `https://localhost:8081/openapi/v1.json` *(pouze Development)*
 * **Scalar dokumentace:** `https://localhost:8081/scalar` *(pouze Development)*
 * **Health check:** `https://localhost:8081/health`
+* **MariaDB:** `localhost:3306`
+* **Redis:** `127.0.0.1:6379`
 
 ### Produkční prostředí (`prod` / `prod.local`)
+
 * **Frontend (Vue.js SPA):** `https://localhost/` (lokálně) nebo `https://<DOMAIN>/` (produkce)
 * **Backend API (Load Balanced):** `https://localhost/api/...` nebo `https://<DOMAIN>/api/...`
 * Databáze a Redis nejsou vystaveny mimo interní síť `app_net`.
-
----
 
 ## 5. Autentizace a správa relací
 
@@ -147,8 +159,6 @@ Administrátoři mohou spravovat relace uživatelů:
 ### Vývojové prostředí (Seeding)
 
 Při spuštění v režimu `Development` se automaticky vytvoří testovací účty: `admin/admin`, `student/student` a `instructor/instructor`. Tento seed se v produkčním prostředí nespouští.
-
----
 
 ## 6. Důležité poznámky pro vývojáře a provoz
 
