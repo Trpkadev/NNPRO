@@ -55,7 +55,7 @@ docker compose -f docker-compose.dev.backend.yaml up -d --build
 ```mermaid
 flowchart LR
     vite("<b>Frontend (Vite na hostiteli)</b><br/>http://localhost:5173<br/>npm run dev (HTTP)"):::frontend
-    ide("<b>Vývojář / IDE</b><br/>Rider / Visual Studio<br/>Přímý přístup k DB, Redis a API"):::client
+    ide("<b>Vývojář / IDE</b><br/>Přímý přístup k DB, Redis a API"):::client
 
     subgraph app_net["Docker Host — interní síť: app_net (bridge)"]
         direction LR
