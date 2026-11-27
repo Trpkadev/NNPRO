@@ -1,4 +1,4 @@
-﻿services:
+services:
   caddy:
     image: caddy:2-alpine
     container_name: caddy
@@ -22,7 +22,7 @@
 
   frontend:
     build:
-      context: ./Frontend
+      context: ./frontend
       dockerfile: Dockerfile
       target: runner
     container_name: frontend
@@ -41,12 +41,12 @@
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_HTTP_PORTS: "8080"
-      CorsSettings__AllowedOrigins__0: https://localhost
       ConnectionStrings__DefaultConnection: ${DOCKER_DB_CONNECTION_STRING:?Set DOCKER_DB_CONNECTION_STRING in .env}
       ConnectionStrings__Redis: ${REDIS_DOCKER_CONNECTION:?Set REDIS_DOCKER_CONNECTION in .env}
       JwtOptions__SecretKey: ${JwtOptions__SecretKey:?Set JwtOptions__SecretKey in .env}
       JwtOptions__Issuer: ${JwtOptions__Issuer:?Set JwtOptions__Issuer in .env}
       JwtOptions__Audience: ${JwtOptions__Audience:?Set JwtOptions__Audience in .env}
+      CorsSettings__AllowedOrigins__0: https://localhost
     volumes:
       - dp_keys:/home/app/dp_keys
     depends_on:

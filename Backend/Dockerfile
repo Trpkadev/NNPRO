@@ -17,6 +17,10 @@ ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "Backend.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
+
+ENV ASPNETCORE_HTTP_PORTS="8080"
+ENV ASPNETCORE_HTTPS_PORTS=""
+
 WORKDIR /app
 
 USER root
@@ -31,11 +35,6 @@ ENTRYPOINT ["dotnet", "Backend.dll"]
 
 FROM final AS development
 ENV ASPNETCORE_ENVIRONMENT="Development"
-ENV ASPNETCORE_HTTP_PORTS="8080"
-ENV ASPNETCORE_HTTPS_PORTS="8081"
-ENV ASPNETCORE_Kestrel__Certificates__Default__Path="/https/aspnetapp.pfx"
 
 FROM final AS production
 ENV ASPNETCORE_ENVIRONMENT="Production"
-ENV ASPNETCORE_HTTP_PORTS="8080"
-ENV ASPNETCORE_HTTPS_PORTS=""

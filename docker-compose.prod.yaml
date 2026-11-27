@@ -1,4 +1,4 @@
-﻿services:
+services:
   caddy:
     image: caddy:2-alpine
     container_name: caddy
@@ -22,7 +22,7 @@
 
   frontend:
     build:
-      context: ./Frontend
+      context: ./frontend
       dockerfile: Dockerfile
       target: runner
     container_name: frontend
@@ -46,6 +46,7 @@
       JwtOptions__SecretKey: ${JwtOptions__SecretKey:?Set JwtOptions__SecretKey in .env.prod}
       JwtOptions__Issuer: ${JwtOptions__Issuer:?Set JwtOptions__Issuer in .env.prod}
       JwtOptions__Audience: ${JwtOptions__Audience:?Set JwtOptions__Audience in .env.prod}
+      CorsSettings__AllowedOrigins__0: https://${DOMAIN:?Set DOMAIN in .env.prod}
     volumes:
       - dp_keys:/home/app/dp_keys
     depends_on:

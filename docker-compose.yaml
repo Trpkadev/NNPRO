@@ -1,4 +1,65 @@
-﻿services:
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: localhost
+      ACME_EMAIL: local@localhost
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_dev_data:/data
+      - caddy_dev_config:/config
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - app_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: runner
+    container_name: frontend
+    restart: unless-stopped
+    networks:
+      - app_net
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080" # volitelné: pro přímý přístup na http://localhost:8080/scalar
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ASPNETCORE_HTTPS_PORTS: ""
+      DataProtection__KeyDirectory: /home/app/dp_keys
+      ConnectionStrings__DefaultConnection: ${DOCKER_DB_CONNECTION_STRING:?Set DOCKER_DB_CONNECTION_STRING in .env}
+      ConnectionStrings__Redis: ${REDIS_DOCKER_CONNECTION:?Set REDIS_DOCKER_CONNECTION in .env}
+      JwtOptions__SecretKey: ${JwtOptions__SecretKey:?Set JwtOptions__SecretKey in .env}
+      JwtOptions__Issuer: ${JwtOptions__Issuer:?Set JwtOptions__Issuer in .env}
+      JwtOptions__Audience: ${JwtOptions__Audience:?Set JwtOptions__Audience in .env}
+      CorsSettings__AllowedOrigins__1: https://localhost
+    volumes:
+      - dp_keys:/home/app/dp_keys
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - app_net
+
   db:
     image: mariadb:12.3
     container_name: db
@@ -13,7 +74,7 @@
       - "3306:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
-      - ./database/init:/docker-entrypoint-initdb.d
+      - ./database/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
@@ -38,49 +99,6 @@
     networks:
       - app_net
 
-  backend:
-    build:
-      context: ./Backend
-      dockerfile: Dockerfile
-      target: development
-    container_name: backend
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-      - "8081:8081"
-    environment:
-      ASPNETCORE_Kestrel__Certificates__Default__Password: ${ASPNETCORE_Kestrel__Certificates__Default__Password:?Set ASPNETCORE_Kestrel__Certificates__Default__Password in .env}
-      CorsSettings__AllowedOrigins__1: http://localhost:5173
-      ConnectionStrings__DefaultConnection: ${DOCKER_DB_CONNECTION_STRING:?Set DOCKER_DB_CONNECTION_STRING in .env}
-      ConnectionStrings__Redis: ${REDIS_DOCKER_CONNECTION:?Set REDIS_DOCKER_CONNECTION in .env}
-      JwtOptions__SecretKey: ${JwtOptions__SecretKey:?Set JwtOptions__SecretKey in .env}
-      JwtOptions__Issuer: ${JwtOptions__Issuer:?Set JwtOptions__Issuer in .env}
-      JwtOptions__Audience: ${JwtOptions__Audience:?Set JwtOptions__Audience in .env}
-    volumes:
-      - dp_keys:/home/app/dp_keys
-      - ./Backend/aspnetapp.pfx:/https/aspnetapp.pfx:ro
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - app_net
-
-  frontend:
-    build:
-      context: ./Frontend
-      dockerfile: Dockerfile
-      target: runner
-    container_name: frontend
-    restart: unless-stopped
-    ports:
-      - "5173:8080"
-    depends_on:
-      - backend
-    networks:
-      - app_net
-
 networks:
   app_net:
     driver: bridge
@@ -89,3 +107,5 @@ volumes:
   mariadb_data:
   redis_data:
   dp_keys:
+  caddy_dev_data:
+  caddy_dev_config:
