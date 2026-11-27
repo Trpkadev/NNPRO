@@ -6,7 +6,7 @@ import { UserRoles, type ProblemDetails, type QueryParameters, type UserRole } f
 import type { AuthenticatedUser, JwtPayload } from '@/types/auth'
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://localhost:8081',
+  baseURL: import.meta.env.VITE_API_URL,
   timeout: 15000,
   withCredentials: true,
   headers: {

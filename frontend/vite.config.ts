@@ -8,11 +8,10 @@ import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { PrimeVueResolver } from '@openvue/auto-import-resolver'
 import { VitePWA } from 'vite-plugin-pwa'
-import fs from 'node:fs'
 
 // https://vite.dev/config/
 export default defineConfig({
-return { plugins: [
+  plugins: [
     vue(),
     vueDevTools(),
     tailwindcss(),
@@ -64,5 +63,5 @@ return { plugins: [
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
-  }
+  },
 })
