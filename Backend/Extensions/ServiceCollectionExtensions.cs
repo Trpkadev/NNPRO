@@ -46,20 +46,19 @@ public static class ServiceCollectionExtensions {
             return services;
         }
 
-        public async Task AddPersistenceAsync(IConfiguration configuration)
+        public IServiceCollection AddPersistence(IConfiguration configuration)
         {
             string connectionString = configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException(Resources.ErrorDefaultConnectionStringMissing);
-
             string redisConnectionString = configuration.GetConnectionString("Redis") ?? throw new InvalidOperationException(Resources.ErrorRedisConnectionStringMissing);
 
-            var serverVersion = await ServerVersion.AutoDetectAsync(connectionString);
+            var serverVersion = new MariaDbServerVersion(new Version(12, 3, 0));
             services.AddDbContextFactory<AppDbContext>(options => options.UseMySql(connectionString, serverVersion));
-
             services.AddStackExchangeRedisCache(options => {
                 options.Configuration = redisConnectionString;
                 options.InstanceName = "Elearning_";
             });
 
+            return services;
         }
 
         public IServiceCollection AddApiControllersAndErrorHandling()
@@ -117,6 +116,12 @@ public static class ServiceCollectionExtensions {
 
             services.AddRateLimiter(options => {
                 options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+                options.OnRejected = (context, _) => {
+                    if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+                        context.HttpContext.Response.Headers.RetryAfter = ((int)Math.Ceiling(retryAfter.TotalSeconds)).ToString();
+
+                    return ValueTask.CompletedTask;
+                };
                 options.AddPolicy("PublicGetPolicy",
                     context => RateLimitPartition.GetFixedWindowLimiter(context.Connection.RemoteIpAddress?.ToString() ?? "unknownIP",
                         _ => new FixedWindowRateLimiterOptions {
@@ -170,7 +175,7 @@ public static class ServiceCollectionExtensions {
             return services;
         }
 
-        public void AddApplicationServices()
+        public IServiceCollection AddApplicationServices()
         {
             services.AddHealthChecks();
 
@@ -187,6 +192,7 @@ public static class ServiceCollectionExtensions {
             services.AddSingleton<ITokenBlacklistService, TokenBlacklistService>();
             services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 
+            return services;
         }
 
         private void AddValidatedOptions<TOptions>() where TOptions : class
@@ -198,15 +204,17 @@ public static class ServiceCollectionExtensions {
         }
     }
 
-    public async static Task InitializeDevelopmentDatabaseAsync(this IServiceProvider services, CancellationToken ct)
-    {
-        await using var scope = services.CreateAsyncScope();
-        var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>();
+    extension(IServiceProvider services) {
+        public async Task InitializeDevelopmentDatabaseAsync(CancellationToken ct)
+        {
+            await using var scope = services.CreateAsyncScope();
+            var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>();
 
-        await using var context = await factory.CreateDbContextAsync(ct);
-        await context.Database.MigrateAsync(ct);
+            await using var context = await factory.CreateDbContextAsync(ct);
+            await context.Database.MigrateAsync(ct);
 
-        await DbInitializer.SeedUsersAsync(factory, ct);
-        await DbInitializer.SeedCoursesAsync(factory, ct);
+            await DbInitializer.SeedUsersAsync(factory, ct);
+            await DbInitializer.SeedCoursesAsync(factory, ct);
+        }
     }
 }

@@ -12,9 +12,8 @@ builder.Services.AddAppConfiguration(builder.Configuration)
     .AddAppCorsAndRateLimiting()
     .AddJwtAuthentication()
     .AddOpenApiDocumentation()
-    .AddApplicationServices();
-
-await builder.Services.AddPersistenceAsync(builder.Configuration);
+    .AddApplicationServices()
+    .AddPersistence(builder.Configuration);
 
 var app = builder.Build();
 
