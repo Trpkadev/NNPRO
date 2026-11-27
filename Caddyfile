@@ -6,7 +6,8 @@
     encode zstd gzip
 
     handle /api/* {
-        reverse_proxy backend:8080 {
+        reverse_proxy {
+            dynamic a backend 8080
             lb_policy round_robin
             fail_duration 10s
             max_fails 3
