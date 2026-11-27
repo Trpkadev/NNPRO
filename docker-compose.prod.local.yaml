@@ -15,8 +15,10 @@ services:
       - caddy_local_data:/data
       - caddy_local_config:/config
     depends_on:
-      - frontend
-      - backend
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
     networks:
       - app_net
 
@@ -38,6 +40,12 @@ services:
     restart: unless-stopped
     deploy:
       replicas: 2
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_HTTP_PORTS: "8080"

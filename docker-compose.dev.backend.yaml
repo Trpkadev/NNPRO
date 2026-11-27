@@ -47,6 +47,12 @@ services:
     restart: unless-stopped
     ports:
       - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: "8080"
@@ -57,7 +63,6 @@ services:
       JwtOptions__SecretKey: ${JwtOptions__SecretKey:?Set JwtOptions__SecretKey in .env}
       JwtOptions__Issuer: ${JwtOptions__Issuer:?Set JwtOptions__Issuer in .env}
       JwtOptions__Audience: ${JwtOptions__Audience:?Set JwtOptions__Audience in .env}
-      CorsSettings__AllowedOrigins__1: https://localhost
     volumes:
       - dp_keys:/home/app/dp_keys
     depends_on:

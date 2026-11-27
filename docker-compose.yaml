@@ -15,8 +15,10 @@ services:
       - caddy_dev_data:/data
       - caddy_dev_config:/config
     depends_on:
-      - frontend
-      - backend
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
     networks:
       - app_net
 
@@ -38,7 +40,13 @@ services:
     container_name: backend
     restart: unless-stopped
     ports:
-      - "8080:8080" # volitelné: pro přímý přístup na http://localhost:8080/scalar
+      - "8080:8080" # pro přímý přístup na http://localhost:8080/scalar
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_HTTP_PORTS: "8080"

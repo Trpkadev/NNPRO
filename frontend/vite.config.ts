@@ -11,7 +11,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 import fs from 'node:fs'
 
 // https://vite.dev/config/
-export default defineConfig(({ command }) => {
+export default defineConfig({
 return { plugins: [
     vue(),
     vueDevTools(),
@@ -65,4 +65,4 @@ return { plugins: [
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   }
-}})
+})

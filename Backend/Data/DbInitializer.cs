@@ -443,6 +443,7 @@ public static class DbInitializer {
 
     private async static Task ExecuteWithLockAsync(AppDbContext dbContext, string lockName, Func<Task> action, CancellationToken cancellationToken)
     {
+        bool canUnlockDbMutex = false;
         await dbContext.Database.OpenConnectionAsync(cancellationToken);
         try
         {
@@ -457,20 +458,25 @@ public static class DbInitializer {
                 object? result = await lockCmd.ExecuteScalarAsync(cancellationToken);
                 if (result is null or DBNull || Convert.ToInt32(result) != 1)
                     throw new TimeoutException($"Nepodařilo se získat databázový zámek '{lockName}'.");
+
+                canUnlockDbMutex = true;
             }
 
             await action();
         }
         finally
         {
-            await using var releaseCmd = dbContext.Database.GetDbConnection().CreateCommand();
-            releaseCmd.CommandText = "SELECT RELEASE_LOCK(@lockName);";
-            var param = releaseCmd.CreateParameter();
-            param.ParameterName = "@lockName";
-            param.Value = lockName;
-            releaseCmd.Parameters.Add(param);
+            if (canUnlockDbMutex)
+            {
+                await using var releaseCmd = dbContext.Database.GetDbConnection().CreateCommand();
+                releaseCmd.CommandText = "SELECT RELEASE_LOCK(@lockName);";
+                var param = releaseCmd.CreateParameter();
+                param.ParameterName = "@lockName";
+                param.Value = lockName;
+                releaseCmd.Parameters.Add(param);
 
-            await releaseCmd.ExecuteScalarAsync(CancellationToken.None);
+                await releaseCmd.ExecuteScalarAsync(CancellationToken.None);
+            }
         }
     }
 }
