@@ -8,44 +8,18 @@ Projekt je rozdělen do čtyř samostatných Docker Compose konfigurací podle �
 
 | Soubor | Účel | Spuštěné služby |
 | :--- | :--- | :--- |
-| `docker-compose.dev.backend.yaml` | Lokální vývoj frontendu (nebo jen DB + Redis pro IDE) | `db`, `redis`, `backend` (Development) |
-| `docker-compose.dev.yaml` | Kompletní vývojový stack v Dockeru | `db`, `redis`, `backend` (Development), `frontend` |
+| `docker-compose.dev.backend.yaml` | Lokální vývoj frontendu (nebo jen DB + Redis pro IDE) | `db`, `redis`, `backend` (Development, HTTP) |
+| `docker-compose.yaml` | Kompletní vývojový stack v Dockeru včetně HTTPS proxy | `caddy`, `frontend`, `backend` (Development), `db`, `redis` |
 | `docker-compose.prod.local.yaml` | Lokální test kompletní produkční architektury | `caddy`, `frontend`, `backend` (2× Production), `db`, `redis` |
 | `docker-compose.prod.yaml` | Ostré produkční nasazení na serveru (Azure) | `caddy`, `frontend`, `backend` (2× Production), `db`, `redis` |
 
-### Produkční síťová architektura
+### Síťová architektura a TLS
 
-* Jediným vstupním bodem z internetu je **Caddy** (`80/tcp`, `443/tcp`, `443/udp`), který automaticky zajišťuje HTTPS certifikáty přes **Let's Encrypt** (v lokálním produkčním režimu přes vlastní interní CA).
-* Uvnitř privátní Docker sítě `app_net` komunikují všechny kontejnery čistě po HTTP bez interních certifikátů.
-* Požadavky na `/api/*` Caddy rozkládá (**round-robin load balancing**) mezi **2 repliky backendu**, ostatní cesty (`/*`) směruje na **Nginx** kontejner s Vue.js aplikací.
+* **Jediný vstupní bod (Caddy):** V konfiguracích `docker-compose.yaml`, `docker-compose.prod.local.yaml` a `docker-compose.prod.yaml` vystavuje porty `80/tcp`, `443/tcp` a `443/udp` reverzní proxy **Caddy**. V produkci automaticky získává a obnovuje certifikáty od **Let's Encrypt**; při lokálním spuštění (`DOMAIN=localhost`) si automaticky generuje vlastní lokální certifikát přes interní CA.
+* **Interní komunikace po HTTP:** Uvnitř privátní Docker sítě `app_net` komunikují služby čistě po HTTP (backend na portu `8080`) — v žádném Docker Compose prostředí není potřeba generovat ani připojovat `.pfx` certifikáty.
+* **Load balancing:** V produkčních konfiguracích (`docker-compose.prod.yaml` a `docker-compose.prod.local.yaml`) Caddy rozkládá požadavky na `/api/*` (**round-robin**) mezi **2 repliky backendu**, zatímco ostatní cesty (`/*`) směruje na **Nginx** kontejner s Vue.js aplikací.
 
-## 2. Prerekvizity pro lokální vývoj (HTTPS certifikát)
-
-Vývojový certifikát `./Backend/aspnetapp.pfx` je vyžadován při spouštění kontejneru `backend` v souborech `docker-compose.dev.backend.yaml` a `docker-compose.dev.yaml` (nebo při běhu backendu lokálně v IDE). Pro produkční sestavení (`prod` / `prod.local`) ani pro frontend není potřeba.
-
-V kořenovém adresáři projektu vygeneruj lokální certifikát (soubor je v `.gitignore`):
-
-```bash
-dotnet dev-certs https --trust -ep ./Backend/aspnetapp.pfx -p nnpro
-```
-
-### Windows
-
-* Dvojklikem otevři vygenerovaný certifikát a potvrď systémové okno pro přidání mezi důvěryhodné certifikáty (případně restartuj prohlížeč/systém).
-
-### Linux (Mint / Ubuntu)
-
-V kořenovém adresáři projektu:
-
-```bash
-sudo install -m 0644 "$HOME"/.aspnet/dev-certs/trust/aspnetcore-localhost-*.pem /usr/local/share/ca-certificates/aspnetcore-localhost.crt
-sudo update-ca-certificates
-```
-Poté restart systému 
-
----
-
-## 3. Spuštění jednotlivých prostředí
+## 2. Prerekvizity a konfigurace prostředí
 
 Všechny Docker příkazy spouštěj z kořene repozitáře. Před prvním lokálním spuštěním vytvoř konfigurační soubor z šablony:
 
@@ -53,27 +27,37 @@ Všechny Docker příkazy spouštěj z kořene repozitáře. Před prvním loká
 cp .env.example .env
 ```
 
-> **Poznámka:** Při přepínání mezi různými režimy vždy nejprve ukonči předchozí stack (`docker compose -f <predchozi-soubor> down`), aby nedošlo ke kolizi portů nebo názvů kontejnerů.
+> **Poznámka k `.env` a `.env.prod`:** Soubory `.env` nepodporují interpolaci proměnných — pokud změníš `DB_PASSWORD`, nezapomeň stejné heslo aktualizovat také uvnitř `DOCKER_DB_CONNECTION_STRING` (`Password=...`). Podpisový klíč `JwtOptions__SecretKey` musí mít alespoň 64 znaků.
+
+* **Vývoj v Dockeru bez certifikátů:** Pro spuštění `docker-compose.yaml` ani žádného ze souborů `docker-compose.*.yaml` není nutné vytvářet žádné SSL certifikáty.
+* **Vývoj přímo na hostiteli (mimo Docker):** Pokud spouštíš backend přímo z IDE (Rider / Visual Studio) přes HTTPS profil nebo frontend přes `npm run dev` se zapnutým lokálním HTTPS, vygeneruj si vývojový certifikát příkazem:
+  ```bash
+  dotnet dev-certs https --trust
+  ```
+
+## 3. Spuštění jednotlivých prostředí
+
+> **Poznámka:** Při přepínání mezi různými režimy vždy nejprve ukonči předchozí stack (`docker compose down` nebo `docker compose -f <predchozi-soubor> down`), aby nedošlo ke kolizi portů nebo názvů kontejnerů.
 
 ### A) Lokální vývoj s backendem v Dockeru (`docker-compose.dev.backend.yaml`)
 
-Spustí databázi, Redis a vývojový backend s lokálním `.pfx` certifikátem (vhodné při lokálním spuštění frontendu přes `npm run dev`):
+Spustí databázi, Redis a vývojový backend na HTTP portu `8080` (vhodné při lokálním spuštění frontendu přes `npm run dev` na `https://localhost:5173`):
 
 ```bash
 docker compose -f docker-compose.dev.backend.yaml up -d --build
 ```
 
-> **Tip pro vývoj backendu v IDE (Rider / Visual Studio):** Pokud chceš spouštět a ladit samotný backend přímo z IDE, spusť jen databázi a Redis, aby nebyly obsazené porty `8080` a `8081`:
+> **Pro vývoj backendu v IDE:** Pokud chceš spouštět a ladit samotný backend přímo z IDE, spusť jen databázi a Redis, aby nebyl obsazený port `8080`:
 > ```bash
 > docker compose -f docker-compose.dev.backend.yaml up -d db redis
 > ```
 
-### B) Kompletní vývojový stack (`docker-compose.dev.yaml`)
+### B) Kompletní vývojový stack (`docker-compose.yaml`)
 
-Spustí databázi, Redis, backend i kontejnerizovaný frontend (Nginx):
+Spustí celý stack včetně reverzní proxy Caddy (`https://localhost/`), Nginx frontendu a backendu v režimu `Development`:
 
 ```bash
-docker compose -f docker-compose.dev.yaml up -d --build
+docker compose up -d --build
 ```
 
 ### C) Lokální test produkčního stacku (`docker-compose.prod.local.yaml`)
@@ -86,38 +70,33 @@ docker compose -f docker-compose.prod.local.yaml up -d --build
 
 ### D) Ostré produkční nasazení (`docker-compose.prod.yaml`)
 
-1. Vytvoř produkční konfiguraci na serveru a vyplň reálnou doménu, e-mail pro Let's Encrypt a silná hesla/klíče:
-
+1. Vytvoř produkční konfiguraci na serveru a vyplň reálnou doménu (`DOMAIN`), e-mail pro Let's Encrypt (`ACME_EMAIL`) a silná hesla/klíče (CORS origin `https://${DOMAIN}` se propisuje automaticky):
    ```bash
    cp .env.prod.example .env.prod
    ```
-
 2. Ověř, že ve firewallu / Azure Network Security Group jsou otevřené příchozí porty **`80/tcp`**, **`443/tcp`** a **`443/udp`** a DNS záznam `DOMAIN` směřuje na IP adresu serveru.
-
 3. Spusť produkční stack:
-
    ```bash
    docker compose -f docker-compose.prod.yaml --env-file .env.prod up -d --build
    ```
 
 ## 4. Dostupné služby a endpointy
 
-### Vývojové prostředí (`dev` / `dev.backend`)
+### Vývojové prostředí (`docker-compose.yaml` a `docker-compose.dev.backend.yaml`)
 
-* **Frontend (pouze `docker-compose.dev.yaml`):** `http://localhost:5173`
-* **Backend HTTP:** `http://localhost:8080`
-* **Backend HTTPS:** `https://localhost:8081`
-* **OpenAPI JSON:** `https://localhost:8081/openapi/v1.json` *(pouze Development)*
-* **Scalar dokumentace:** `https://localhost:8081/scalar` *(pouze Development)*
-* **Health check:** `https://localhost:8081/health`
-* **MariaDB:** `localhost:3306`
+* **Aplikace přes Caddy (pouze `docker-compose.yaml`):** `https://localhost/` (API na `https://localhost/api/...`)
+* **Backend API (přímý přístup):** `http://localhost:8080/api/...` *(kořenová cesta `/` na portu `8080` nemá stránku, frontend běží přes Caddy na `https://localhost/`)*
+* **OpenAPI JSON:** `http://localhost:8080/openapi/v1.json` *(pouze Development)*
+* **Scalar dokumentace:** `http://localhost:8080/scalar` *(pouze Development)*
+* **Health check:** `http://localhost:8080/health`
+* **MariaDB:** `127.0.0.1:3306`
 * **Redis:** `127.0.0.1:6379`
 
-### Produkční prostředí (`prod` / `prod.local`)
+### Produkční prostředí (`docker-compose.prod.yaml` a `docker-compose.prod.local.yaml`)
 
 * **Frontend (Vue.js SPA):** `https://localhost/` (lokálně) nebo `https://<DOMAIN>/` (produkce)
 * **Backend API (Load Balanced):** `https://localhost/api/...` nebo `https://<DOMAIN>/api/...`
-* Databáze a Redis nejsou vystaveny mimo interní síť `app_net`.
+* Backend (`8080`), databáze ani Redis nejsou vystaveny mimo interní síť `app_net`.
 
 ## 5. Autentizace a správa relací
 
@@ -136,17 +115,17 @@ Backend využívá krátkodobé JWT access tokeny (výchozí platnost 10 minut) 
 
 Access token backend vrací v JSON pod `data.accessToken`. Frontend ho drží pouze v paměti a posílá jako Bearer token:
 
-```js
+```javascript
 headers: { Authorization: `Bearer ${accessToken}` }
 ```
 
-Refresh token backend nastavuje jako `HttpOnly; Secure; SameSite=Lax` cookie s cestou `/api/auth`; v databázi uchovává pouze jeho hash. JavaScript cookie nepřečte. U požadavků z jiné originy použij ve `fetch` `credentials: "include"`, v Axiosu `withCredentials: true` (login, registrace, refresh i logout). CORS povoluje credentials jen nakonfigurovaným originům.
+Refresh token backend nastavuje jako `HttpOnly; Secure; SameSite=Lax` cookie s cestou `/api/auth`; v databázi uchovává pouze jeho hash. JavaScript cookie nepřečte. U *cross-origin* požadavků použij ve `fetch` `credentials: "include"`, v Axiosu `withCredentials: true` (login, registrace, refresh i logout). CORS povoluje credentials jen nakonfigurovaným originům.
 
 Po obnovení stránky frontend zavolá `/api/auth/refresh` a access token uloží z odpovědi. Při `401` z chráněného API může frontend jednou obnovit token a původní požadavek zopakovat; pokud refresh vrátí `401`, musí uživatele odhlásit. Refresh endpoint vyžaduje hlavičku `Origin` odpovídající nakonfigurovanému originu nebo originu samotného API.
 
 Refresh tokeny se při obnově rotují. Opětovné použití spotřebovaného tokenu zneplatní jeho tokenovou rodinu (konkrétní relaci), ne ostatní relace uživatele. Access tokeny se při revokaci blokují v Redis do konce jejich platnosti.
 
-Cookie s `SameSite=Lax` funguje pro frontend a API na stejné doméně (v produkci obojí běží pod `https://<DOMAIN>` přes Caddy). Pro cross-site vývoj je třeba povolit přesný origin frontendu v `CorsSettings:AllowedOrigins`.
+Cookie s `SameSite=Lax` funguje pro frontend a API na stejné doméně/`site` (v produkci i v `docker-compose.yaml` běží obojí pod jednou originou `https://<DOMAIN>` / `https://localhost` přes Caddy; při lokálním vývoji přes Vite na `https://localhost:5173` proti portu `8080` jde stále o stejný `site` `localhost`). Pro *cross-origin* vývoj je potřeba povolit přesný origin frontendu v `CorsSettings:AllowedOrigins`.
 
 ### Administrátorské funkce (Role: Admin)
 
@@ -158,12 +137,12 @@ Administrátoři mohou spravovat relace uživatelů:
 
 ### Vývojové prostředí (Seeding)
 
-Při spuštění v režimu `Development` se automaticky vytvoří testovací účty: `admin/admin`, `student/student` a `instructor/instructor`. Tento seed se v produkčním prostředí nespouští.
+Při spuštění v režimu `Development` se automaticky vytvoří testovací účty (`admin/admin`, `student/student`, `instructor/instructor`, `student2/student2`, `instructor2/instructor2`) a ukázkové kurzy. Tento seed se v produkčním prostředí nespouští.
 
 ## 6. Důležité poznámky pro vývojáře a provoz
 
-* **Automatické EF Core migrace:** Databázové schéma se aplikuje automaticky při startu backendu (`dbContext.Database.MigrateAsync()`). Při současném startu 2 produkčních replik si EF Core zamkne tabulku `__EFMigrationsHistory` a migrace proběhne bezpečně jednou.
+* **Automatické EF Core migrace a bezpečný seeding:** Databázové schéma se aplikuje automaticky při startu backendu (`dbContext.Database.MigrateAsync()`). Souběžný start více replik je chráněn databázovým zámkem tabulky `__EFMigrationsHistory` (u migrací) a databázovým advisory lockem `GET_LOCK` s transakcí v `DbInitializer` (u vývojového seedu).
 * **Bezstavový backend (2 repliky):** Obě produkční repliky backendu sdílejí volume `dp_keys` (pro DataProtection klíče) a veškerý sdílený stav ukládají do **Redis** a **MariaDB**.
 * **MariaDB verze:** Databáze používá příznak `MARIADB_AUTO_UPGRADE=1` pro bezproblémové aktualizace systémových tabulek databáze.
-* **Lokální self-signed certifikát v prohlížeči:** Při lokálním testu přes `docker-compose.prod.local.yaml` (`https://localhost`) prohlížeč zobrazí varování před lokálním certifikátem vygenerovaným Caddy — stačí potvrdit pokračování na stránku (případně lze pro vývoj v Chrome/Edge zapnout `chrome://flags/#allow-insecure-localhost`).
-* **Git:** Soubory `*.pfx`, `.env` a `.env.prod` obsahují citlivé údaje nebo lokální certifikáty a nesmí být součástí Git repozitáře.
+* **Lokální self-signed certifikát v prohlížeči:** Při lokálním spuštění přes Caddy (`docker-compose.yaml` nebo `docker-compose.prod.local.yaml` na `https://localhost`) prohlížeč zobrazí varování před lokálním certifikátem vygenerovaným Caddy — stačí potvrdit pokračování na stránku (případně lze v Chrome/Edge zapnout `chrome://flags/#allow-insecure-localhost`).
+* **Git:** Soubory `.env` a `.env.prod` obsahují citlivé údaje a nesmí být součástí Git repozitáře.
