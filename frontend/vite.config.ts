@@ -66,14 +66,6 @@ const hasLocalCerts = isServe && fs.existsSync('./certs/localhost.key') && fs.ex
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
-  },
-  server: {
-    https: hasLocalCerts
-            ? {
-                key: fs.readFileSync('./certs/localhost.key'),
-                cert: fs.readFileSync('./certs/localhost.pem'),
-              }
-            : undefined
   }
 }
 })
