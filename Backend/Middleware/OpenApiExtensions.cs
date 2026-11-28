@@ -2,7 +2,7 @@ using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.OpenApi;
 
-namespace Backend.Extensions;
+namespace Backend.Middleware;
 
 public static class OpenApiExtensions {
     private const string BearerSecuritySchemeName = "Bearer";

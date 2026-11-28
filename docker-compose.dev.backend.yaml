@@ -1,0 +1,22 @@
+services:
+  db:
+    extends:
+      file: docker-compose.base.yaml
+      service: db
+    ports:
+      - "3306:3306"
+
+  redis:
+    extends:
+      file: docker-compose.base.yaml
+      service: redis
+    ports:
+      - "127.0.0.1:6379:6379"
+
+networks:
+  app_net:
+    driver: bridge
+
+volumes:
+  mariadb_data:
+  redis_data:

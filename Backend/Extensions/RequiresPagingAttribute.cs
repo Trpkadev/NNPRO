@@ -13,11 +13,14 @@ public sealed class RequiresPagingAttribute : ActionFilterAttribute {
         if (query is { Page: not null, PageSize: not null })
             return;
 
-        context.ModelState.AddModelError(nameof(RequestQuery.Page), Resources.ErrorPagingRequired);
-        context.ModelState.AddModelError(nameof(RequestQuery.PageSize), Resources.ErrorPagingRequired);
+        if (query.Page == null)
+            context.ModelState.AddModelError(nameof(RequestQuery.Page), Resources.ErrorPagingPageRequired);
+        if (query.PageSize == null)
+            context.ModelState.AddModelError(nameof(RequestQuery.PageSize), Resources.ErrorPagingPageSizeRequired);
+
         context.Result = new BadRequestObjectResult(new ValidationProblemDetails(context.ModelState) {
             Title = Resources.ErrorBadRequestTitle,
-            Detail = Resources.ErrorPagingRequired,
+            Detail = Resources.ErrorPaginationRequired,
             Status = StatusCodes.Status400BadRequest,
             Instance = context.HttpContext.Request.Path,
             Extensions = { ["traceId"] = context.HttpContext.TraceIdentifier }

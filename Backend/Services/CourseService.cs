@@ -114,6 +114,15 @@ public class CourseService(AppDbContext dbContext, IOptions<DatabaseLimitsOption
         await dbContext.Courses.Where(c => c.Id == id).ExecuteDeleteAsync(ct);
     }
 
+    public async Task UpdateInstructorsAsync(uint userId, uint id, CourseUpdateInstructorsRequestDto requestDto, CancellationToken ct)
+    {
+        await CourseAuthorization.EnsureCanManageCourseAsync(dbContext, userId, id, ct);
+        var course = await dbContext.Courses.FirstOrDefaultAsync(c => c.Id == id, ct) ?? throw ServiceException.NotFound(Resources.ErrorCourseNotFound);
+        var instructors = await dbContext.Users.Where(x => requestDto.InstructorIds.AsEnumerable().Contains(x.Id)).ToArrayAsync(ct);
+        course.Instructors = instructors;
+        await dbContext.SaveChangesAsync(ct);
+    }
+
     public async Task UpdateAsync(uint userId, uint id, CourseUpdateRequestDto requestDto, CancellationToken ct)
     {
         await CourseAuthorization.EnsureCanManageCourseAsync(dbContext, userId, id, ct);

@@ -1,4 +1,4 @@
-using Backend.Extensions;
+using Backend.Middleware;
 using DotNetEnv;
 using Scalar.AspNetCore;
 
@@ -12,12 +12,13 @@ builder.Services.AddAppConfiguration(builder.Configuration)
     .AddAppCorsAndRateLimiting()
     .AddJwtAuthentication()
     .AddOpenApiDocumentation()
-    .AddApplicationServices();
-
-await builder.Services.AddPersistenceAsync(builder.Configuration);
+    .AddApplicationServices()
+    .AddApiLocalization()
+    .AddPersistence(builder.Configuration);
 
 var app = builder.Build();
 
+app.UseRequestLocalization();
 app.UseExceptionHandler();
 
 // Forwarded headers must be applied before rate limiting to resolve the client IP.
@@ -26,6 +27,7 @@ app.UseForwardedHeaders();
 // Apply CORS before rate limiting and authentication so rejected requests retain CORS headers.
 app.UseCors("Frontend");
 app.UseRateLimiter();
+app.UseResponseCompression();
 app.UseResponseCaching();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -35,6 +37,7 @@ if (app.Environment.IsDevelopment())
     await app.Services.InitializeDevelopmentDatabaseAsync(app.Lifetime.ApplicationStopping);
     app.MapOpenApi();
     app.MapScalarApiReference();
+    app.MapGet("/", () => Results.Redirect("/scalar")).ExcludeFromDescription();
 }
 
 app.MapControllers();

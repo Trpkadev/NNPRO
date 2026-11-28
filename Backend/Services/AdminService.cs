@@ -11,18 +11,7 @@ using Microsoft.Extensions.Options;
 
 namespace Backend.Services;
 
-public class AdminService(AppDbContext dbContext, IAuthService authService, ITokenBlacklistService tokenBlacklistService, IOptions<JwtOptions> jwtOptions, IOptions<DatabaseLimitsOptions> databaseLimitsOptions) : IAdminService {
-    public async Task<(UserResponseDto[] Users, Metadata Metadata)> GetUsersAsync(RequestQuery query, CancellationToken ct)
-    {
-        var usersQuery = dbContext.Users.AsNoTracking()
-            .Filter(query.Filters)
-            .OrderByProperty(query.Sorting);
-        var (users, pagination) = await usersQuery.ToPagedResultAsync(query, databaseLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
-
-        UserResponseDto[] userResponses = [.. users.Select(user => new UserResponseDto(user.Id, user.Username, user.Email, user.Role.ToString()))];
-        return (userResponses, new Metadata(pagination, query));
-    }
-
+public class AdminService(AppDbContext dbContext, IAuthService authService, ITokenBlacklistService tokenBlacklistService, IOptions<JwtOptions> jwtOptions, IOptions<DatabaseLimitsOptions> dbLimitsOptions) : IAdminService {
     public async Task<AdminUserDetailsDto> GetUserAsync(uint userId, CancellationToken ct)
     {
         var user = await dbContext.Users.AsNoTracking()
@@ -85,7 +74,7 @@ public class AdminService(AppDbContext dbContext, IAuthService authService, ITok
             .Where(token => token.UserId == userId && token.RevokedAtUtc == null && token.ExpiresAtUtc > nowUtc)
             .Filter(filters)
             .OrderByProperty(new SortingMetadata { SortBy = entitySortBy, IsDescending = descending });
-        var (sessions, pagination) = await sessionsQuery.ToPagedResultAsync(query, databaseLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
+        var (sessions, pagination) = await sessionsQuery.ToPagedResultAsync(query, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
 
         AdminSessionResponseDto[] sessionResponses = [.. sessions.Select(token => new AdminSessionResponseDto(token.TokenFamilyId, token.DeviceName, token.UserAgent, token.CreatedByIp, token.CreatedAtUtc, token.ExpiresAtUtc))];
         return (sessionResponses, new Metadata(pagination, query));

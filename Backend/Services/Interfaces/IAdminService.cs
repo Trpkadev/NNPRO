@@ -5,8 +5,6 @@ using Backend.Models.Entities;
 namespace Backend.Services.Interfaces;
 
 public interface IAdminService {
-    Task<(UserResponseDto[] Users, Metadata Metadata)> GetUsersAsync(RequestQuery query, CancellationToken ct);
-
     Task<AdminUserDetailsDto> GetUserAsync(uint userId, CancellationToken ct);
 
     Task UpdateUserRoleAsync(uint userId, UserRole role, string? adminIp, CancellationToken ct);

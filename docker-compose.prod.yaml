@@ -1,0 +1,60 @@
+services:
+  caddy:
+    extends:
+      file: docker-compose.base.yaml
+      service: caddy
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env.prod}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in .env.prod}
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
+
+  frontend:
+    extends:
+      file: docker-compose.base.yaml
+      service: frontend
+
+  backend:
+    extends:
+      file: docker-compose.base.yaml
+      service: backend
+    build:
+      target: production
+    deploy:
+      replicas: 2
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      CorsSettings__AllowedOrigins__0: https://${DOMAIN:?Set DOMAIN in .env.prod}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  db:
+    extends:
+      file: docker-compose.base.yaml
+      service: db
+
+  redis:
+    extends:
+      file: docker-compose.base.yaml
+      service: redis
+    command: ["redis-server", "--appendonly", "yes"]
+
+networks:
+  app_net:
+    driver: bridge
+
+volumes:
+  mariadb_data:
+  redis_data:
+  dp_keys:
+  caddy_data:
+  caddy_config:

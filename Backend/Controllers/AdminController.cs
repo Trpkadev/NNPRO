@@ -12,17 +12,6 @@ namespace Backend.Controllers;
 [Route("api/admin")]
 [Tags("Administration")]
 public class AdminController(IAdminService adminService) : ApiControllerBase {
-    [HttpGet("users")]
-    [EndpointSummary("List users")]
-    [EndpointDescription("Returns a paginated, filterable list of users without sensitive account data.")]
-    [ProducesResponseType<Wrapper<UserResponseDto[]>>(StatusCodes.Status200OK)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetUsers([FromQuery] RequestQuery query, CancellationToken cancellationToken)
-    {
-        var (users, metadata) = await adminService.GetUsersAsync(query, cancellationToken);
-        return Ok(users, metadata);
-    }
-
     [HttpGet("users/{userId:uint}")]
     [EndpointSummary("Get user details")]
     [ProducesResponseType<Wrapper<AdminUserDetailsDto>>(StatusCodes.Status200OK)]

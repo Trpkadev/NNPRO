@@ -36,6 +36,18 @@ public class UserController(IUserService userService) : ApiControllerBase {
         return Ok(progress, metadata);
     }
 
+    [HttpGet]
+    [Authorize(Roles = "Admin, Instructor")]
+    [EndpointSummary("List users")]
+    [EndpointDescription("Returns a paginated, filterable list of users without sensitive account data.")]
+    [ProducesResponseType<Wrapper<UserResponseDto[]>>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetUsers([FromQuery] RequestQuery query, CancellationToken cancellationToken)
+    {
+        var (users, metadata) = await userService.GetUsersAsync(AuthenticatedUserId, query, cancellationToken);
+        return Ok(users, metadata);
+    }
+
     [HttpPut]
     [Authorize]
     [EndpointSummary("Update a currently logged in user")]
