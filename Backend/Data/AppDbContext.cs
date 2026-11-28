@@ -16,7 +16,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Question> Questions => Set<Question>();
     public DbSet<AnswerOption> AnswerOptions => Set<AnswerOption>();
     public DbSet<QuizAttempt> QuizAttempts => Set<QuizAttempt>();
-    public DbSet<StudentAnswer> StudentAnswers => Set<StudentAnswer>();
+    public DbSet<AttempterAnswer> AttempterAnswers => Set<AttempterAnswer>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -112,10 +112,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         modelBuilder.Entity<QuizAttempt>(entity => {
             entity.Property(qa => qa.ScorePercent).HasPrecision(5, 2);
-            entity.HasIndex(a => new { a.StudentId, a.QuizId });
-            entity.HasOne(a => a.Student)
+            entity.HasIndex(a => new {
+                StudentId = a.AttempterId, a.QuizId
+            });
+            entity.HasOne(a => a.Attempter)
                 .WithMany(u => u.QuizAttempts)
-                .HasForeignKey(a => a.StudentId)
+                .HasForeignKey(a => a.AttempterId)
                 .OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(a => a.Quiz)
                 .WithMany()
@@ -123,10 +125,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<StudentAnswer>(entity => {
+        modelBuilder.Entity<AttempterAnswer>(entity => {
             entity.HasIndex(a => new { a.QuizAttemptId, a.QuestionId }).IsUnique();
             entity.HasOne(a => a.QuizAttempt)
-                .WithMany(qa => qa.StudentAnswers)
+                .WithMany(qa => qa.AttempterAnswers)
                 .HasForeignKey(a => a.QuizAttemptId)
                 .OnDelete(DeleteBehavior.Cascade);
 

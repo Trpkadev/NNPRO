@@ -8,8 +8,8 @@ public class QuizAttempt : IValidatableObject {
     public uint QuizId { get; set; }
     public Quiz Quiz { get; set; } = null!;
 
-    public uint StudentId { get; set; }
-    public User Student { get; set; } = null!;
+    public uint AttempterId { get; set; }
+    public User Attempter { get; set; } = null!;
 
     public DateTime StartedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime? SubmittedAtUtc { get; set; }
@@ -19,7 +19,7 @@ public class QuizAttempt : IValidatableObject {
 
     public bool IsPassed { get; set; }
 
-    public ICollection<StudentAnswer> StudentAnswers { get; set; } = [];
+    public ICollection<AttempterAnswer> AttempterAnswers { get; set; } = [];
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {

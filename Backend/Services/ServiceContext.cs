@@ -16,7 +16,7 @@ public sealed record ServiceContext<T>(
     ILogger<T> Logger,
     ITokenBlacklistService TokenBlacklistService,
     IOptions<JwtOptions> JwtOptions,
-    JwtTokenGenerator JwtTokenGenerator) {
+    IJwtTokenGenerator JwtTokenGenerator) {
     public int MaxUnpagedItems => DbLimits.Value.MaxItemsLoadedWithoutPagination;
     public uint AuthUserId => CurrentUser.Id;
 }

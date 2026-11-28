@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Backend.Models.Entities;
 
-public class StudentAnswer {
+public class AttempterAnswer {
     public uint Id { get; set; }
 
     public uint QuizAttemptId { get; set; }

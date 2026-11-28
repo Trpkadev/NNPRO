@@ -347,25 +347,25 @@ public static class DbInitializer {
                 // Úspěšný pokus (6/6 bodů = 100 %)
                 var passedAttempt = new QuizAttempt {
                     QuizId = csharpQuiz.Id,
-                    StudentId = student1.Id,
+                    AttempterId = student1.Id,
                     StartedAtUtc = DateTime.UtcNow.AddDays(-5).AddMinutes(-8),
                     SubmittedAtUtc = DateTime.UtcNow.AddDays(-5),
                     ScorePercent = 100m,
                     IsPassed = true,
-                    StudentAnswers = [
-                        new StudentAnswer {
+                    AttempterAnswers = [
+                        new AttempterAnswer {
                             QuestionId = q1.Id,
                             SelectedOptionIds = [q1Opt1.Id],
                             IsFullyCorrect = true,
                             AwardedPoints = 2
                         },
-                        new StudentAnswer {
+                        new AttempterAnswer {
                             QuestionId = q2.Id,
                             SelectedOptionIds = [q2Opt1.Id, q2Opt2.Id],
                             IsFullyCorrect = true,
                             AwardedPoints = 3
                         },
-                        new StudentAnswer {
+                        new AttempterAnswer {
                             QuestionId = q3.Id,
                             SelectedOptionIds = [q3Opt1.Id],
                             IsFullyCorrect = true,
@@ -377,7 +377,7 @@ public static class DbInitializer {
                 // Rozpracovaný (neodevzdaný) pokus
                 var inProgressAttempt = new QuizAttempt {
                     QuizId = aspQuiz.Id,
-                    StudentId = student1.Id,
+                    AttempterId = student1.Id,
                     StartedAtUtc = DateTime.UtcNow.AddMinutes(-3),
                     SubmittedAtUtc = null,
                     ScorePercent = 0m,
@@ -406,25 +406,25 @@ public static class DbInitializer {
                 // Neúspěšný pokus (1/6 bodů = 16.67 %)
                 var failedAttempt = new QuizAttempt {
                     QuizId = csharpQuiz.Id,
-                    StudentId = student2.Id,
+                    AttempterId = student2.Id,
                     StartedAtUtc = DateTime.UtcNow.AddDays(-3).AddMinutes(-5),
                     SubmittedAtUtc = DateTime.UtcNow.AddDays(-3),
                     ScorePercent = 16.67m,
                     IsPassed = false,
-                    StudentAnswers = [
-                        new StudentAnswer {
+                    AttempterAnswers = [
+                        new AttempterAnswer {
                             QuestionId = q1.Id,
                             SelectedOptionIds = [q1Opt2.Id],
                             IsFullyCorrect = false,
                             AwardedPoints = 0
                         },
-                        new StudentAnswer {
+                        new AttempterAnswer {
                             QuestionId = q2.Id,
                             SelectedOptionIds = [q2Opt1.Id],
                             IsFullyCorrect = false,
                             AwardedPoints = 0
                         },
-                        new StudentAnswer {
+                        new AttempterAnswer {
                             QuestionId = q3.Id,
                             SelectedOptionIds = [q3Opt1.Id],
                             IsFullyCorrect = true,

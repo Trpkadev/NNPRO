@@ -79,7 +79,7 @@ public class QuizController(IQuizService quizService, ILogger<QuizController> lo
     public async Task<ActionResult<QuizResponseDto>> GetQuizEditor(uint quizId, CancellationToken cancellationToken) => Ok(await quizService.GetForEditorAsync(quizId, cancellationToken));
 
     [HttpGet("{quizId:uint}/attempts")]
-    [Authorize(Roles = "Admin,Instructor")]
+    [Authorize(Roles = "Instructor,Admin")]
     [RequiresPaging]
     [EndpointSummary("Get all attempts for a quiz")]
     [ProducesResponseType<Wrapper<QuizAttemptResponseDto[]>>(StatusCodes.Status200OK)]
@@ -112,7 +112,7 @@ public class QuizController(IQuizService quizService, ILogger<QuizController> lo
     public async Task<ActionResult<QuizAttemptDetailResponseDto>> GetAttempt(uint attemptId, CancellationToken cancellationToken) => Ok(await quizService.GetAttemptByAttemptIdAsync(attemptId, cancellationToken));
 
     [HttpPost("attempt/start")]
-    [Authorize(Roles = "Student")]
+    [Authorize]
     [EndpointSummary("Start a quiz attempt")]
     [ProducesResponseType<Wrapper<uint>>(StatusCodes.Status201Created)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
@@ -127,7 +127,7 @@ public class QuizController(IQuizService quizService, ILogger<QuizController> lo
     }
 
     [HttpPost("attempt/end")]
-    [Authorize(Roles = "Student")]
+    [Authorize]
     [EndpointSummary("Submit and end a quiz attempt")]
     [EndpointDescription("AnswersJson must be a JSON object mapping question IDs to arrays of selected option IDs.")]
     [ProducesResponseType<Wrapper<QuizAttemptResponseDto>>(StatusCodes.Status200OK)]

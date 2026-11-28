@@ -52,6 +52,39 @@ namespace Backend.Migrations
                     b.ToTable("AnswerOptions");
                 });
 
+            modelBuilder.Entity("Backend.Models.Entities.AttempterAnswer", b =>
+                {
+                    b.Property<uint>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int unsigned");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<uint>("Id"));
+
+                    b.Property<ushort>("AwardedPoints")
+                        .HasColumnType("smallint unsigned");
+
+                    b.Property<bool>("IsFullyCorrect")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<uint>("QuestionId")
+                        .HasColumnType("int unsigned");
+
+                    b.Property<uint>("QuizAttemptId")
+                        .HasColumnType("int unsigned");
+
+                    b.PrimitiveCollection<string>("SelectedOptionIds")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId");
+
+                    b.HasIndex("QuizAttemptId", "QuestionId")
+                        .IsUnique();
+
+                    b.ToTable("AttempterAnswers");
+                });
+
             modelBuilder.Entity("Backend.Models.Entities.Course", b =>
                 {
                     b.Property<uint>("Id")
@@ -256,6 +289,9 @@ namespace Backend.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<uint>("Id"));
 
+                    b.Property<uint>("AttempterId")
+                        .HasColumnType("int unsigned");
+
                     b.Property<bool>("IsPassed")
                         .HasColumnType("tinyint(1)");
 
@@ -269,9 +305,6 @@ namespace Backend.Migrations
                     b.Property<DateTime>("StartedAtUtc")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<uint>("StudentId")
-                        .HasColumnType("int unsigned");
-
                     b.Property<DateTime?>("SubmittedAtUtc")
                         .HasColumnType("datetime(6)");
 
@@ -279,7 +312,7 @@ namespace Backend.Migrations
 
                     b.HasIndex("QuizId");
 
-                    b.HasIndex("StudentId", "QuizId");
+                    b.HasIndex("AttempterId", "QuizId");
 
                     b.ToTable("QuizAttempts");
                 });
@@ -384,39 +417,6 @@ namespace Backend.Migrations
                     b.ToTable("Sections");
                 });
 
-            modelBuilder.Entity("Backend.Models.Entities.StudentAnswer", b =>
-                {
-                    b.Property<uint>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int unsigned");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<uint>("Id"));
-
-                    b.Property<ushort>("AwardedPoints")
-                        .HasColumnType("smallint unsigned");
-
-                    b.Property<bool>("IsFullyCorrect")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<uint>("QuestionId")
-                        .HasColumnType("int unsigned");
-
-                    b.Property<uint>("QuizAttemptId")
-                        .HasColumnType("int unsigned");
-
-                    b.PrimitiveCollection<string>("SelectedOptionIds")
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("QuestionId");
-
-                    b.HasIndex("QuizAttemptId", "QuestionId")
-                        .IsUnique();
-
-                    b.ToTable("StudentAnswers");
-                });
-
             modelBuilder.Entity("Backend.Models.Entities.StudentLessonProgress", b =>
                 {
                     b.Property<uint>("Id")
@@ -510,6 +510,25 @@ namespace Backend.Migrations
                     b.Navigation("Question");
                 });
 
+            modelBuilder.Entity("Backend.Models.Entities.AttempterAnswer", b =>
+                {
+                    b.HasOne("Backend.Models.Entities.Question", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Backend.Models.Entities.QuizAttempt", "QuizAttempt")
+                        .WithMany("AttempterAnswers")
+                        .HasForeignKey("QuizAttemptId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
+
+                    b.Navigation("QuizAttempt");
+                });
+
             modelBuilder.Entity("Backend.Models.Entities.Enrollment", b =>
                 {
                     b.HasOne("Backend.Models.Entities.Course", "Course")
@@ -575,21 +594,21 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Backend.Models.Entities.QuizAttempt", b =>
                 {
+                    b.HasOne("Backend.Models.Entities.User", "Attempter")
+                        .WithMany("QuizAttempts")
+                        .HasForeignKey("AttempterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("Backend.Models.Entities.Quiz", "Quiz")
                         .WithMany()
                         .HasForeignKey("QuizId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Backend.Models.Entities.User", "Student")
-                        .WithMany("QuizAttempts")
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("Attempter");
 
                     b.Navigation("Quiz");
-
-                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("Backend.Models.Entities.RefreshToken", b =>
@@ -612,25 +631,6 @@ namespace Backend.Migrations
                         .IsRequired();
 
                     b.Navigation("Course");
-                });
-
-            modelBuilder.Entity("Backend.Models.Entities.StudentAnswer", b =>
-                {
-                    b.HasOne("Backend.Models.Entities.Question", "Question")
-                        .WithMany()
-                        .HasForeignKey("QuestionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Backend.Models.Entities.QuizAttempt", "QuizAttempt")
-                        .WithMany("StudentAnswers")
-                        .HasForeignKey("QuizAttemptId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Question");
-
-                    b.Navigation("QuizAttempt");
                 });
 
             modelBuilder.Entity("Backend.Models.Entities.StudentLessonProgress", b =>
@@ -691,7 +691,7 @@ namespace Backend.Migrations
 
             modelBuilder.Entity("Backend.Models.Entities.QuizAttempt", b =>
                 {
-                    b.Navigation("StudentAnswers");
+                    b.Navigation("AttempterAnswers");
                 });
 
             modelBuilder.Entity("Backend.Models.Entities.Section", b =>

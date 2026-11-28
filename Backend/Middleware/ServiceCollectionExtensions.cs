@@ -195,6 +195,7 @@ public static class ServiceCollectionExtensions {
 
         public IServiceCollection AddApplicationServices()
         {
+            services.AddHttpContextAccessor();
             services.AddHealthChecks();
 
             services.AddScoped<ICourseService, CourseService>();
@@ -206,7 +207,9 @@ public static class ServiceCollectionExtensions {
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IAdminService, AdminService>();
+
             services.AddScoped<ICurrentUser, CurrentUser>();
+            services.AddScoped(typeof(ServiceContext<>));
 
             services.AddSingleton<IValidationAttributeAdapterProvider, LocalizedValidationAttributeAdapterProvider>();
             services.AddSingleton<ITokenBlacklistService, TokenBlacklistService>();

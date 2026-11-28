@@ -100,7 +100,7 @@ public class QuizService(ServiceContext<QuizService> ctx) : IQuizService {
             throw ServiceException.NotFound(Resources.ErrorQuizNotFound);
 
         var (attempts, metadata) = await ctx.Db.QuizAttempts.AsNoTracking()
-            .Where(attempt => attempt.QuizId == quizId && attempt.StudentId == ctx.AuthUserId)
+            .Where(attempt => attempt.QuizId == quizId && attempt.AttempterId == ctx.AuthUserId)
             .OrderByDescending(attempt => attempt.StartedAtUtc)
             .Select(attempt => new MyQuizAttemptResponseDto(
                 attempt.Id,
@@ -120,7 +120,7 @@ public class QuizService(ServiceContext<QuizService> ctx) : IQuizService {
             .Select(candidate => new {
                 candidate.Id,
                 candidate.QuizId,
-                candidate.StudentId,
+                candidate.AttempterId,
                 candidate.StartedAtUtc,
                 candidate.SubmittedAtUtc,
                 candidate.ScorePercent,
@@ -129,7 +129,7 @@ public class QuizService(ServiceContext<QuizService> ctx) : IQuizService {
             })
             .FirstOrDefaultAsync(ct);
 
-        var answers = (await ctx.Db.StudentAnswers.AsNoTracking()
+        var answers = (await ctx.Db.AttempterAnswers.AsNoTracking()
                 .Where(candidate => candidate.QuizAttemptId == attemptId)
                 .Select(candidate => new {
                     candidate.QuestionId,
@@ -141,13 +141,13 @@ public class QuizService(ServiceContext<QuizService> ctx) : IQuizService {
         if (attempt is null)
             throw ServiceException.NotFound(Resources.ErrorQuizAttemptNotFound);
 
-        if (attempt.StudentId != ctx.AuthUserId)
+        if (attempt.AttempterId != ctx.AuthUserId)
             await CourseAuthorization.EnsureCanManageCourseAsync(ctx.Db, attempt.CourseId, ctx.AuthUserId, ct);
 
         return new QuizAttemptDetailResponseDto(
             attempt.Id,
             attempt.QuizId,
-            attempt.StudentId,
+            attempt.AttempterId,
             attempt.StartedAtUtc,
             attempt.SubmittedAtUtc,
             attempt.ScorePercent,
@@ -173,13 +173,14 @@ public class QuizService(ServiceContext<QuizService> ctx) : IQuizService {
                        .Select(user => (UserRole?)user.Role)
                        .FirstOrDefaultAsync(ct)
                    ?? throw ServiceException.NotFound(Resources.ErrorUserNotFound);
-        if (role != UserRole.Student)
-            throw ServiceException.Forbidden(Resources.ErrorOnlyStudentsCanStartQuiz);
 
-        bool isEnrolled = await ctx.Db.Enrollments.AsNoTracking()
-            .AnyAsync(enrollment => enrollment.StudentId == ctx.AuthUserId && enrollment.CourseId == quiz.CourseId, ct);
-        if (!isEnrolled)
-            throw ServiceException.Forbidden(Resources.ErrorQuizEnrollmentRequired);
+        if (role == UserRole.Student)
+        {
+            bool isEnrolled = await ctx.Db.Enrollments.AsNoTracking()
+                .AnyAsync(enrollment => enrollment.StudentId == ctx.AuthUserId && enrollment.CourseId == quiz.CourseId, ct);
+            if (!isEnrolled)
+                throw ServiceException.Forbidden(Resources.ErrorQuizEnrollmentRequired);
+        }
 
         var attemptLock = AttemptLocks.GetOrAdd((ctx.AuthUserId, quiz.Id), _ => new SemaphoreSlim(1, 1));
         await attemptLock.WaitAsync(ct);
@@ -189,7 +190,7 @@ public class QuizService(ServiceContext<QuizService> ctx) : IQuizService {
 
             var nowUtc = DateTime.UtcNow;
             var unsubmittedAttempts = await ctx.Db.QuizAttempts
-                .Where(a => a.QuizId == quiz.Id && a.StudentId == ctx.AuthUserId && a.SubmittedAtUtc == null)
+                .Where(a => a.QuizId == quiz.Id && a.AttempterId == ctx.AuthUserId && a.SubmittedAtUtc == null)
                 .ToListAsync(ct);
 
             foreach (var openAttempt in unsubmittedAttempts)
@@ -201,7 +202,7 @@ public class QuizService(ServiceContext<QuizService> ctx) : IQuizService {
             }
 
             int attemptsCount = await ctx.Db.QuizAttempts.AsNoTracking()
-                .CountAsync(attempt => attempt.QuizId == quiz.Id && attempt.StudentId == ctx.AuthUserId, ct);
+                .CountAsync(attempt => attempt.QuizId == quiz.Id && attempt.AttempterId == ctx.AuthUserId, ct);
 
             if (quiz.MaxAttempts.HasValue && attemptsCount >= quiz.MaxAttempts.Value)
             {
@@ -211,7 +212,7 @@ public class QuizService(ServiceContext<QuizService> ctx) : IQuizService {
                 throw ServiceException.Conflict(Resources.ErrorQuizMaxAttemptsReached);
             }
 
-            QuizAttempt attempt = new() { QuizId = quiz.Id, StudentId = ctx.AuthUserId };
+            QuizAttempt attempt = new() { QuizId = quiz.Id, AttempterId = ctx.AuthUserId };
             ctx.Db.QuizAttempts.Add(attempt);
             await ctx.Db.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
@@ -227,7 +228,7 @@ public class QuizService(ServiceContext<QuizService> ctx) : IQuizService {
     public async Task<QuizAttemptResponseDto> EndAttemptAsync(EndAttemptRequestDto request, CancellationToken ct)
     {
         var attemptMeta = await ctx.Db.QuizAttempts.AsNoTracking()
-                              .Where(a => a.Id == request.AttemptId && a.StudentId == ctx.AuthUserId)
+                              .Where(a => a.Id == request.AttemptId && a.AttempterId == ctx.AuthUserId)
                               .Select(a => new { a.Id, a.QuizId })
                               .FirstOrDefaultAsync(ct)
                           ?? throw ServiceException.NotFound(Resources.ErrorQuizAttemptNotFound);
@@ -237,7 +238,7 @@ public class QuizService(ServiceContext<QuizService> ctx) : IQuizService {
         try
         {
             var attempt = await ctx.Db.QuizAttempts.Include(a => a.Quiz)
-                              .FirstOrDefaultAsync(a => a.Id == request.AttemptId && a.StudentId == ctx.AuthUserId, ct)
+                              .FirstOrDefaultAsync(a => a.Id == request.AttemptId && a.AttempterId == ctx.AuthUserId, ct)
                           ?? throw ServiceException.NotFound(Resources.ErrorQuizAttemptNotFound);
 
             if (attempt.SubmittedAtUtc.HasValue)
@@ -285,7 +286,7 @@ public class QuizService(ServiceContext<QuizService> ctx) : IQuizService {
                 totalPoints += question.Points;
                 awardedPoints += questionAwardedPoints;
 
-                ctx.Db.StudentAnswers.Add(new StudentAnswer {
+                ctx.Db.AttempterAnswers.Add(new AttempterAnswer {
                     QuizAttemptId = attempt.Id,
                     QuestionId = question.Id,
                     SelectedOptionIds = selectedSorted,
@@ -317,7 +318,7 @@ public class QuizService(ServiceContext<QuizService> ctx) : IQuizService {
             .Select(attempt => new QuizAttemptResponseDto(
                 attempt.Id,
                 attempt.QuizId,
-                attempt.StudentId,
+                attempt.AttempterId,
                 attempt.StartedAtUtc,
                 attempt.SubmittedAtUtc,
                 attempt.ScorePercent,
@@ -370,7 +371,7 @@ public class QuizService(ServiceContext<QuizService> ctx) : IQuizService {
 
     private static bool IsAttemptExpired(DateTime startedAtUtc, uint? timeLimitSeconds, DateTime nowUtc, Config cfg) => timeLimitSeconds.HasValue && startedAtUtc.AddSeconds(timeLimitSeconds.Value + cfg.NetworkDelayToleranceSeconds) <= nowUtc;
 
-    private static QuizAttemptResponseDto MapToResponseDto(QuizAttempt attempt) => new(attempt.Id, attempt.QuizId, attempt.StudentId, attempt.StartedAtUtc, attempt.SubmittedAtUtc, attempt.ScorePercent, attempt.IsPassed);
+    private static QuizAttemptResponseDto MapToResponseDto(QuizAttempt attempt) => new(attempt.Id, attempt.QuizId, attempt.AttempterId, attempt.StartedAtUtc, attempt.SubmittedAtUtc, attempt.ScorePercent, attempt.IsPassed);
 
 
     private async Task EnsureCanManageQuizAsync(uint quizId, CancellationToken ct) => await EnsureCanManageQuizAsync(ctx.AuthUserId, quizId, ct);

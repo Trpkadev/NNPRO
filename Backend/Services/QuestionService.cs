@@ -146,7 +146,7 @@ public class QuestionService(ServiceContext<QuestionService> ctx) : IQuestionSer
     public async Task DeleteAsync(uint questionId, CancellationToken ct)
     {
         await EnsureCanManageQuestionAsync(questionId, ct);
-        if (await ctx.Db.StudentAnswers.AnyAsync(answer => answer.QuestionId == questionId, ct))
+        if (await ctx.Db.AttempterAnswers.AnyAsync(answer => answer.QuestionId == questionId, ct))
             throw ServiceException.Conflict(Resources.ErrorQuestionHasSubmittedAnswers);
 
         await ctx.Db.Questions.Where(question => question.Id == questionId).ExecuteDeleteAsync(ct);
