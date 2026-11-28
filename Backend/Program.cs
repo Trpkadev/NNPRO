@@ -1,4 +1,4 @@
-using Backend.Extensions;
+using Backend.Middleware;
 using DotNetEnv;
 using Scalar.AspNetCore;
 
@@ -13,10 +13,12 @@ builder.Services.AddAppConfiguration(builder.Configuration)
     .AddJwtAuthentication()
     .AddOpenApiDocumentation()
     .AddApplicationServices()
+    .AddApiLocalization()
     .AddPersistence(builder.Configuration);
 
 var app = builder.Build();
 
+app.UseRequestLocalization();
 app.UseExceptionHandler();
 
 // Forwarded headers must be applied before rate limiting to resolve the client IP.

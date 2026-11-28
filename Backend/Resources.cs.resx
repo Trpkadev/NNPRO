@@ -1,65 +1,157 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!--
-                                            Microsoft ResX Schema 
-                                            
-                                            Version 2.0
-                                            
-                                            The primary goals of this format is to allow a simple XML format 
-                                            that is mostly human readable. The generation and parsing of the 
-                                            various data types are done through the TypeConverter classes 
-                                            associated with the data types.
-                                            
-                                            Example:
-                                            
-                                            ... ado.net/XML headers & schema ...
-                                            <resheader name="resmimetype">text/microsoft-resx</resheader>
-                                            <resheader name="version">2.0</resheader>
-                                            <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
-                                            <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
-                                            <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
-                                            <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
-                                            <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
-                                                <value>[base64 mime encoded serialized .NET Framework object]</value>
-                                            </data>
-                                            <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
-                                                <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
-                                                <comment>This is a comment</comment>
-                                            </data>
-                                            
-                                            There are any number of "resheader" rows that contain simple 
-                                            name/value pairs.
-                                            
-                                            Each data row contains a name, and value. The row also contains a 
-                                            type or mimetype. Type corresponds to a .NET class that support 
-                                            text/value conversion through the TypeConverter architecture. 
-                                            Classes that don't support this are serialized and stored with the 
-                                            mimetype set.
-                                            
-                                            The mimetype is used for serialized objects, and tells the 
-                                            ResXResourceReader how to depersist the object. This is currently not 
-                                            extensible. For a given mimetype the value must be set accordingly:
-                                            
-                                            Note - application/x-microsoft.net.object.binary.base64 is the format 
-                                            that the ResXResourceWriter will generate, however the reader can 
-                                            read any of the formats listed below.
-                                            
-                                            mimetype: application/x-microsoft.net.object.binary.base64
-                                            value   : The object must be serialized with 
-                                                    : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
-                                                    : and then encoded with base64 encoding.
-                                            
-                                            mimetype: application/x-microsoft.net.object.soap.base64
-                                            value   : The object must be serialized with 
-                                                    : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
-                                                    : and then encoded with base64 encoding.
-                                            
-                                            mimetype: application/x-microsoft.net.object.bytearray.base64
-                                            value   : The object must be serialized into a byte array 
-                                                    : using a System.ComponentModel.TypeConverter
-                                                    : and then encoded with base64 encoding.
-                                            -->
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+    
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" id="root" xmlns="">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" id="root" xmlns="">
     <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
     <xsd:element name="root" msdata:IsDataSet="true">
       <xsd:complexType>
@@ -205,13 +297,13 @@
   </resheader>
   <resheader name="reader">
     <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=2.0.0.0, Culture=neutral,
-            PublicKeyToken=b77a5c561934e089
-        </value>
+      PublicKeyToken=b77a5c561934e089
+    </value>
   </resheader>
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral,
-            PublicKeyToken=b77a5c561934e089
-        </value>
+      PublicKeyToken=b77a5c561934e089
+    </value>
   </resheader>
   <data name="ErrorAccessTokenRevoked" xml:space="preserve">
     <value>Přístupový token byl zneplatněn.</value>
@@ -283,13 +375,13 @@
     <value>Zápis do kurzu nebyl nalezen.</value>
   </data>
   <data name="ErrorInternalServerError" xml:space="preserve">
-    <value>Nastala neočekávaná chyba</value>
+    <value>Nastala neočekávaná chyba.</value>
   </data>
   <data name="ErrorInvalidFilter" xml:space="preserve">
-    <value>Parametr {0} je ve filtru neplatný</value>
+    <value>Parametr {0} je ve filtru neplatný.</value>
   </data>
   <data name="ErrorInvalidSort" xml:space="preserve">
-    <value>Vlastnost řazení {0} je neplatná</value>
+    <value>Vlastnost řazení {0} je neplatná.</value>
   </data>
   <data name="ErrorInvalidUserRole" xml:space="preserve">
     <value>Uživatelská role je neplatná.</value>
@@ -316,13 +408,16 @@
     <value>Kvíz mohou spustit pouze studenti.</value>
   </data>
   <data name="ErrorPaginationRequired" xml:space="preserve">
-    <value>Stránkování musí být zapnuto pro tento požadavek</value>
+    <value>Pro tento požadavek je vyžadováno stránkování.</value>
   </data>
   <data name="ErrorPagingInvalidParams" xml:space="preserve">
-        <value>Parametry 'Page' a 'PageSize' musí být oba nastaveny nebo oba prázdný.</value>
-    </data>
-  <data name="ErrorPagingRequired" xml:space="preserve">
-    <value>Pro tento endpoint jsou povinné parametry Page a PageSize.</value>
+    <value>Parametry 'Page' a 'PageSize' musí být oba nastaveny nebo oba prázdné.</value>
+  </data>
+  <data name="ErrorPagingPageRequired" xml:space="preserve">
+    <value>Pro tento endpoint je povinný parametr Page.</value>
+  </data>
+  <data name="ErrorPagingPageSizeRequired" xml:space="preserve">
+    <value>Pro tento endpoint je povinný parametr PageSize.</value>
   </data>
   <data name="ErrorQuestionHasSubmittedAnswers" xml:space="preserve">
     <value>Tato otázka již má odevzdané odpovědi.</value>
@@ -346,7 +441,7 @@
     <value>Kvíz nebyl nalezen.</value>
   </data>
   <data name="ErrorRedisConnectionStringMissing" xml:space="preserve">
-    <value>Neexistuje connection string pro Redis</value>
+    <value>Neexistuje connection string pro Redis.</value>
   </data>
   <data name="ErrorRequiresPagingActionParameterMissing" xml:space="preserve">
     <value>Atribut {0} vyžaduje parametr akce typu {1}.</value>
@@ -369,6 +464,39 @@
   <data name="FiltersMustBeJsonObjectOrKeyValuePairs" xml:space="preserve">
     <value>Filtry musí být platný objekt JSON nebo seznam dvojic klíč=hodnota oddělených čárkami.</value>
   </data>
+  <data name="ModelBindingFieldInvalidValue" xml:space="preserve">
+    <value>Hodnota '{0}' není platná pro pole {1}.</value>
+  </data>
+  <data name="ModelBindingInvalidValue" xml:space="preserve">
+    <value>Hodnota '{0}' není platná.</value>
+  </data>
+  <data name="ModelBindingMissingBody" xml:space="preserve">
+    <value>Tělo požadavku nesmí být prázdné.</value>
+  </data>
+  <data name="ModelBindingMissingKeyOrValue" xml:space="preserve">
+    <value>Hodnota je povinná.</value>
+  </data>
+  <data name="ModelBindingMissingValue" xml:space="preserve">
+    <value>Hodnota pro pole {0} nebyla zadána.</value>
+  </data>
+  <data name="ModelBindingMustBeNumber" xml:space="preserve">
+    <value>Pole {0} musí být číslo.</value>
+  </data>
+  <data name="ModelBindingMustNotBeNull" xml:space="preserve">
+    <value>Hodnota '{0}' nesmí být prázdná.</value>
+  </data>
+  <data name="ModelBindingNonPropertyInvalidValue" xml:space="preserve">
+    <value>Hodnota '{0}' není platná.</value>
+  </data>
+  <data name="ModelBindingNonPropertyMustBeNumber" xml:space="preserve">
+    <value>Pole musí být číslo.</value>
+  </data>
+  <data name="ModelBindingNonPropertyUnknownValueInvalid" xml:space="preserve">
+    <value>Zadaná hodnota není platná.</value>
+  </data>
+  <data name="ModelBindingUnknownValueInvalid" xml:space="preserve">
+    <value>Zadaná hodnota není platná pro pole {0}.</value>
+  </data>
   <data name="OpenApiBearerDescription" xml:space="preserve">
     <value>Zadejte JWT přístupový token.</value>
   </data>
@@ -376,16 +504,43 @@
     <value>API pro správu kurzů, lekcí a kvízů s autentizací JWT.</value>
   </data>
   <data name="OpenApiTitle" xml:space="preserve">
-    <value>E-learning Systém API</value>
+    <value>E-learning systém API</value>
+  </data>
+  <data name="ValidationCompare" xml:space="preserve">
+    <value>Pole {0} a {1} se neshodují.</value>
   </data>
   <data name="ValidationCourseSortPropertyInvalid" xml:space="preserve">
     <value>Vlastnost řazení {0} je neplatná.</value>
   </data>
+  <data name="ValidationEmailAddress" xml:space="preserve">
+    <value>Pole {0} není platná e-mailová adresa.</value>
+  </data>
   <data name="ValidationLoginIdentifierRequired" xml:space="preserve">
     <value>Pro přihlášení zadejte uživatelské jméno nebo e-mailovou adresu.</value>
   </data>
+  <data name="ValidationMaxLength" xml:space="preserve">
+    <value>Pole {0} může mít maximálně {1} položek nebo znaků.</value>
+  </data>
+  <data name="ValidationMinLength" xml:space="preserve">
+    <value>Pole {0} musí mít alespoň {1} položek nebo znaků.</value>
+  </data>
   <data name="ValidationQuizAttemptSubmissionBeforeStart" xml:space="preserve">
     <value>Čas odevzdání nesmí předcházet času zahájení pokusu.</value>
+  </data>
+  <data name="ValidationRange" xml:space="preserve">
+    <value>Pole {0} musí být v rozsahu od {1} do {2}.</value>
+  </data>
+  <data name="ValidationRegularExpression" xml:space="preserve">
+    <value>Pole {0} nemá platný formát.</value>
+  </data>
+  <data name="ValidationRequired" xml:space="preserve">
+    <value>Pole {0} je povinné.</value>
+  </data>
+  <data name="ValidationStringLength" xml:space="preserve">
+    <value>Pole {0} může mít maximálně {1} znaků.</value>
+  </data>
+  <data name="ValidationStringLengthWithMin" xml:space="preserve">
+    <value>Pole {0} musí mít délku od {2} do {1} znaků.</value>
   </data>
   <data name="ValidationStudentAnswerOptionIdsMustBeJsonArray" xml:space="preserve">
     <value>SelectedOptionIdsJson musí obsahovat platné pole JSON.</value>
@@ -395,5 +550,8 @@
   </data>
   <data name="ValidationUnsubmittedQuizAttemptMustNotHaveResult" xml:space="preserve">
     <value>Neodevzdaný pokus nesmí mít výsledek ani být označen jako splněný.</value>
+  </data>
+  <data name="ValidationUrl" xml:space="preserve">
+    <value>Pole {0} není platná URL adresa.</value>
   </data>
 </root>
