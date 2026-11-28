@@ -14,4 +14,8 @@ public interface IAdminService {
     Task RevokeSessionAsync(uint userId, Guid sessionId, string? adminIp, CancellationToken ct);
 
     Task RevokeAllSessionsAsync(uint userId, string? adminIp, CancellationToken ct);
+
+    Task UpdateAsync(uint userId, UpdateUserRequestDto request, CancellationToken ct);
+
+    Task DeleteAsync(uint userId, CancellationToken ct);
 }

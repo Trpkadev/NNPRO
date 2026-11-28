@@ -22,7 +22,7 @@ public class EnrollmentController(IEnrollmentService enrollmentService) : ApiCon
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<UserResponseDto[]>> GetEnrolledUsers([FromRoute] uint courseId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        var (students, metadata) = await enrollmentService.GetEnrolledUsersAsync(courseId, AuthenticatedUserId, requestQuery, cancellationToken);
+        var (students, metadata) = await enrollmentService.GetEnrolledUsersAsync(courseId, requestQuery, cancellationToken);
         return Ok(students, metadata);
     }
 
@@ -36,7 +36,7 @@ public class EnrollmentController(IEnrollmentService enrollmentService) : ApiCon
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult> EnrollIntoCourse([FromBody] EnrollmentRequestDto enrollmentRequest, CancellationToken cancellationToken)
     {
-        uint newEnrollmentId = await enrollmentService.EnrollIntoCourseAsync(AuthenticatedUserId, enrollmentRequest, cancellationToken);
+        uint newEnrollmentId = await enrollmentService.EnrollIntoCourseAsync(enrollmentRequest, cancellationToken);
         return CreatedAtAction(nameof(CourseController.GetCourseById), "Course", new { id = enrollmentRequest.CourseId }, newEnrollmentId);
     }
 
@@ -48,7 +48,7 @@ public class EnrollmentController(IEnrollmentService enrollmentService) : ApiCon
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult> ForceEnrollIntoCourse([FromBody] ForceEnrollmentRequestDto forceEnrollmentRequest, CancellationToken cancellationToken)
     {
-        uint newEnrollmentId = await enrollmentService.ForceEnrollIntoCourseAsync(AuthenticatedUserId, forceEnrollmentRequest, cancellationToken);
+        uint newEnrollmentId = await enrollmentService.ForceEnrollIntoCourseAsync(forceEnrollmentRequest, cancellationToken);
         return CreatedAtAction(nameof(GetEnrolledUsers), new { courseId = forceEnrollmentRequest.CourseId, page = 1, pageSize = 10 }, newEnrollmentId);
     }
 
@@ -60,7 +60,7 @@ public class EnrollmentController(IEnrollmentService enrollmentService) : ApiCon
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> Unenroll([FromRoute] uint courseId, CancellationToken cancellationToken)
     {
-        await enrollmentService.UnenrollAsync(AuthenticatedUserId, courseId, cancellationToken);
+        await enrollmentService.UnenrollAsync(courseId, cancellationToken);
         return NoContent();
     }
 
@@ -72,7 +72,7 @@ public class EnrollmentController(IEnrollmentService enrollmentService) : ApiCon
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult> ForceUnenroll([FromRoute] uint courseId, [FromRoute] uint studentId, CancellationToken cancellationToken)
     {
-        await enrollmentService.ForceUnenrollAsync(AuthenticatedUserId, courseId, studentId, cancellationToken);
+        await enrollmentService.ForceUnenrollAsync(new ForceEnrollmentRequestDto(studentId, courseId), cancellationToken);
         return NoContent();
     }
 }

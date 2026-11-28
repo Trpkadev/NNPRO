@@ -17,7 +17,7 @@ public class QuestionController(IQuestionService questionService) : ApiControlle
     [EndpointSummary("Get question detail")]
     [ProducesResponseType<Wrapper<QuestionResponseDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<QuestionResponseDto>> GetQuestion(uint questionId, CancellationToken cancellationToken) => Ok(await questionService.GetByIdAsync(questionId, AuthenticatedUserId, cancellationToken));
+    public async Task<ActionResult<QuestionResponseDto>> GetQuestion(uint questionId, CancellationToken cancellationToken) => Ok(await questionService.GetByIdAsync(questionId, cancellationToken));
 
     [HttpGet("{questionId:uint}/options")]
     [Authorize]
@@ -28,7 +28,7 @@ public class QuestionController(IQuestionService questionService) : ApiControlle
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<AnswerOptionResponseDto[]>> GetAnswerOptions(uint questionId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        var (options, metadata) = await questionService.GetOptionsAsync(questionId, AuthenticatedUserId, requestQuery, cancellationToken);
+        var (options, metadata) = await questionService.GetOptionsAsync(questionId, requestQuery, cancellationToken);
         return Ok(options, metadata);
     }
 
@@ -41,7 +41,7 @@ public class QuestionController(IQuestionService questionService) : ApiControlle
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<AnswerOptionEditorResponseDto[]>> GetAnswerOptionsForEditor(uint questionId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        var (options, metadata) = await questionService.GetOptionsForEditorAsync(AuthenticatedUserId, questionId, requestQuery, cancellationToken);
+        var (options, metadata) = await questionService.GetOptionsForEditorAsync(questionId, requestQuery, cancellationToken);
         return Ok(options, metadata);
     }
 
@@ -55,7 +55,7 @@ public class QuestionController(IQuestionService questionService) : ApiControlle
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<uint>> CreateAnswerOption(uint questionId, [FromBody] CreateAnswerOptionRequestDto requestDto, CancellationToken cancellationToken)
     {
-        uint answerOptionId = await questionService.CreateAnswerOptionAsync(AuthenticatedUserId, questionId, requestDto, cancellationToken);
+        uint answerOptionId = await questionService.CreateAnswerOptionAsync(questionId, requestDto, cancellationToken);
         return CreatedAtAction(nameof(GetAnswerOptionsForEditor), new { questionId, page = 1, pageSize = 10 }, answerOptionId);
     }
 
@@ -69,7 +69,7 @@ public class QuestionController(IQuestionService questionService) : ApiControlle
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateAnswerOption(uint questionId, uint optionId, [FromBody] UpdateAnswerOptionRequestDto requestDto, CancellationToken cancellationToken)
     {
-        await questionService.UpdateAnswerOptionAsync(AuthenticatedUserId, questionId, optionId, requestDto, cancellationToken);
+        await questionService.UpdateAnswerOptionAsync(questionId, optionId, requestDto, cancellationToken);
         return NoContent();
     }
 
@@ -82,7 +82,7 @@ public class QuestionController(IQuestionService questionService) : ApiControlle
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteAnswerOption(uint questionId, uint optionId, CancellationToken cancellationToken)
     {
-        await questionService.DeleteAnswerOptionAsync(AuthenticatedUserId, questionId, optionId, cancellationToken);
+        await questionService.DeleteAnswerOptionAsync(questionId, optionId, cancellationToken);
         return NoContent();
     }
 
@@ -94,7 +94,7 @@ public class QuestionController(IQuestionService questionService) : ApiControlle
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<uint>> CreateQuestion([FromBody] CreateQuestionRequestDto requestDto, CancellationToken cancellationToken)
     {
-        uint newQuestionId = await questionService.CreateAsync(AuthenticatedUserId, requestDto, cancellationToken);
+        uint newQuestionId = await questionService.CreateAsync(requestDto, cancellationToken);
         return CreatedAtAction(nameof(GetQuestion), new { questionId = newQuestionId }, newQuestionId);
     }
 
@@ -106,7 +106,7 @@ public class QuestionController(IQuestionService questionService) : ApiControlle
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateQuestion(uint questionId, [FromBody] CreateQuestionRequestDto requestDto, CancellationToken cancellationToken)
     {
-        await questionService.UpdateAsync(AuthenticatedUserId, questionId, requestDto, cancellationToken);
+        await questionService.UpdateAsync(questionId, requestDto, cancellationToken);
         return NoContent();
     }
 
@@ -118,7 +118,7 @@ public class QuestionController(IQuestionService questionService) : ApiControlle
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> DeleteQuestion(uint questionId, CancellationToken cancellationToken)
     {
-        await questionService.DeleteAsync(AuthenticatedUserId, questionId, cancellationToken);
+        await questionService.DeleteAsync(questionId, cancellationToken);
         return NoContent();
     }
 }

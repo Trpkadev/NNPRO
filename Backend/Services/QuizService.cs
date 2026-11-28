@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 using System.Data;
 using System.Text.Json;
 using Backend.Configuration;
-using Backend.Data;
 using Backend.Exceptions;
 using Backend.Extensions;
 using Backend.Models.DTOs.Request;
@@ -10,16 +9,15 @@ using Backend.Models.DTOs.Response;
 using Backend.Models.Entities;
 using Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace Backend.Services;
 
-public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions> dbLimitsOptions, IOptions<Config> cfg) : IQuizService {
-    private static readonly ConcurrentDictionary<(uint StudentId, uint QuizId), SemaphoreSlim> AttemptLocks = new();
+public class QuizService(ServiceContext<QuizService> ctx) : IQuizService {
+    private static readonly ConcurrentDictionary<(uint UserId, uint QuizId), SemaphoreSlim> AttemptLocks = new();
 
-    public async Task<(QuestionResponseDto[] Questions, Metadata Metadata)> GetQuestionsAsync(uint quizId, uint userId, RequestQuery requestQuery, CancellationToken ct)
+    public async Task<(QuestionResponseDto[] Questions, Metadata Metadata)> GetQuestionsAsync(uint quizId, RequestQuery requestQuery, CancellationToken ct)
     {
-        var quizInfo = await dbContext.Quizzes.AsNoTracking()
+        var quizInfo = await ctx.Db.Quizzes.AsNoTracking()
                            .Where(q => q.Id == quizId)
                            .Select(q => new {
                                q.Section.CourseId,
@@ -28,12 +26,12 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
                            .FirstOrDefaultAsync(ct)
                        ?? throw ServiceException.NotFound(Resources.ErrorQuizNotFound);
 
-        await CourseAuthorization.EnsureCanAccessCourseAsync(dbContext, quizInfo.CourseId, userId, ct);
+        await CourseAuthorization.EnsureCanAccessCourseAsync(ctx.Db, quizInfo.CourseId, ctx.AuthUserId, ct);
 
-        var query = dbContext.Questions.AsNoTracking()
+        var query = ctx.Db.Questions.AsNoTracking()
             .Where(question => question.QuizId == quizId);
 
-        query = quizInfo.RandomizeQuestions ? query.OrderBy(q => q.Id * 2654435761u ^ userId) : query.OrderBy(q => q.Id);
+        query = quizInfo.RandomizeQuestions ? query.OrderBy(q => q.Id * 2654435761u ^ ctx.AuthUserId) : query.OrderBy(q => q.Id);
 
         var (questions, metadata) = await query.Select(question => new QuestionResponseDto(
                 question.Id,
@@ -42,14 +40,14 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
                 question.Type,
                 question.Points,
                 question.QuizId))
-            .ToPagedResultAsync(requestQuery, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
+            .ToPagedResultAsync(requestQuery, ctx.MaxUnpagedItems, ct);
 
         return (questions, new Metadata(metadata, requestQuery));
     }
 
-    public async Task<uint> CreateAsync(uint requestingUserId, CreateQuizRequestDto request, CancellationToken ct)
+    public async Task<uint> CreateAsync(CreateQuizRequestDto request, CancellationToken ct)
     {
-        await EnsureCanManageSectionAsync(requestingUserId, request.SectionId, ct);
+        await EnsureCanManageSectionAsync(request.SectionId, ct);
         Quiz quiz = new() {
             Title = request.Title,
             SectionId = request.SectionId,
@@ -59,20 +57,20 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
             RandomizeQuestions = request.RandomizeQuestions,
             RandomizeAnswers = request.RandomizeAnswers
         };
-        dbContext.Quizzes.Add(quiz);
-        await dbContext.SaveChangesAsync(ct);
+        ctx.Db.Quizzes.Add(quiz);
+        await ctx.Db.SaveChangesAsync(ct);
         return quiz.Id;
     }
 
-    public async Task UpdateAsync(uint requestingUserId, uint quizId, CreateQuizRequestDto request, CancellationToken ct)
+    public async Task UpdateAsync(uint quizId, CreateQuizRequestDto request, CancellationToken ct)
     {
-        var quiz = await dbContext.Quizzes.FirstOrDefaultAsync(candidate => candidate.Id == quizId, ct);
+        var quiz = await ctx.Db.Quizzes.FirstOrDefaultAsync(candidate => candidate.Id == quizId, ct);
         if (quiz is null)
             throw ServiceException.NotFound(Resources.ErrorQuizNotFound);
 
-        await EnsureCanManageSectionAsync(requestingUserId, quiz.SectionId, ct);
+        await EnsureCanManageSectionAsync(quiz.SectionId, ct);
         if (quiz.SectionId != request.SectionId)
-            await EnsureCanManageSectionAsync(requestingUserId, request.SectionId, ct);
+            await EnsureCanManageSectionAsync(request.SectionId, ct);
 
         quiz.Title = request.Title;
         quiz.SectionId = request.SectionId;
@@ -81,28 +79,28 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
         quiz.PassingThresholdPercent = request.PassingThresholdPercent;
         quiz.RandomizeQuestions = request.RandomizeQuestions;
         quiz.RandomizeAnswers = request.RandomizeAnswers;
-        await dbContext.SaveChangesAsync(ct);
+        await ctx.Db.SaveChangesAsync(ct);
     }
 
-    public async Task DeleteAsync(uint requestingUserId, uint quizId, CancellationToken ct)
+    public async Task DeleteAsync(uint quizId, CancellationToken ct)
     {
-        await EnsureCanManageQuizAsync(requestingUserId, quizId, ct);
-        await dbContext.Quizzes.Where(quiz => quiz.Id == quizId).ExecuteDeleteAsync(ct);
+        await EnsureCanManageQuizAsync(quizId, ct);
+        await ctx.Db.Quizzes.Where(quiz => quiz.Id == quizId).ExecuteDeleteAsync(ct);
     }
 
-    public async Task<QuizResponseDto> GetForEditorAsync(uint requestingUserId, uint quizId, CancellationToken ct)
+    public async Task<QuizResponseDto> GetForEditorAsync(uint quizId, CancellationToken ct)
     {
-        await EnsureCanManageQuizAsync(requestingUserId, quizId, ct);
-        return await GetByIdAsync(quizId, requestingUserId, ct);
+        await EnsureCanManageQuizAsync(quizId, ct);
+        return await GetByIdAsync(quizId, ct);
     }
 
-    public async Task<(MyQuizAttemptResponseDto[] Attempts, Metadata Metadata)> GetMyAttemptsAsync(uint studentId, uint quizId, RequestQuery request, CancellationToken ct)
+    public async Task<(MyQuizAttemptResponseDto[] Attempts, Metadata Metadata)> GetMyAttemptsAsync(uint quizId, RequestQuery request, CancellationToken ct)
     {
-        if (!await dbContext.Quizzes.AsNoTracking().AnyAsync(quiz => quiz.Id == quizId, ct))
+        if (!await ctx.Db.Quizzes.AsNoTracking().AnyAsync(quiz => quiz.Id == quizId, ct))
             throw ServiceException.NotFound(Resources.ErrorQuizNotFound);
 
-        var (attempts, metadata) = await dbContext.QuizAttempts.AsNoTracking()
-            .Where(attempt => attempt.QuizId == quizId && attempt.StudentId == studentId)
+        var (attempts, metadata) = await ctx.Db.QuizAttempts.AsNoTracking()
+            .Where(attempt => attempt.QuizId == quizId && attempt.StudentId == ctx.AuthUserId)
             .OrderByDescending(attempt => attempt.StartedAtUtc)
             .Select(attempt => new MyQuizAttemptResponseDto(
                 attempt.Id,
@@ -110,14 +108,14 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
                 attempt.SubmittedAtUtc,
                 attempt.ScorePercent,
                 attempt.IsPassed))
-            .ToPagedResultAsync(request, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
+            .ToPagedResultAsync(request, ctx.MaxUnpagedItems, ct);
 
         return (attempts, new Metadata(metadata, request));
     }
 
-    public async Task<QuizAttemptDetailResponseDto> GetAttemptByAttemptIdAsync(uint requestingUserId, uint attemptId, CancellationToken ct)
+    public async Task<QuizAttemptDetailResponseDto> GetAttemptByAttemptIdAsync(uint attemptId, CancellationToken ct)
     {
-        var attempt = await dbContext.QuizAttempts.AsNoTracking()
+        var attempt = await ctx.Db.QuizAttempts.AsNoTracking()
             .Where(candidate => candidate.Id == attemptId)
             .Select(candidate => new {
                 candidate.Id,
@@ -131,7 +129,7 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
             })
             .FirstOrDefaultAsync(ct);
 
-        var answers = (await dbContext.StudentAnswers.AsNoTracking()
+        var answers = (await ctx.Db.StudentAnswers.AsNoTracking()
                 .Where(candidate => candidate.QuizAttemptId == attemptId)
                 .Select(candidate => new {
                     candidate.QuestionId,
@@ -143,8 +141,8 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
         if (attempt is null)
             throw ServiceException.NotFound(Resources.ErrorQuizAttemptNotFound);
 
-        if (attempt.StudentId != requestingUserId)
-            await CourseAuthorization.EnsureCanManageCourseAsync(dbContext, requestingUserId, attempt.CourseId, ct);
+        if (attempt.StudentId != ctx.AuthUserId)
+            await CourseAuthorization.EnsureCanManageCourseAsync(ctx.Db, attempt.CourseId, ctx.AuthUserId, ct);
 
         return new QuizAttemptDetailResponseDto(
             attempt.Id,
@@ -157,9 +155,9 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
             answers);
     }
 
-    public async Task<uint> StartAttemptAsync(uint studentId, StartAttemptRequestDto request, CancellationToken ct)
+    public async Task<uint> StartAttemptAsync(StartAttemptRequestDto request, CancellationToken ct)
     {
-        var quiz = await dbContext.Quizzes.AsNoTracking()
+        var quiz = await ctx.Db.Quizzes.AsNoTracking()
                        .Where(candidate => candidate.Id == request.QuizId)
                        .Select(candidate => new {
                            candidate.Id,
@@ -170,52 +168,52 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
                        .FirstOrDefaultAsync(ct)
                    ?? throw ServiceException.NotFound(Resources.ErrorQuizNotFound);
 
-        var role = await dbContext.Users.AsNoTracking()
-                       .Where(user => user.Id == studentId)
+        var role = await ctx.Db.Users.AsNoTracking()
+                       .Where(user => user.Id == ctx.AuthUserId)
                        .Select(user => (UserRole?)user.Role)
                        .FirstOrDefaultAsync(ct)
                    ?? throw ServiceException.NotFound(Resources.ErrorUserNotFound);
         if (role != UserRole.Student)
             throw ServiceException.Forbidden(Resources.ErrorOnlyStudentsCanStartQuiz);
 
-        bool isEnrolled = await dbContext.Enrollments.AsNoTracking()
-            .AnyAsync(enrollment => enrollment.StudentId == studentId && enrollment.CourseId == quiz.CourseId, ct);
+        bool isEnrolled = await ctx.Db.Enrollments.AsNoTracking()
+            .AnyAsync(enrollment => enrollment.StudentId == ctx.AuthUserId && enrollment.CourseId == quiz.CourseId, ct);
         if (!isEnrolled)
             throw ServiceException.Forbidden(Resources.ErrorQuizEnrollmentRequired);
 
-        var attemptLock = AttemptLocks.GetOrAdd((studentId, quiz.Id), _ => new SemaphoreSlim(1, 1));
+        var attemptLock = AttemptLocks.GetOrAdd((ctx.AuthUserId, quiz.Id), _ => new SemaphoreSlim(1, 1));
         await attemptLock.WaitAsync(ct);
         try
         {
-            await using var transaction = await dbContext.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
+            await using var transaction = await ctx.Db.Database.BeginTransactionAsync(IsolationLevel.Serializable, ct);
 
             var nowUtc = DateTime.UtcNow;
-            var unsubmittedAttempts = await dbContext.QuizAttempts
-                .Where(a => a.QuizId == quiz.Id && a.StudentId == studentId && a.SubmittedAtUtc == null)
+            var unsubmittedAttempts = await ctx.Db.QuizAttempts
+                .Where(a => a.QuizId == quiz.Id && a.StudentId == ctx.AuthUserId && a.SubmittedAtUtc == null)
                 .ToListAsync(ct);
 
             foreach (var openAttempt in unsubmittedAttempts)
             {
-                if (!IsAttemptExpired(openAttempt.StartedAtUtc, quiz.TimeLimitSeconds, nowUtc, cfg.Value))
+                if (!IsAttemptExpired(openAttempt.StartedAtUtc, quiz.TimeLimitSeconds, nowUtc, ctx.Cfg.Value))
                     throw ServiceException.Conflict(Resources.ErrorActiveAttempt);
 
                 CloseAsExpired(openAttempt, nowUtc);
             }
 
-            int attemptsCount = await dbContext.QuizAttempts.AsNoTracking()
-                .CountAsync(attempt => attempt.QuizId == quiz.Id && attempt.StudentId == studentId, ct);
+            int attemptsCount = await ctx.Db.QuizAttempts.AsNoTracking()
+                .CountAsync(attempt => attempt.QuizId == quiz.Id && attempt.StudentId == ctx.AuthUserId, ct);
 
             if (quiz.MaxAttempts.HasValue && attemptsCount >= quiz.MaxAttempts.Value)
             {
-                await dbContext.SaveChangesAsync(ct);
+                await ctx.Db.SaveChangesAsync(ct);
                 await transaction.CommitAsync(ct);
 
                 throw ServiceException.Conflict(Resources.ErrorQuizMaxAttemptsReached);
             }
 
-            QuizAttempt attempt = new() { QuizId = quiz.Id, StudentId = studentId };
-            dbContext.QuizAttempts.Add(attempt);
-            await dbContext.SaveChangesAsync(ct);
+            QuizAttempt attempt = new() { QuizId = quiz.Id, StudentId = ctx.AuthUserId };
+            ctx.Db.QuizAttempts.Add(attempt);
+            await ctx.Db.SaveChangesAsync(ct);
             await transaction.CommitAsync(ct);
 
             return attempt.Id;
@@ -226,37 +224,37 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
         }
     }
 
-    public async Task<QuizAttemptResponseDto> EndAttemptAsync(uint studentId, EndAttemptRequestDto request, CancellationToken ct)
+    public async Task<QuizAttemptResponseDto> EndAttemptAsync(EndAttemptRequestDto request, CancellationToken ct)
     {
-        var attemptMeta = await dbContext.QuizAttempts.AsNoTracking()
-                              .Where(a => a.Id == request.AttemptId && a.StudentId == studentId)
+        var attemptMeta = await ctx.Db.QuizAttempts.AsNoTracking()
+                              .Where(a => a.Id == request.AttemptId && a.StudentId == ctx.AuthUserId)
                               .Select(a => new { a.Id, a.QuizId })
                               .FirstOrDefaultAsync(ct)
                           ?? throw ServiceException.NotFound(Resources.ErrorQuizAttemptNotFound);
 
-        var attemptLock = AttemptLocks.GetOrAdd((studentId, attemptMeta.QuizId), _ => new SemaphoreSlim(1, 1));
+        var attemptLock = AttemptLocks.GetOrAdd((ctx.AuthUserId, attemptMeta.QuizId), _ => new SemaphoreSlim(1, 1));
         await attemptLock.WaitAsync(ct);
         try
         {
-            var attempt = await dbContext.QuizAttempts.Include(a => a.Quiz)
-                              .FirstOrDefaultAsync(a => a.Id == request.AttemptId && a.StudentId == studentId, ct)
+            var attempt = await ctx.Db.QuizAttempts.Include(a => a.Quiz)
+                              .FirstOrDefaultAsync(a => a.Id == request.AttemptId && a.StudentId == ctx.AuthUserId, ct)
                           ?? throw ServiceException.NotFound(Resources.ErrorQuizAttemptNotFound);
 
             if (attempt.SubmittedAtUtc.HasValue)
                 throw ServiceException.Conflict(Resources.ErrorAttemptAlreadySubmitted);
 
             var nowUtc = DateTime.UtcNow;
-            if (IsAttemptExpired(attempt.StartedAtUtc, attempt.Quiz.TimeLimitSeconds, nowUtc, cfg.Value))
+            if (IsAttemptExpired(attempt.StartedAtUtc, attempt.Quiz.TimeLimitSeconds, nowUtc, ctx.Cfg.Value))
             {
                 CloseAsExpired(attempt, nowUtc);
-                await dbContext.SaveChangesAsync(ct);
+                await ctx.Db.SaveChangesAsync(ct);
 
                 throw ServiceException.Forbidden(Resources.ErrorAttemptTimeLimitReached);
             }
 
             var submittedAnswers = ParseSubmittedAnswers(request.AnswersJson);
 
-            var questions = await dbContext.Questions.AsNoTracking()
+            var questions = await ctx.Db.Questions.AsNoTracking()
                 .Where(q => q.QuizId == attempt.QuizId)
                 .Include(q => q.AnswerOptions)
                 .ToListAsync(ct);
@@ -287,7 +285,7 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
                 totalPoints += question.Points;
                 awardedPoints += questionAwardedPoints;
 
-                dbContext.StudentAnswers.Add(new StudentAnswer {
+                ctx.Db.StudentAnswers.Add(new StudentAnswer {
                     QuizAttemptId = attempt.Id,
                     QuestionId = question.Id,
                     SelectedOptionIds = selectedSorted,
@@ -299,7 +297,7 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
             attempt.SubmittedAtUtc = nowUtc;
             attempt.ScorePercent = totalPoints == 0 ? 0m : (decimal)awardedPoints * 100 / totalPoints;
             attempt.IsPassed = attempt.ScorePercent >= attempt.Quiz.PassingThresholdPercent;
-            await dbContext.SaveChangesAsync(ct);
+            await ctx.Db.SaveChangesAsync(ct);
 
             return MapToResponseDto(attempt);
         }
@@ -309,11 +307,11 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
         }
     }
 
-    public async Task<(QuizAttemptResponseDto[] Attempts, Metadata Metadata)> GetAttemptsAsync(uint requestingUserId, uint quizId, RequestQuery request, CancellationToken ct)
+    public async Task<(QuizAttemptResponseDto[] Attempts, Metadata Metadata)> GetAttemptsAsync(uint quizId, RequestQuery request, CancellationToken ct)
     {
-        await EnsureCanManageQuizAsync(requestingUserId, quizId, ct);
+        await EnsureCanManageQuizAsync(quizId, ct);
 
-        var (attempts, metadata) = await dbContext.QuizAttempts.AsNoTracking()
+        var (attempts, metadata) = await ctx.Db.QuizAttempts.AsNoTracking()
             .Where(attempt => attempt.QuizId == quizId)
             .OrderByDescending(attempt => attempt.StartedAtUtc)
             .Select(attempt => new QuizAttemptResponseDto(
@@ -324,14 +322,14 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
                 attempt.SubmittedAtUtc,
                 attempt.ScorePercent,
                 attempt.IsPassed))
-            .ToPagedResultAsync(request, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
+            .ToPagedResultAsync(request, ctx.MaxUnpagedItems, ct);
 
         return (attempts, new Metadata(metadata, request));
     }
 
-    public async Task<QuizResponseDto> GetByIdAsync(uint quizId, uint userId, CancellationToken ct)
+    public async Task<QuizResponseDto> GetByIdAsync(uint quizId, CancellationToken ct)
     {
-        var result = await dbContext.Quizzes.AsNoTracking()
+        var result = await ctx.Db.Quizzes.AsNoTracking()
                          .Where(quiz => quiz.Id == quizId)
                          .Select(quiz => new {
                              Dto = new QuizResponseDto(
@@ -346,7 +344,7 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
                          .FirstOrDefaultAsync(ct)
                      ?? throw ServiceException.NotFound(Resources.ErrorQuizNotFound);
 
-        await CourseAuthorization.EnsureCanAccessCourseAsync(dbContext, result.CourseId, userId, ct);
+        await CourseAuthorization.EnsureCanAccessCourseAsync(ctx.Db, result.CourseId, ctx.AuthUserId, ct);
 
         return result.Dto;
     }
@@ -375,27 +373,29 @@ public class QuizService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions>
     private static QuizAttemptResponseDto MapToResponseDto(QuizAttempt attempt) => new(attempt.Id, attempt.QuizId, attempt.StudentId, attempt.StartedAtUtc, attempt.SubmittedAtUtc, attempt.ScorePercent, attempt.IsPassed);
 
 
-    private async Task EnsureCanManageQuizAsync(uint requestingUserId, uint quizId, CancellationToken ct)
-    {
-        uint? courseId = await dbContext.Quizzes.AsNoTracking()
-            .Where(quiz => quiz.Id == quizId)
-            .Select(quiz => (uint?)quiz.Section.CourseId)
-            .FirstOrDefaultAsync(ct);
-        if (!courseId.HasValue)
-            throw ServiceException.NotFound(Resources.ErrorQuizNotFound);
+    private async Task EnsureCanManageQuizAsync(uint quizId, CancellationToken ct) => await EnsureCanManageQuizAsync(ctx.AuthUserId, quizId, ct);
 
-        await CourseAuthorization.EnsureCanManageCourseAsync(dbContext, requestingUserId, courseId.Value, ct);
+    private async Task EnsureCanManageQuizAsync(uint userId, uint quizId, CancellationToken ct)
+    {
+        uint courseId = await ctx.Db.Quizzes.AsNoTracking()
+                            .Where(quiz => quiz.Id == quizId)
+                            .Select(quiz => (uint?)quiz.Section.CourseId)
+                            .FirstOrDefaultAsync(ct)
+                        ?? throw ServiceException.NotFound(Resources.ErrorQuizNotFound);
+
+        await CourseAuthorization.EnsureCanManageCourseAsync(ctx.Db, courseId, userId, ct);
     }
 
-    private async Task EnsureCanManageSectionAsync(uint requestingUserId, uint sectionId, CancellationToken ct)
-    {
-        uint? courseId = await dbContext.Sections.AsNoTracking()
-            .Where(section => section.Id == sectionId)
-            .Select(section => (uint?)section.CourseId)
-            .FirstOrDefaultAsync(ct);
-        if (!courseId.HasValue)
-            throw ServiceException.NotFound(Resources.ErrorSectionNotFound);
+    private async Task EnsureCanManageSectionAsync(uint sectionId, CancellationToken ct) => await EnsureCanManageSectionAsync(ctx.AuthUserId, sectionId, ct);
 
-        await CourseAuthorization.EnsureCanManageCourseAsync(dbContext, requestingUserId, courseId.Value, ct);
+    private async Task EnsureCanManageSectionAsync(uint userId, uint sectionId, CancellationToken ct)
+    {
+        uint courseId = await ctx.Db.Sections.AsNoTracking()
+                            .Where(section => section.Id == sectionId)
+                            .Select(section => (uint?)section.CourseId)
+                            .FirstOrDefaultAsync(ct)
+                        ?? throw ServiceException.NotFound(Resources.ErrorSectionNotFound);
+
+        await CourseAuthorization.EnsureCanManageCourseAsync(ctx.Db, courseId, userId, ct);
     }
 }

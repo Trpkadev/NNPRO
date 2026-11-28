@@ -18,7 +18,7 @@ public class SectionController(ISectionService sectionService) : ApiControllerBa
     [EndpointDescription("Returns the details of a section.")]
     [ProducesResponseType<Wrapper<SectionResponseDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<SectionResponseDto>> GetSectionById([FromRoute] uint sectionId, CancellationToken cancellationToken) => Ok(await sectionService.GetByIdAsync(AuthenticatedUserId, sectionId, cancellationToken));
+    public async Task<ActionResult<SectionResponseDto>> GetSectionById([FromRoute] uint sectionId, CancellationToken cancellationToken) => Ok(await sectionService.GetByIdAsync(sectionId, cancellationToken));
 
     [HttpGet("{sectionId:uint}/lessons")]
     [Authorize]
@@ -28,7 +28,7 @@ public class SectionController(ISectionService sectionService) : ApiControllerBa
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<LessonResponseWrapperDto>> GetSectionLessons([FromRoute] uint sectionId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        var (lessons, metadata) = await sectionService.GetLessonsAsync(sectionId, AuthenticatedUserId, requestQuery, cancellationToken);
+        var (lessons, metadata) = await sectionService.GetLessonsAsync(sectionId, requestQuery, cancellationToken);
         return Ok(lessons, metadata);
     }
 
@@ -40,7 +40,7 @@ public class SectionController(ISectionService sectionService) : ApiControllerBa
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<QuizResponseDto[]>> GetSectionQuizzes([FromRoute] uint sectionId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        var (quizzes, metadata) = await sectionService.GetQuizzesAsync(sectionId, AuthenticatedUserId, requestQuery, cancellationToken);
+        var (quizzes, metadata) = await sectionService.GetQuizzesAsync(sectionId, requestQuery, cancellationToken);
         return Ok(quizzes, metadata);
     }
 
@@ -53,7 +53,7 @@ public class SectionController(ISectionService sectionService) : ApiControllerBa
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<uint>> CreateSection([FromBody] CreateSectionRequestDto requestDto, CancellationToken cancellationToken)
     {
-        uint newSectionId = await sectionService.CreateAsync(AuthenticatedUserId, requestDto, cancellationToken);
+        uint newSectionId = await sectionService.CreateAsync(requestDto, cancellationToken);
         return CreatedAtAction(nameof(GetSectionById), new { sectionId = newSectionId }, newSectionId);
     }
 
@@ -65,7 +65,7 @@ public class SectionController(ISectionService sectionService) : ApiControllerBa
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateSection(uint sectionId, [FromBody] CreateSectionRequestDto requestDto, CancellationToken cancellationToken)
     {
-        await sectionService.UpdateAsync(AuthenticatedUserId, sectionId, requestDto, cancellationToken);
+        await sectionService.UpdateAsync(sectionId, requestDto, cancellationToken);
         return NoContent();
     }
 
@@ -77,7 +77,7 @@ public class SectionController(ISectionService sectionService) : ApiControllerBa
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteSection(uint sectionId, CancellationToken cancellationToken)
     {
-        await sectionService.DeleteAsync(AuthenticatedUserId, sectionId, cancellationToken);
+        await sectionService.DeleteAsync(sectionId, cancellationToken);
         return NoContent();
     }
 }

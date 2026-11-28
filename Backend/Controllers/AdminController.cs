@@ -22,6 +22,28 @@ public class AdminController(IAdminService adminService) : ApiControllerBase {
         return Ok(user);
     }
 
+    [HttpPut("users/{userId:uint}")]
+    [EndpointSummary("Update a user")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> UpdateUser(uint userId, [FromBody] UpdateUserRequestDto requestDto, CancellationToken cancellationToken)
+    {
+        await adminService.UpdateAsync(userId, requestDto, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpDelete("users/{userId:uint}")]
+    [EndpointSummary("Delete a user")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteUser(uint userId, CancellationToken cancellationToken)
+    {
+        await adminService.DeleteAsync(userId, cancellationToken);
+        return NoContent();
+    }
+
     [HttpPut("users/{userId:uint}/role")]
     [EndpointSummary("Update a user's role")]
     [EndpointDescription("Changing a user's role revokes their active refresh tokens and invalidates their outstanding access tokens.")]

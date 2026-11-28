@@ -18,7 +18,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [EndpointDescription("Returns the full details of a course including its title and description.")]
     [ProducesResponseType<Wrapper<CourseResponseDto>>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<CourseResponseDto>> GetCourseById(uint id, CancellationToken cancellationToken) => Ok(await courseService.GetByIdAsync(id, AuthenticatedUserId, cancellationToken));
+    public async Task<ActionResult<CourseResponseDto>> GetCourseById(uint id, CancellationToken cancellationToken) => Ok(await courseService.GetByIdAsync(id, cancellationToken));
 
     [HttpGet]
     [RequiresPaging]
@@ -55,7 +55,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<SectionResponseDto[]>> GetCourseSections(uint courseId, [FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        var (sections, metadata) = await courseService.GetSectionsAsync(courseId, AuthenticatedUserId, requestQuery, cancellationToken);
+        var (sections, metadata) = await courseService.GetSectionsAsync(courseId, requestQuery, cancellationToken);
         return Ok(sections, metadata);
     }
 
@@ -67,7 +67,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<SectionResponseDto[]>> GetManageableCourses([FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        var (sections, metadata) = await courseService.GetManageableCoursesAsync(AuthenticatedUserId, requestQuery, cancellationToken);
+        var (sections, metadata) = await courseService.GetManageableCoursesAsync(requestQuery, cancellationToken);
         return Ok(sections, metadata);
     }
 
@@ -79,7 +79,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<uint>> AddCourse([FromBody] CourseCreateRequestDto courseCreateRequestDto, CancellationToken cancellationToken)
     {
-        uint newCourseId = await courseService.CreateAsync(AuthenticatedUserId, courseCreateRequestDto, cancellationToken);
+        uint newCourseId = await courseService.CreateAsync(courseCreateRequestDto, cancellationToken);
         return CreatedAtAction(nameof(GetCourseById), new { id = newCourseId }, newCourseId);
     }
 
@@ -91,7 +91,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> RemoveCourse(uint id, CancellationToken cancellationToken)
     {
-        await courseService.RemoveAsync(AuthenticatedUserId, id, cancellationToken);
+        await courseService.RemoveAsync(id, cancellationToken);
         return NoContent();
     }
 
@@ -104,7 +104,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateCourse(uint id, [FromBody] CourseUpdateRequestDto courseUpdateRequestDto, CancellationToken cancellationToken)
     {
-        await courseService.UpdateAsync(AuthenticatedUserId, id, courseUpdateRequestDto, cancellationToken);
+        await courseService.UpdateAsync(id, courseUpdateRequestDto, cancellationToken);
         return NoContent();
     }
 
@@ -117,7 +117,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateCourseInstructors(uint id, [FromBody] CourseUpdateInstructorsRequestDto courseUpdateRequestDto, CancellationToken cancellationToken)
     {
-        await courseService.UpdateInstructorsAsync(AuthenticatedUserId, id, courseUpdateRequestDto, cancellationToken);
+        await courseService.UpdateInstructorsAsync(id, courseUpdateRequestDto, cancellationToken);
         return NoContent();
     }
 
@@ -131,7 +131,7 @@ public class CourseController(ICourseService courseService) : ApiControllerBase 
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<CourseThumbnailResponseDto[]>> GetCourseThumbnails([FromQuery] CourseThumbnailRequestDto requestDto, CancellationToken cancellationToken)
     {
-        var (thumbnails, metadata) = await courseService.GetCourseThumbnailsAsync(AuthenticatedUserId, requestDto, cancellationToken);
+        var (thumbnails, metadata) = await courseService.GetCourseThumbnailsAsync(requestDto, cancellationToken);
 
         return Ok(thumbnails, metadata);
     }

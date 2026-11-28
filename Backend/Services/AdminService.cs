@@ -1,5 +1,3 @@
-using Backend.Configuration;
-using Backend.Data;
 using Backend.Exceptions;
 using Backend.Extensions;
 using Backend.Models.DTOs.Request;
@@ -7,11 +5,10 @@ using Backend.Models.DTOs.Response;
 using Backend.Models.Entities;
 using Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace Backend.Services;
 
-public class AdminService(ServiceContext<AdminService> ctx, IAuthService authService) : IAdminService {
+public class AdminService(ServiceContext<AdminService> ctx, IAuthService authService, IUserService userService) : IAdminService {
     public async Task<AdminUserDetailsDto> GetUserAsync(uint userId, CancellationToken ct)
     {
         var user = await ctx.Db.Users.AsNoTracking()
@@ -93,6 +90,10 @@ public class AdminService(ServiceContext<AdminService> ctx, IAuthService authSer
         await EnsureUserExistsAsync(userId, ct);
         await authService.RevokeAllSessionsAsync(userId, adminIp, ct);
     }
+
+    public Task UpdateAsync(uint userId, UpdateUserRequestDto request, CancellationToken ct) => userService.UpdateAsync(userId, request, ct);
+
+    public Task DeleteAsync(uint userId, CancellationToken ct) => userService.DeleteAsync(userId, ct);
 
     private async Task EnsureUserExistsAsync(uint userId, CancellationToken ct)
     {

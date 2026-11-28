@@ -20,7 +20,7 @@ public class UserController(IUserService userService) : ApiControllerBase {
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<UserCourseResponseDto[]>> GetMyCourses([FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        var (courses, metadata) = await userService.GetMyCoursesAsync(AuthenticatedUserId, requestQuery, cancellationToken);
+        var (courses, metadata) = await userService.GetMyCoursesAsync(requestQuery, cancellationToken);
         return Ok(courses, metadata);
     }
 
@@ -32,7 +32,7 @@ public class UserController(IUserService userService) : ApiControllerBase {
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<UserLessonProgressResponseDto[]>> GetMyProgress([FromQuery] RequestQuery requestQuery, CancellationToken cancellationToken)
     {
-        var (progress, metadata) = await userService.GetMyProgressAsync(AuthenticatedUserId, requestQuery, cancellationToken);
+        var (progress, metadata) = await userService.GetMyProgressAsync(requestQuery, cancellationToken);
         return Ok(progress, metadata);
     }
 
@@ -44,7 +44,7 @@ public class UserController(IUserService userService) : ApiControllerBase {
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetUsers([FromQuery] RequestQuery query, CancellationToken cancellationToken)
     {
-        var (users, metadata) = await userService.GetUsersAsync(AuthenticatedUserId, query, cancellationToken);
+        var (users, metadata) = await userService.GetUsersAsync(query, cancellationToken);
         return Ok(users, metadata);
     }
 
@@ -56,20 +56,7 @@ public class UserController(IUserService userService) : ApiControllerBase {
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateUser([FromBody] UpdateUserRequestDto requestDto, CancellationToken cancellationToken)
     {
-        await userService.UpdateAsync(AuthenticatedUserId, requestDto, cancellationToken);
-        return NoContent();
-    }
-
-    [HttpPut("{userId:uint}")]
-    [Authorize(Roles = "Admin")]
-    [EndpointSummary("Update a user")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> UpdateUser(uint userId, [FromBody] UpdateUserRequestDto requestDto, CancellationToken cancellationToken)
-    {
-        await userService.UpdateAsync(userId, requestDto, cancellationToken);
+        await userService.UpdateAsync(requestDto, cancellationToken);
         return NoContent();
     }
 
@@ -79,18 +66,7 @@ public class UserController(IUserService userService) : ApiControllerBase {
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> DeleteUser(CancellationToken cancellationToken)
     {
-        await userService.DeleteAsync(AuthenticatedUserId, cancellationToken);
-        return NoContent();
-    }
-
-    [HttpDelete("{userId:uint}")]
-    [Authorize(Roles = "Admin")]
-    [EndpointSummary("Delete a user")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteUser(uint userId, CancellationToken cancellationToken)
-    {
-        await userService.DeleteAsync(userId, cancellationToken);
+        await userService.DeleteAsync(cancellationToken);
         return NoContent();
     }
 }

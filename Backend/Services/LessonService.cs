@@ -1,5 +1,3 @@
-using Backend.Configuration;
-using Backend.Data;
 using Backend.Exceptions;
 using Backend.Extensions;
 using Backend.Models.DTOs.Request;
@@ -7,12 +5,11 @@ using Backend.Models.DTOs.Response;
 using Backend.Models.Entities;
 using Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace Backend.Services;
 
 public class LessonService(ServiceContext<LessonService> ctx) : ILessonService {
-    public async Task<LessonResponseDto> GetByIdAsync(uint id, uint userId, CancellationToken ct)
+    public async Task<LessonResponseDto> GetByIdAsync(uint id, CancellationToken ct)
     {
         var data = await ctx.Db.Lessons.AsNoTracking()
                        .Where(l => l.Id == id)
@@ -23,11 +20,11 @@ public class LessonService(ServiceContext<LessonService> ctx) : ILessonService {
                        .FirstOrDefaultAsync(ct)
                    ?? throw ServiceException.NotFound(Resources.ErrorLessonNotFound);
 
-        await CourseAuthorization.EnsureCanAccessCourseAsync(ctx.Db, data.CourseId, userId, ct);
+        await CourseAuthorization.EnsureCanAccessCourseAsync(ctx.Db, data.CourseId, ctx.AuthUserId, ct);
         return data.Dto;
     }
 
-    public async Task<(AttachmentResponseDto[] Attachments, Metadata Metadata)> GetAttachmentsAsync(uint lessonId, uint userId, RequestQuery request, CancellationToken ct)
+    public async Task<(AttachmentResponseDto[] Attachments, Metadata Metadata)> GetAttachmentsAsync(uint lessonId, RequestQuery request, CancellationToken ct)
     {
         uint courseId = await ctx.Db.Lessons.AsNoTracking()
                             .Where(l => l.Id == lessonId)
@@ -35,7 +32,7 @@ public class LessonService(ServiceContext<LessonService> ctx) : ILessonService {
                             .FirstOrDefaultAsync(ct)
                         ?? throw ServiceException.NotFound(Resources.ErrorLessonNotFound);
 
-        await CourseAuthorization.EnsureCanAccessCourseAsync(ctx.Db, courseId, userId, ct);
+        await CourseAuthorization.EnsureCanAccessCourseAsync(ctx.Db, courseId, ctx.AuthUserId, ct);
 
         var (attachments, metadata) = await ctx.Db.LessonAttachments.AsNoTracking()
             .Where(attachment => attachment.LessonId == lessonId)
@@ -47,12 +44,12 @@ public class LessonService(ServiceContext<LessonService> ctx) : ILessonService {
                 attachment.ContentType,
                 attachment.SizeBytes,
                 attachment.LessonId))
-            .ToPagedResultAsync(request, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
+            .ToPagedResultAsync(request, ctx.MaxUnpagedItems, ct);
 
         return (attachments, new Metadata(metadata, request));
     }
 
-    public async Task<uint> CreateAsync(uint requestingUserId, CreateLessonRequestDto request, CancellationToken ct)
+    public async Task<uint> CreateAsync(CreateLessonRequestDto request, CancellationToken ct)
     {
         var section = await ctx.Db.Sections.AsNoTracking()
             .Where(candidate => candidate.Id == request.SectionId)
@@ -61,7 +58,7 @@ public class LessonService(ServiceContext<LessonService> ctx) : ILessonService {
         if (section is null)
             throw ServiceException.NotFound(Resources.ErrorSectionNotFound);
 
-        await CourseAuthorization.EnsureCanManageCourseAsync(ctx.Db, requestingUserId, section.CourseId, ct);
+        await EnsureCanManageSectionAsync(request.SectionId, ct);
 
         Lesson lesson = new() {
             Title = request.Title,
@@ -75,15 +72,15 @@ public class LessonService(ServiceContext<LessonService> ctx) : ILessonService {
         return lesson.Id;
     }
 
-    public async Task UpdateAsync(uint requestingUserId, uint lessonId, CreateLessonRequestDto request, CancellationToken ct)
+    public async Task UpdateAsync(uint lessonId, CreateLessonRequestDto request, CancellationToken ct)
     {
         var lesson = await ctx.Db.Lessons.FirstOrDefaultAsync(candidate => candidate.Id == lessonId, ct);
         if (lesson is null)
             throw ServiceException.NotFound(Resources.ErrorLessonNotFound);
 
-        await EnsureCanManageSectionAsync(requestingUserId, lesson.SectionId, ct);
+        await EnsureCanManageSectionAsync(lesson.SectionId, ct);
         if (lesson.SectionId != request.SectionId)
-            await EnsureCanManageSectionAsync(requestingUserId, request.SectionId, ct);
+            await EnsureCanManageSectionAsync(request.SectionId, ct);
 
         lesson.Title = request.Title;
         lesson.Content = request.Content;
@@ -93,13 +90,13 @@ public class LessonService(ServiceContext<LessonService> ctx) : ILessonService {
         await ctx.Db.SaveChangesAsync(ct);
     }
 
-    public async Task DeleteAsync(uint requestingUserId, uint lessonId, CancellationToken ct)
+    public async Task DeleteAsync(uint lessonId, CancellationToken ct)
     {
-        await EnsureCanManageLessonAsync(requestingUserId, lessonId, ct);
+        await EnsureCanManageLessonAsync(ctx.AuthUserId, lessonId, ct);
         await ctx.Db.Lessons.Where(lesson => lesson.Id == lessonId).ExecuteDeleteAsync(ct);
     }
 
-    public async Task UpdateProgressAsync(uint studentId, uint lessonId, UpdateProgressDto request, CancellationToken ct)
+    public async Task UpdateProgressAsync(uint lessonId, UpdateProgressDto request, CancellationToken ct)
     {
         var lesson = await ctx.Db.Lessons.AsNoTracking()
             .Where(candidate => candidate.Id == lessonId)
@@ -109,17 +106,17 @@ public class LessonService(ServiceContext<LessonService> ctx) : ILessonService {
             throw ServiceException.NotFound(Resources.ErrorLessonNotFound);
 
         bool isEnrolled = await ctx.Db.Enrollments
-            .AnyAsync(enrollment => enrollment.StudentId == studentId && enrollment.CourseId == lesson.CourseId, ct);
+            .AnyAsync(enrollment => enrollment.StudentId == ctx.AuthUserId && enrollment.CourseId == lesson.CourseId, ct);
         if (!isEnrolled)
             throw ServiceException.Forbidden(Resources.ErrorCourseEnrollmentRequiredForProgress);
 
         var progress = await ctx.Db.StudentLessonProgresses
-            .FirstOrDefaultAsync(candidate => candidate.StudentId == studentId && candidate.LessonId == lessonId, ct);
+            .FirstOrDefaultAsync(candidate => candidate.StudentId == ctx.AuthUserId && candidate.LessonId == lessonId, ct);
         DateTime? completedAtUtc = request.IsCompleted ? DateTime.UtcNow : null;
         if (progress is null)
         {
             ctx.Db.StudentLessonProgresses.Add(new StudentLessonProgress {
-                StudentId = studentId,
+                StudentId = ctx.AuthUserId,
                 LessonId = lessonId,
                 IsCompleted = request.IsCompleted,
                 CompletedAtUtc = completedAtUtc
@@ -134,9 +131,9 @@ public class LessonService(ServiceContext<LessonService> ctx) : ILessonService {
         await ctx.Db.SaveChangesAsync(ct);
     }
 
-    public async Task<uint> AddAttachmentAsync(uint requestingUserId, AttachmentRequestDto request, CancellationToken ct)
+    public async Task<uint> AddAttachmentAsync(AttachmentRequestDto request, CancellationToken ct)
     {
-        await EnsureCanManageLessonAsync(requestingUserId, request.LessonId, ct);
+        await EnsureCanManageLessonAsync(ctx.AuthUserId, request.LessonId, ct);
         LessonAttachment attachment = new() {
             FileName = request.FileName,
             Url = request.Url,
@@ -149,9 +146,9 @@ public class LessonService(ServiceContext<LessonService> ctx) : ILessonService {
         return attachment.Id;
     }
 
-    public async Task DeleteAttachmentAsync(uint requestingUserId, uint lessonId, uint attachmentId, CancellationToken ct)
+    public async Task DeleteAttachmentAsync(uint lessonId, uint attachmentId, CancellationToken ct)
     {
-        await EnsureCanManageLessonAsync(requestingUserId, lessonId, ct);
+        await EnsureCanManageLessonAsync(ctx.AuthUserId, lessonId, ct);
         int deleted = await ctx.Db.LessonAttachments
             .Where(attachment => attachment.Id == attachmentId && attachment.LessonId == lessonId)
             .ExecuteDeleteAsync(ct);
@@ -159,27 +156,27 @@ public class LessonService(ServiceContext<LessonService> ctx) : ILessonService {
             throw ServiceException.NotFound(Resources.ErrorLessonAttachmentNotFound);
     }
 
-    private async Task EnsureCanManageLessonAsync(uint requestingUserId, uint lessonId, CancellationToken ct)
+    private async Task EnsureCanManageLessonAsync(uint userId, uint lessonId, CancellationToken ct)
     {
-        uint? courseId = await ctx.Db.Lessons.AsNoTracking()
-            .Where(lesson => lesson.Id == lessonId)
-            .Select(lesson => (uint?)lesson.Section.CourseId)
-            .FirstOrDefaultAsync(ct);
-        if (!courseId.HasValue)
-            throw ServiceException.NotFound(Resources.ErrorLessonNotFound);
+        uint courseId = await ctx.Db.Lessons.AsNoTracking()
+                            .Where(lesson => lesson.Id == lessonId)
+                            .Select(lesson => (uint?)lesson.Section.CourseId)
+                            .FirstOrDefaultAsync(ct)
+                        ?? throw ServiceException.NotFound(Resources.ErrorLessonNotFound);
 
-        await CourseAuthorization.EnsureCanManageCourseAsync(ctx.Db, requestingUserId, courseId.Value, ct);
+        await CourseAuthorization.EnsureCanManageCourseAsync(ctx.Db, courseId, userId, ct);
     }
 
-    private async Task EnsureCanManageSectionAsync(uint requestingUserId, uint sectionId, CancellationToken ct)
-    {
-        uint? courseId = await ctx.Db.Sections.AsNoTracking()
-            .Where(section => section.Id == sectionId)
-            .Select(section => (uint?)section.CourseId)
-            .FirstOrDefaultAsync(ct);
-        if (!courseId.HasValue)
-            throw ServiceException.NotFound(Resources.ErrorSectionNotFound);
+    private async Task EnsureCanManageSectionAsync(uint sectionId, CancellationToken ct) => await EnsureCanManageSectionAsync(ctx.AuthUserId, sectionId, ct);
 
-        await CourseAuthorization.EnsureCanManageCourseAsync(ctx.Db, requestingUserId, courseId.Value, ct);
+    private async Task EnsureCanManageSectionAsync(uint userId, uint sectionId, CancellationToken ct)
+    {
+        uint courseId = await ctx.Db.Sections.AsNoTracking()
+                            .Where(section => section.Id == sectionId)
+                            .Select(section => (uint?)section.CourseId)
+                            .FirstOrDefaultAsync(ct)
+                        ?? throw ServiceException.NotFound(Resources.ErrorSectionNotFound);
+
+        await CourseAuthorization.EnsureCanManageCourseAsync(ctx.Db, courseId, userId, ct);
     }
 }

@@ -1,13 +1,10 @@
 using System.Security.Cryptography;
 using System.Text;
-using Backend.Configuration;
-using Backend.Data;
 using Backend.Models.DTOs.Request;
 using Backend.Models.DTOs.Response;
 using Backend.Models.Entities;
 using Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace Backend.Services;
 

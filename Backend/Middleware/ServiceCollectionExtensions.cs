@@ -206,6 +206,7 @@ public static class ServiceCollectionExtensions {
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IAdminService, AdminService>();
+            services.AddScoped<ICurrentUser, CurrentUser>();
 
             services.AddSingleton<IValidationAttributeAdapterProvider, LocalizedValidationAttributeAdapterProvider>();
             services.AddSingleton<ITokenBlacklistService, TokenBlacklistService>();

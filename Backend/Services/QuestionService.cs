@@ -1,5 +1,3 @@
-using Backend.Configuration;
-using Backend.Data;
 using Backend.Exceptions;
 using Backend.Extensions;
 using Backend.Models.DTOs.Request;
@@ -7,14 +5,13 @@ using Backend.Models.DTOs.Response;
 using Backend.Models.Entities;
 using Backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace Backend.Services;
 
-public class QuestionService(AppDbContext dbContext, IOptions<DatabaseLimitsOptions> dbLimitsOptions) : IQuestionService {
-    public async Task<QuestionResponseDto> GetByIdAsync(uint questionId, uint userId, CancellationToken ct)
+public class QuestionService(ServiceContext<QuestionService> ctx) : IQuestionService {
+    public async Task<QuestionResponseDto> GetByIdAsync(uint questionId, CancellationToken ct)
     {
-        var result = await dbContext.Questions.AsNoTracking()
+        var result = await ctx.Db.Questions.AsNoTracking()
                          .Where(question => question.Id == questionId)
                          .Select(question => new {
                              Dto = new QuestionResponseDto(
@@ -29,14 +26,14 @@ public class QuestionService(AppDbContext dbContext, IOptions<DatabaseLimitsOpti
                          .FirstOrDefaultAsync(ct)
                      ?? throw ServiceException.NotFound(Resources.ErrorQuestionNotFound);
 
-        await CourseAuthorization.EnsureCanAccessCourseAsync(dbContext, result.CourseId, userId, ct);
+        await CourseAuthorization.EnsureCanAccessCourseAsync(ctx.Db, result.CourseId, ctx.AuthUserId, ct);
 
         return result.Dto;
     }
 
-    public async Task<(AnswerOptionResponseDto[] Options, Metadata metadata)> GetOptionsAsync(uint questionId, uint userId, RequestQuery requestQuery, CancellationToken ct)
+    public async Task<(AnswerOptionResponseDto[] Options, Metadata metadata)> GetOptionsAsync(uint questionId, RequestQuery requestQuery, CancellationToken ct)
     {
-        var questionInfo = await dbContext.Questions.AsNoTracking()
+        var questionInfo = await ctx.Db.Questions.AsNoTracking()
                                .Where(q => q.Id == questionId)
                                .Select(q => new {
                                    q.Quiz.Section.CourseId,
@@ -45,13 +42,13 @@ public class QuestionService(AppDbContext dbContext, IOptions<DatabaseLimitsOpti
                                .FirstOrDefaultAsync(ct)
                            ?? throw ServiceException.NotFound(Resources.ErrorQuestionNotFound);
 
-        await CourseAuthorization.EnsureCanAccessCourseAsync(dbContext, questionInfo.CourseId, userId, ct);
+        await CourseAuthorization.EnsureCanAccessCourseAsync(ctx.Db, questionInfo.CourseId, ctx.AuthUserId, ct);
 
-        var (options, metadata) = await dbContext.AnswerOptions.AsNoTracking()
+        var (options, metadata) = await ctx.Db.AnswerOptions.AsNoTracking()
             .Where(option => option.QuestionId == questionId)
             .OrderBy(option => option.Id)
             .Select(option => new AnswerOptionResponseDto(option.Id, option.Text, option.ImageUrl, option.QuestionId))
-            .ToPagedResultAsync(requestQuery, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
+            .ToPagedResultAsync(requestQuery, ctx.MaxUnpagedItems, ct);
 
         if (questionInfo.RandomizeAnswers)
             Random.Shared.Shuffle(options);
@@ -59,35 +56,35 @@ public class QuestionService(AppDbContext dbContext, IOptions<DatabaseLimitsOpti
         return (options, new Metadata(metadata, requestQuery));
     }
 
-    public async Task<(AnswerOptionEditorResponseDto[] Options, Metadata metadata)> GetOptionsForEditorAsync(uint requestingUserId, uint questionId, RequestQuery requestQuery, CancellationToken ct)
+    public async Task<(AnswerOptionEditorResponseDto[] Options, Metadata metadata)> GetOptionsForEditorAsync(uint questionId, RequestQuery requestQuery, CancellationToken ct)
     {
-        await EnsureCanManageQuestionAsync(requestingUserId, questionId, ct);
-        var (options, metadata) = await dbContext.AnswerOptions.AsNoTracking()
+        await EnsureCanManageQuestionAsync(questionId, ct);
+        var (options, metadata) = await ctx.Db.AnswerOptions.AsNoTracking()
             .Where(option => option.QuestionId == questionId)
             .OrderBy(option => option.Id)
             .Select(option => new AnswerOptionEditorResponseDto(option.Id, option.Text, option.ImageUrl, option.IsCorrect, option.QuestionId))
-            .ToPagedResultAsync(requestQuery, dbLimitsOptions.Value.MaxItemsLoadedWithoutPagination, ct);
+            .ToPagedResultAsync(requestQuery, ctx.MaxUnpagedItems, ct);
         return (options, new Metadata(metadata, requestQuery));
     }
 
-    public async Task<uint> CreateAnswerOptionAsync(uint requestingUserId, uint questionId, CreateAnswerOptionRequestDto request, CancellationToken ct)
+    public async Task<uint> CreateAnswerOptionAsync(uint questionId, CreateAnswerOptionRequestDto request, CancellationToken ct)
     {
-        await EnsureCanManageQuestionAsync(requestingUserId, questionId, ct);
+        await EnsureCanManageQuestionAsync(questionId, ct);
         AnswerOption option = new() {
             Text = request.Text,
             ImageUrl = request.ImageUrl,
             IsCorrect = request.IsCorrect,
             QuestionId = questionId
         };
-        dbContext.AnswerOptions.Add(option);
-        await dbContext.SaveChangesAsync(ct);
+        ctx.Db.AnswerOptions.Add(option);
+        await ctx.Db.SaveChangesAsync(ct);
         return option.Id;
     }
 
-    public async Task UpdateAnswerOptionAsync(uint requestingUserId, uint questionId, uint optionId, UpdateAnswerOptionRequestDto request, CancellationToken ct)
+    public async Task UpdateAnswerOptionAsync(uint questionId, uint optionId, UpdateAnswerOptionRequestDto request, CancellationToken ct)
     {
-        await EnsureCanManageQuestionAsync(requestingUserId, questionId, ct);
-        var option = await dbContext.AnswerOptions
+        await EnsureCanManageQuestionAsync(questionId, ct);
+        var option = await ctx.Db.AnswerOptions
             .FirstOrDefaultAsync(candidate => candidate.Id == optionId && candidate.QuestionId == questionId, ct);
         if (option is null)
             throw ServiceException.NotFound(Resources.ErrorAnswerOptionNotFound);
@@ -95,22 +92,22 @@ public class QuestionService(AppDbContext dbContext, IOptions<DatabaseLimitsOpti
         option.Text = request.Text;
         option.ImageUrl = request.ImageUrl;
         option.IsCorrect = request.IsCorrect;
-        await dbContext.SaveChangesAsync(ct);
+        await ctx.Db.SaveChangesAsync(ct);
     }
 
-    public async Task DeleteAnswerOptionAsync(uint requestingUserId, uint questionId, uint optionId, CancellationToken ct)
+    public async Task DeleteAnswerOptionAsync(uint questionId, uint optionId, CancellationToken ct)
     {
-        await EnsureCanManageQuestionAsync(requestingUserId, questionId, ct);
-        int deleted = await dbContext.AnswerOptions
+        await EnsureCanManageQuestionAsync(questionId, ct);
+        int deleted = await ctx.Db.AnswerOptions
             .Where(option => option.Id == optionId && option.QuestionId == questionId)
             .ExecuteDeleteAsync(ct);
         if (deleted == 0)
             throw ServiceException.NotFound(Resources.ErrorAnswerOptionNotFound);
     }
 
-    public async Task<uint> CreateAsync(uint requestingUserId, CreateQuestionRequestDto request, CancellationToken ct)
+    public async Task<uint> CreateAsync(CreateQuestionRequestDto request, CancellationToken ct)
     {
-        await EnsureCanManageQuizAsync(requestingUserId, request.QuizId, ct);
+        await EnsureCanManageQuizAsync(request.QuizId, ct);
         if (!Enum.TryParse(request.Type, true, out QuestionType questionType) || !Enum.IsDefined(questionType))
             throw ServiceException.BadRequest(Resources.ErrorQuestionTypeInvalid);
 
@@ -121,20 +118,20 @@ public class QuestionService(AppDbContext dbContext, IOptions<DatabaseLimitsOpti
             Points = request.Points,
             QuizId = request.QuizId
         };
-        dbContext.Questions.Add(question);
-        await dbContext.SaveChangesAsync(ct);
+        ctx.Db.Questions.Add(question);
+        await ctx.Db.SaveChangesAsync(ct);
         return question.Id;
     }
 
-    public async Task UpdateAsync(uint requestingUserId, uint questionId, CreateQuestionRequestDto request, CancellationToken ct)
+    public async Task UpdateAsync(uint questionId, CreateQuestionRequestDto request, CancellationToken ct)
     {
-        var question = await dbContext.Questions.FirstOrDefaultAsync(candidate => candidate.Id == questionId, ct);
+        var question = await ctx.Db.Questions.FirstOrDefaultAsync(candidate => candidate.Id == questionId, ct);
         if (question is null)
             throw ServiceException.NotFound(Resources.ErrorQuestionNotFound);
 
-        await EnsureCanManageQuizAsync(requestingUserId, question.QuizId, ct);
+        await EnsureCanManageQuizAsync(question.QuizId, ct);
         if (question.QuizId != request.QuizId)
-            await EnsureCanManageQuizAsync(requestingUserId, request.QuizId, ct);
+            await EnsureCanManageQuizAsync(request.QuizId, ct);
         if (!Enum.TryParse(request.Type, true, out QuestionType questionType) || !Enum.IsDefined(questionType))
             throw ServiceException.BadRequest(Resources.ErrorQuestionTypeInvalid);
 
@@ -143,39 +140,41 @@ public class QuestionService(AppDbContext dbContext, IOptions<DatabaseLimitsOpti
         question.Type = questionType;
         question.Points = request.Points;
         question.QuizId = request.QuizId;
-        await dbContext.SaveChangesAsync(ct);
+        await ctx.Db.SaveChangesAsync(ct);
     }
 
-    public async Task DeleteAsync(uint requestingUserId, uint questionId, CancellationToken ct)
+    public async Task DeleteAsync(uint questionId, CancellationToken ct)
     {
-        await EnsureCanManageQuestionAsync(requestingUserId, questionId, ct);
-        if (await dbContext.StudentAnswers.AnyAsync(answer => answer.QuestionId == questionId, ct))
+        await EnsureCanManageQuestionAsync(questionId, ct);
+        if (await ctx.Db.StudentAnswers.AnyAsync(answer => answer.QuestionId == questionId, ct))
             throw ServiceException.Conflict(Resources.ErrorQuestionHasSubmittedAnswers);
 
-        await dbContext.Questions.Where(question => question.Id == questionId).ExecuteDeleteAsync(ct);
+        await ctx.Db.Questions.Where(question => question.Id == questionId).ExecuteDeleteAsync(ct);
     }
 
-    private async Task EnsureCanManageQuestionAsync(uint requestingUserId, uint questionId, CancellationToken ct)
-    {
-        uint? courseId = await dbContext.Questions.AsNoTracking()
-            .Where(question => question.Id == questionId)
-            .Select(question => (uint?)question.Quiz.Section.CourseId)
-            .FirstOrDefaultAsync(ct);
-        if (!courseId.HasValue)
-            throw ServiceException.NotFound(Resources.ErrorQuestionNotFound);
+    private async Task EnsureCanManageQuestionAsync(uint questionId, CancellationToken ct) => await EnsureCanManageQuestionAsync(ctx.AuthUserId, questionId, ct);
 
-        await CourseAuthorization.EnsureCanManageCourseAsync(dbContext, requestingUserId, courseId.Value, ct);
+    private async Task EnsureCanManageQuestionAsync(uint userId, uint questionId, CancellationToken ct)
+    {
+        uint courseId = await ctx.Db.Questions.AsNoTracking()
+                            .Where(question => question.Id == questionId)
+                            .Select(question => (uint?)question.Quiz.Section.CourseId)
+                            .FirstOrDefaultAsync(ct)
+                        ?? throw ServiceException.NotFound(Resources.ErrorQuestionNotFound);
+
+        await CourseAuthorization.EnsureCanManageCourseAsync(ctx.Db, courseId, userId, ct);
     }
 
-    private async Task EnsureCanManageQuizAsync(uint requestingUserId, uint quizId, CancellationToken ct)
-    {
-        uint? courseId = await dbContext.Quizzes.AsNoTracking()
-            .Where(quiz => quiz.Id == quizId)
-            .Select(quiz => (uint?)quiz.Section.CourseId)
-            .FirstOrDefaultAsync(ct);
-        if (!courseId.HasValue)
-            throw ServiceException.NotFound(Resources.ErrorQuizNotFound);
+    private async Task EnsureCanManageQuizAsync(uint quizId, CancellationToken ct) => await EnsureCanManageQuizAsync(ctx.AuthUserId, quizId, ct);
 
-        await CourseAuthorization.EnsureCanManageCourseAsync(dbContext, requestingUserId, courseId.Value, ct);
+    private async Task EnsureCanManageQuizAsync(uint userId, uint quizId, CancellationToken ct)
+    {
+        uint courseId = await ctx.Db.Quizzes.AsNoTracking()
+                            .Where(quiz => quiz.Id == quizId)
+                            .Select(quiz => (uint?)quiz.Section.CourseId)
+                            .FirstOrDefaultAsync(ct)
+                        ?? throw ServiceException.NotFound(Resources.ErrorQuizNotFound);
+
+        await CourseAuthorization.EnsureCanManageCourseAsync(ctx.Db, courseId, userId, ct);
     }
 }
