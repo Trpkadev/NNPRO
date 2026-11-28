@@ -7,7 +7,7 @@ using System.Threading.RateLimiting;
 using Backend.Configuration;
 using Backend.Data;
 using Backend.Exceptions;
-using Backend.Middleware;
+using Backend.Extensions;
 using Backend.Services;
 using Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -16,13 +16,14 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.DataAnnotations;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
-namespace Backend.Extensions;
+namespace Backend.Middleware;
 
 public static class ServiceCollectionExtensions {
     extension(IServiceCollection services) {
@@ -65,7 +66,23 @@ public static class ServiceCollectionExtensions {
 
         public IServiceCollection AddApiControllersAndErrorHandling()
         {
-            services.AddControllers(options => options.Filters.Add<ApiResponseWrapperFilter>())
+            services.AddControllers(options => {
+                    options.Filters.Add<ApiResponseWrapperFilter>();
+                    options.ModelMetadataDetailsProviders.Add(new LocalizedValidationMetadataProvider());
+
+                    var provider = options.ModelBindingMessageProvider;
+                    provider.SetAttemptedValueIsInvalidAccessor((val, field) => string.Format(Resources.ModelBindingFieldInvalidValue, val, field));
+                    provider.SetMissingBindRequiredValueAccessor(field => string.Format(Resources.ModelBindingMissingValue, field));
+                    provider.SetMissingKeyOrValueAccessor(() => Resources.ModelBindingMissingKeyOrValue);
+                    provider.SetMissingRequestBodyRequiredValueAccessor(() => Resources.ModelBindingMissingBody);
+                    provider.SetNonPropertyAttemptedValueIsInvalidAccessor(val => string.Format(Resources.ModelBindingNonPropertyInvalidValue, val));
+                    provider.SetNonPropertyUnknownValueIsInvalidAccessor(() => Resources.ModelBindingNonPropertyUnknownValueInvalid);
+                    provider.SetNonPropertyValueMustBeANumberAccessor(() => Resources.ModelBindingNonPropertyMustBeNumber);
+                    provider.SetUnknownValueIsInvalidAccessor(field => string.Format(Resources.ModelBindingUnknownValueInvalid, field));
+                    provider.SetValueIsInvalidAccessor(val => string.Format(Resources.ModelBindingInvalidValue, val));
+                    provider.SetValueMustBeANumberAccessor(field => string.Format(Resources.ModelBindingMustBeNumber, field));
+                    provider.SetValueMustNotBeNullAccessor(val => string.Format(Resources.ModelBindingMustNotBeNull, val));
+                })
                 .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()))
                 .ConfigureApiBehaviorOptions(options => options.InvalidModelStateResponseFactory = context => {
                     var problemDetails = new ValidationProblemDetails(context.ModelState) {
@@ -190,6 +207,7 @@ public static class ServiceCollectionExtensions {
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IAdminService, AdminService>();
 
+            services.AddSingleton<IValidationAttributeAdapterProvider, LocalizedValidationAttributeAdapterProvider>();
             services.AddSingleton<ITokenBlacklistService, TokenBlacklistService>();
             services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
 
@@ -206,7 +224,7 @@ public static class ServiceCollectionExtensions {
                     new CultureInfo("cs")
                 };
 
-                options.DefaultRequestCulture = new RequestCulture(culture: "en", uiCulture: "en");
+                options.DefaultRequestCulture = new RequestCulture("en", "en");
                 options.SupportedCultures = supportedCultures;
                 options.SupportedUICultures = supportedCultures;
                 options.FallBackToParentCultures = true;

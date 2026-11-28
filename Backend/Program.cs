@@ -1,4 +1,4 @@
-using Backend.Extensions;
+using Backend.Middleware;
 using DotNetEnv;
 using Scalar.AspNetCore;
 
