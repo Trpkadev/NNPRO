@@ -171,6 +171,7 @@ export interface CourseResponseDto {
   id: number
   title: string
   description: string
+  hasAccess: boolean
 }
 
 export interface CourseThumbnailResponseDto {

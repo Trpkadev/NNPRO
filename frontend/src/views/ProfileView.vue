@@ -1,80 +1,121 @@
 <script setup lang="ts">
-import { formatDateTime } from '@/utils/formatters'
+import StudentProfileProgress from '@/components/profile/StudentProfileProgress.vue'
+import InstructorProfileCourses from '@/components/profile/InstructorProfileCourses.vue'
 
 const { t } = useI18n()
+const authStore = useAuthStore()
 
-const progressPage = ref(1)
-const { data: progressResponse, isLoading: progressLoading } = useMyProgressQuery(
-  computed(() => ({
-    Page: progressPage.value,
-    PageSize: 10,
-  })),
+const username = computed(() => authStore.user?.username ?? '')
+const initials = computed(() => username.value.slice(0, 2).toUpperCase() || '?')
+
+const roleLabel = computed(() =>
+  authStore.userRole ? t(`roles.${authStore.userRole}`) : t('roles.guest'),
 )
-
-const progressList = computed(() => progressResponse.value?.data ?? [])
-const progressPagination = computed(() => progressResponse.value?.metadata?.pagination ?? null)
 </script>
 
 <template>
-  <div class="space-y-8">
-    <div>
-      <h1 class="text-2xl font-bold">{{ t('profile.title') }}</h1>
-      <p class="text-sm text-surface-500">{{ t('profile.subtitle') }}</p>
-    </div>
+  <div class="space-y-6">
+    <!-- Společná profilová hlavička -->
+    <div
+      class="rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-0 dark:bg-surface-900 overflow-hidden"
+    >
+      <div class="h-2 bg-primary" />
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <ProfileAccountCard />
-
-      <div
-        class="lg:col-span-2 p-5 rounded-2xl bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 space-y-4"
-      >
-        <h2 class="text-base font-bold">{{ t('profile.learningProgressTitle') }}</h2>
-
-        <div v-if="progressLoading" class="space-y-2">
-          <Skeleton v-for="n in 4" :key="n" height="3rem" class="rounded-xl" />
+      <div class="p-5 sm:p-7 flex flex-col sm:flex-row sm:items-center gap-5">
+        <div
+          class="w-16 h-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-2xl font-bold shrink-0"
+        >
+          {{ initials }}
         </div>
 
-        <p v-else-if="progressList.length === 0" class="text-sm text-surface-500 text-center py-8">
-          {{ t('profile.noProgressYet') }}
-        </p>
+        <div class="min-w-0 flex-1 space-y-1">
+          <h1 class="text-2xl font-bold break-words">
+            {{ username || t('profile.title') }}
+          </h1>
 
-        <DataTable v-else :value="progressList" striped-rows responsive-layout="scroll">
-          <Column field="lessonTitle" :header="t('lessons.lesson')">
-            <template #body="{ data }">
-              <RouterLink
-                :to="{
-                  name: 'lesson-detail',
-                  params: { courseId: data.courseId, lessonId: data.lessonId },
-                }"
-                class="font-semibold text-primary hover:underline"
-              >
-                {{ data.lessonTitle }}
-              </RouterLink>
-            </template>
-          </Column>
-          <Column :header="t('common.actions')">
-            <template #body="{ data }">
-              <Tag
-                :value="data.isCompleted ? t('lessons.completed') : t('lessons.incomplete')"
-                :severity="data.isCompleted ? 'success' : 'secondary'"
-              />
-            </template>
-          </Column>
-          <Column :header="t('profile.completedAt')">
-            <template #body="{ data }">
-              <span class="text-xs text-surface-500">{{
-                formatDateTime(data.completedAtUtc)
-              }}</span>
-            </template>
-          </Column>
-        </DataTable>
+          <p class="text-sm text-surface-500">
+            {{
+              authStore.isStudent
+                ? t('profile.studentSubtitle')
+                : authStore.isInstructor
+                  ? t('profile.instructorSubtitle')
+                  : authStore.isAdmin
+                    ? t('profile.adminSubtitle')
+                    : t('profile.subtitle')
+            }}
+          </p>
 
-        <PaginationControls
-          :pagination="progressPagination"
-          :loading="progressLoading"
-          @update:page="progressPage = $event"
-        />
+          <p v-if="authStore.user?.email" class="text-xs text-surface-500 break-all">
+            {{ authStore.user.email }}
+          </p>
+        </div>
+
+        <Tag :value="roleLabel" severity="secondary" class="self-start sm:self-center" />
       </div>
+    </div>
+
+    <!-- STUDENT -->
+    <template v-if="authStore.isStudent">
+      <StudentProfileProgress />
+    </template>
+
+    <!-- LEKTOR -->
+    <template v-else-if="authStore.isInstructor">
+      <InstructorProfileCourses />
+    </template>
+
+    <!-- ADMINISTRÁTOR -->
+    <template v-else-if="authStore.isAdmin">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <RouterLink
+          :to="{ name: 'admin-dashboard' }"
+          class="group p-5 rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-0 dark:bg-surface-900 hover:border-primary/50 transition-colors no-underline flex items-center gap-4"
+        >
+          <div
+            class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0"
+          >
+            <i class="oi oi-shield text-xl" />
+          </div>
+
+          <div class="flex-1 min-w-0">
+            <h2 class="font-bold text-surface-900 dark:text-surface-0">
+              {{ t('nav.adminZone') }}
+            </h2>
+            <p class="text-sm text-surface-500">
+              {{ t('profile.adminManagementDescription') }}
+            </p>
+          </div>
+
+          <i class="oi oi-chevron-right text-surface-400 group-hover:text-primary" />
+        </RouterLink>
+
+        <RouterLink
+          :to="{ name: 'instructor-dashboard' }"
+          class="group p-5 rounded-2xl border border-surface-200 dark:border-surface-800 bg-surface-0 dark:bg-surface-900 hover:border-primary/50 transition-colors no-underline flex items-center gap-4"
+        >
+          <div
+            class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0"
+          >
+            <i class="oi oi-briefcase text-xl" />
+          </div>
+
+          <div class="flex-1 min-w-0">
+            <h2 class="font-bold text-surface-900 dark:text-surface-0">
+              {{ t('nav.instructorZone') }}
+            </h2>
+            <p class="text-sm text-surface-500">
+              {{ t('profile.adminCoursesDescription') }}
+            </p>
+          </div>
+
+          <i class="oi oi-chevron-right text-surface-400 group-hover:text-primary" />
+        </RouterLink>
+      </div>
+    </template>
+
+    <!-- Nastavení účtu pro všechny role -->
+    <div class="max-w-2xl space-y-4">
+      <ProfileAccountCard />
     </div>
   </div>
 </template>

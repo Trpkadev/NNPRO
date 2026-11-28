@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const { t } = useI18n()
+const router = useRouter()
 </script>
 
 <template>
@@ -14,13 +15,28 @@ const { t } = useI18n()
         >
           <i class="oi oi-briefcase text-xl" />
         </div>
+
         <div>
-          <h1 class="text-xl font-bold">{{ t('nav.instructorZone') }}</h1>
+          <h1 class="text-xl font-bold">
+            {{ t('nav.instructorZone') }}
+          </h1>
+
           <p class="text-xs text-surface-500 dark:text-surface-400">
             {{ t('nav.coursesManagement') }}
           </p>
         </div>
       </div>
+
+      <!-- Návrat do studentské části -->
+      <Button
+        :label="t('nav.backToLearning')"
+        icon="oi oi-arrow-left"
+        severity="secondary"
+        outlined
+        size="small"
+        class="w-full sm:w-auto"
+        @click="router.push({ name: 'home' })"
+      />
     </div>
 
     <RouterView />

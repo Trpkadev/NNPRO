@@ -47,6 +47,13 @@ export const coursesService = {
     return data.data
   },
 
+  async getManageable(params?: QueryParameters): Promise<WrapperOfCourseResponseDtoList> {
+    const { data } = await api.get<WrapperOfCourseResponseDtoList>('/api/courses/manageable', {
+      params: serializeQueryParams(params),
+    })
+    return data
+  },
+
   /**
    * Seznam lektorů přiřazených ke kurzu (GET /api/courses/{courseId}/instructors)
    */
