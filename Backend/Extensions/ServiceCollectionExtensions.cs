@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO.Compression;
 using System.Security.Claims;
 using System.Text;
@@ -13,6 +14,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
@@ -65,18 +67,17 @@ public static class ServiceCollectionExtensions {
         {
             services.AddControllers(options => options.Filters.Add<ApiResponseWrapperFilter>())
                 .AddJsonOptions(options => options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()))
-                .ConfigureApiBehaviorOptions(options => {
-                    options.InvalidModelStateResponseFactory = context => {
-                        var problemDetails = new ValidationProblemDetails(context.ModelState) {
-                            Title = Resources.ErrorBadRequestTitle,
-                            Detail = Resources.ErrorBadRequestDescription,
-                            Status = StatusCodes.Status400BadRequest,
-                            Instance = context.HttpContext.Request.Path,
-                            Extensions = { ["traceId"] = context.HttpContext.TraceIdentifier }
-                        };
-                        return new BadRequestObjectResult(problemDetails);
+                .ConfigureApiBehaviorOptions(options => options.InvalidModelStateResponseFactory = context => {
+                    var problemDetails = new ValidationProblemDetails(context.ModelState) {
+                        Title = Resources.ErrorBadRequestTitle,
+                        Detail = Resources.ErrorBadRequestDescription,
+                        Status = StatusCodes.Status400BadRequest,
+                        Instance = context.HttpContext.Request.Path,
+                        Extensions = { ["traceId"] = context.HttpContext.TraceIdentifier }
                     };
-                });
+                    return new BadRequestObjectResult(problemDetails);
+                })
+                .AddDataAnnotationsLocalization(options => options.DataAnnotationLocalizerProvider = (_, factory) => factory.Create(typeof(Resources)));
 
             services.AddResponseCaching(); // TODO: Add [ResponseCache] to public GET endpoints
             services.AddResponseCompression(options => {
@@ -191,6 +192,28 @@ public static class ServiceCollectionExtensions {
 
             services.AddSingleton<ITokenBlacklistService, TokenBlacklistService>();
             services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+
+            return services;
+        }
+
+        public IServiceCollection AddApiLocalization()
+        {
+            services.AddLocalization();
+
+            services.Configure<RequestLocalizationOptions>(options => {
+                var supportedCultures = new[] {
+                    new CultureInfo("en"),
+                    new CultureInfo("cs")
+                };
+
+                options.DefaultRequestCulture = new RequestCulture(culture: "en", uiCulture: "en");
+                options.SupportedCultures = supportedCultures;
+                options.SupportedUICultures = supportedCultures;
+                options.FallBackToParentCultures = true;
+                options.FallBackToParentUICultures = true;
+
+                options.RequestCultureProviders = [new AcceptLanguageHeaderRequestCultureProvider()];
+            });
 
             return services;
         }
