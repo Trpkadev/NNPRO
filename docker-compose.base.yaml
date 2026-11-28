@@ -1,0 +1,83 @@
+services:
+  db:
+    image: mariadb:12.3
+    container_name: db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${DB_NAME:?Set DB_NAME}
+      MARIADB_USER: ${DB_USER:?Set DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+      MARIADB_AUTO_UPGRADE: "1"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app_net
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - app_net
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    environment:
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ASPNETCORE_HTTPS_PORTS: ""
+      ConnectionStrings__DefaultConnection: ${DOCKER_DB_CONNECTION_STRING:?Set DOCKER_DB_CONNECTION_STRING}
+      ConnectionStrings__Redis: ${REDIS_DOCKER_CONNECTION:?Set REDIS_DOCKER_CONNECTION}
+      JwtOptions__SecretKey: ${JwtOptions__SecretKey:?Set JwtOptions__SecretKey}
+      JwtOptions__Issuer: ${JwtOptions__Issuer:?Set JwtOptions__Issuer}
+      JwtOptions__Audience: ${JwtOptions__Audience:?Set JwtOptions__Audience}
+      DataProtection__KeyDirectory: /home/app/dp_keys
+    volumes:
+      - dp_keys:/home/app/dp_keys
+    networks:
+      - app_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: runner
+    container_name: frontend
+    restart: unless-stopped
+    networks:
+      - app_net
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    networks:
+      - app_net

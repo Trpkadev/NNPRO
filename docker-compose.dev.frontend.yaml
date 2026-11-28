@@ -1,0 +1,36 @@
+services:
+  db:
+    extends:
+      file: docker-compose.base.yaml
+      service: db
+
+  redis:
+    extends:
+      file: docker-compose.base.yaml
+      service: redis
+
+  backend:
+    extends:
+      file: docker-compose.base.yaml
+      service: backend
+    build:
+      target: development
+    container_name: backend
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+networks:
+  app_net:
+    driver: bridge
+
+volumes:
+  mariadb_data:
+  redis_data:
+  dp_keys:
